@@ -93,11 +93,11 @@ export type ImportCsvResult = {
 };
 
 function isLocale(value: string): value is Locale {
-	return value in Locale;
+	return Object.hasOwn(Locale, value);
 }
 
 function isGuestKind(value: string): value is GuestKind {
-	return value in GuestKind;
+	return Object.hasOwn(GuestKind, value);
 }
 
 export function parseImportCsv(text: string): ImportCsvResult {
