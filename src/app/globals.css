@@ -39,6 +39,22 @@ header {
 	color: var(--color-ink);
 }
 
+/*
+ * `background-color` has the identical inheritance gap as `color` above, but for the page's
+ * paint instead of its text: `body` is the only element that ever gets `background-color`
+ * explicitly, resolved once against the *default* (editorial) theme, so any section with no
+ * background of its own (Story, Events, Gallery, RSVP all rely on this) shows that default cream
+ * through in every other theme. That was invisible while every theme's ivory was some shade of
+ * pale cream, but MIDNIGHT's ivory is near-black, so the page would otherwise flash back to a
+ * bright cream strip the moment Hero's own explicit background ends. `header` is excluded here:
+ * it already carries its own opaque/translucent `bg-*` utility per theme (`navClassNames` in
+ * `site-nav.tsx`), and this unlayered rule would beat that layered Tailwind utility outright.
+ */
+main,
+footer {
+	background-color: var(--color-ivory);
+}
+
 h1,
 h2,
 h3 {
