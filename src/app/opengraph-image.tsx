@@ -6,6 +6,10 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Wedding RSVP";
 
+// The card is drawn from live settings, so it must be rendered per request. Without this Next
+// prerenders it during `next build`, where CI has no `DATABASE_URL` and the env parse throws.
+export const dynamic = "force-dynamic";
+
 const DEFAULT_COUPLE_NAMES = "Our Wedding";
 const DEFAULT_TAGLINE = "We're getting married and can't wait to celebrate with you.";
 
