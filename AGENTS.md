@@ -45,8 +45,8 @@ once in `src/lib/env.ts`; import `env` from there, never read `process.env` else
 ## Verification
 
 Every test, typecheck, build, and CI run happens on Mac Studio or in GitHub Actions
-(`.github/workflows/ci.yml`), never on a MacBook. CI builds with a dummy `DATABASE_URL` and dummy
-secrets so nothing connects to a real database at build time.
+(`.github/workflows/ci.yml`), never on a MacBook. CI builds with no environment variables at all: `env` and `db` are parsed and created on first
+access, so a build never needs runtime secrets or a database.
 
 ## No personal data in code
 
