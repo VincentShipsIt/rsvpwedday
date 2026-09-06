@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveDatabaseUrl } from "@/lib/database-url";
 
 const envSchema = z.object({
 	DATABASE_URL: z.string().min(1),
@@ -14,7 +15,7 @@ export type Env = z.infer<typeof envSchema>;
 let parsed: Env | undefined;
 
 function load(): Env {
-	parsed ??= envSchema.parse(process.env);
+	parsed ??= envSchema.parse({ ...process.env, DATABASE_URL: resolveDatabaseUrl(process.env) });
 	return parsed;
 }
 
