@@ -80,16 +80,20 @@ export function WebsiteForm({
 	}
 
 	function addMilestone() {
-		setMilestones((current) => [
-			...current,
-			{
-				key: createKey(),
-				sortOrder: current.length,
-				dateLabel: "",
-				imageUrl: "",
-				translations: emptyMilestoneTranslations(),
-			},
-		]);
+		setMilestones((current) => {
+			const nextSortOrder =
+				current.length === 0 ? 0 : Math.max(...current.map((milestone) => milestone.sortOrder)) + 1;
+			return [
+				...current,
+				{
+					key: createKey(),
+					sortOrder: nextSortOrder,
+					dateLabel: "",
+					imageUrl: "",
+					translations: emptyMilestoneTranslations(),
+				},
+			];
+		});
 	}
 
 	function removeMilestone(key: string) {
