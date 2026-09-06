@@ -61,12 +61,31 @@ h3 {
 	--wed-secondary: #8a9a7b;
 }
 
+/*
+ * `h1, h2, h3` above is unlayered CSS, which always beats a Tailwind utility class regardless of
+ * source order (Tailwind's utilities live in a cascade layer, and unlayered rules always win over
+ * layered ones). `font-accent` on the garden hero's couple names would otherwise lose to that rule
+ * and silently fall back to the serif display font, so this selector needs the extra specificity.
+ */
+[data-theme="garden"] .hero-couple-names {
+	font-family: var(--font-accent);
+	font-size: clamp(3.5rem, 9vw, 7rem);
+}
+
+/*
+ * The hidden initial state only applies once `.is-armed` is set, which the Reveal component adds
+ * in a `useEffect` right before it starts observing. Server HTML and no-JS clients never get
+ * `.is-armed`, so they see every section already in place instead of stuck at opacity 0.
+ */
 .reveal {
-	opacity: 0;
-	transform: translateY(16px);
 	transition:
 		opacity 0.6s ease,
 		transform 0.6s ease;
+}
+
+.reveal.is-armed:not(.reveal-visible) {
+	opacity: 0;
+	transform: translateY(16px);
 }
 
 .reveal-visible {
@@ -76,9 +95,12 @@ h3 {
 
 @media (prefers-reduced-motion: reduce) {
 	.reveal {
+		transition: none;
+	}
+
+	.reveal.is-armed:not(.reveal-visible) {
 		opacity: 1;
 		transform: none;
-		transition: none;
 	}
 }
 

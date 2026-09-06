@@ -133,7 +133,7 @@ function GardenHero({
 			id="top"
 			className="flex scroll-mt-[var(--wed-nav-height)] flex-col items-center gap-8 px-6 py-24 text-center"
 		>
-			<h1 className="font-accent text-6xl text-green sm:text-8xl">{coupleNames}</h1>
+			<h1 className="hero-couple-names text-green">{coupleNames}</h1>
 			<div className="relative aspect-[3/4] w-full max-w-md overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark">
 				{heroImageUrl && (
 					<Image

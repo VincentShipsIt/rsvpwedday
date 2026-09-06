@@ -68,7 +68,7 @@ export function Countdown({
 			: "flex flex-col";
 
 	return (
-		<div className="flex gap-4 text-center sm:gap-8" aria-live="polite">
+		<div className="flex gap-4 text-center sm:gap-8">
 			{units.map(([value, label]) => (
 				<div key={label} className={unitClassName}>
 					<span className="font-display text-3xl sm:text-4xl">

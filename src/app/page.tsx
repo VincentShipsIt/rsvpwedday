@@ -70,6 +70,9 @@ export default async function LandingPage({
 	});
 
 	const firstEvent = localizedEvents[0] ?? null;
+	const hasStory = localizedMilestones.length > 0;
+	const hasEvents = localizedEvents.length > 0;
+	const hasGallery = (siteContent?.galleryUrls ?? []).length > 0;
 
 	return (
 		<>
@@ -84,6 +87,9 @@ export default async function LandingPage({
 					rsvp: dictionary.site.navRsvp,
 					language: dictionary.common.languageLabel,
 				}}
+				hasStory={hasStory}
+				hasEvents={hasEvents}
+				hasGallery={hasGallery}
 			/>
 			<main lang={locale} dir={localeDefinition.dir} data-theme={dataTheme[theme]}>
 				<Hero
