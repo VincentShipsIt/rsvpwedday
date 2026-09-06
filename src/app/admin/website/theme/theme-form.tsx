@@ -5,6 +5,7 @@ import { ExternalLinkIcon } from "lucide-react";
 import { useState } from "react";
 import { updateTheme } from "@/app/admin/website/actions";
 import { SaveStatus } from "@/components/admin/save-status";
+import { ThemeThumbnail } from "@/components/admin/theme-thumbnail";
 import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import type { SiteTheme } from "@/generated/prisma/enums";
@@ -30,7 +31,7 @@ export function ThemeForm({ initialTheme }: ThemeFormProps) {
 					return (
 						// A native <button> can't contain the nested <a> Preview link below (interactive
 						// content can't nest), so the card itself is a plain container and the selection
-						// control is a full-size button layered behind the Preview link instead.
+						// control is a full-size button layered over the thumbnail instead.
 						<div
 							key={choice.key}
 							className={cn(
@@ -38,11 +39,12 @@ export function ThemeForm({ initialTheme }: ThemeFormProps) {
 								isSelected ? "border-ring bg-accent" : "hover:bg-accent/50"
 							)}
 						>
+							<ThemeThumbnail themeKey={choice.key} label={choice.label} />
 							<button
 								type="button"
 								aria-pressed={isSelected}
 								onClick={() => setTheme(choice.theme)}
-								className="absolute inset-0 rounded-lg"
+								className="absolute inset-0 z-10 rounded-lg"
 							>
 								<span className="sr-only">Select {choice.label} theme</span>
 							</button>
@@ -56,9 +58,9 @@ export function ThemeForm({ initialTheme }: ThemeFormProps) {
 								href={`/?theme=${choice.key}`}
 								target="_blank"
 								rel="noreferrer"
-								className="relative z-10 flex w-fit items-center gap-1 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+								className="relative z-20 flex w-fit items-center gap-1 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
 							>
-								Preview
+								Open full preview
 								<ExternalLinkIcon className="size-3.5" aria-hidden="true" />
 							</a>
 						</div>

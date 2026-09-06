@@ -21,9 +21,13 @@ export const dynamic = "force-dynamic";
 export default async function LandingPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ lang?: string; theme?: string; pick?: string }>;
+	searchParams: Promise<{ lang?: string; theme?: string; pick?: string; preview?: string }>;
 }) {
-	const { lang, theme: themeParam, pick: pickParam } = await searchParams;
+	const { lang, theme: themeParam, pick: pickParam, preview: previewParam } = await searchParams;
+	// `?preview=1` is how the admin's theme thumbnails embed this page in an iframe. The only
+	// thing it changes is the first-load invitation cover, which would otherwise hide every
+	// theme behind an identical closed envelope and make the thumbnails useless.
+	const isPreview = previewParam === "1";
 	const showThemePicker = pickParam === "1";
 	const locale = await resolveSiteLocale(lang);
 	const dictionary = getDictionary(locale);
@@ -81,7 +85,8 @@ export default async function LandingPage({
 	const hasEvents = localizedEvents.length > 0;
 	const hasGallery = (siteContent?.galleryUrls ?? []).length > 0;
 
-	const hasInvitationOpening = theme === SiteTheme.VINTAGE || theme === SiteTheme.GARDEN;
+	const hasInvitationOpening =
+		!isPreview && (theme === SiteTheme.VINTAGE || theme === SiteTheme.GARDEN);
 
 	return (
 		<>
