@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 					<Link href="/admin/import">Import</Link>
 					<Link href="/admin/export">Export</Link>
 					<Link href="/admin/settings">Settings</Link>
+					<Link href="/admin/website">Website</Link>
 					<form action={logout} className="ml-auto">
 						<button type="submit" className="text-green underline underline-offset-4">
 							Log out
