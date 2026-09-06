@@ -27,6 +27,7 @@ export const en = {
 		rsvpDeadlineLabel: "Please respond by {date}",
 		rsvpQuestions: "Questions? Write to {email}",
 		footerLine: "{coupleNames} · {year}",
+		openInvitationLabel: "Open the invitation",
 	},
 	rsvp: {
 		heading: "You're invited, {name}",

@@ -2,6 +2,7 @@ import { Events, type EventView } from "@/components/site/events";
 import { Gallery } from "@/components/site/gallery";
 import { HashScrollFix } from "@/components/site/hash-scroll";
 import { Hero } from "@/components/site/hero";
+import { InvitationOpening } from "@/components/site/invitation-opening";
 import { RsvpSection } from "@/components/site/rsvp-section";
 import { SectionDivider } from "@/components/site/section-divider";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -80,9 +81,18 @@ export default async function LandingPage({
 	const hasEvents = localizedEvents.length > 0;
 	const hasGallery = (siteContent?.galleryUrls ?? []).length > 0;
 
+	const hasInvitationOpening = theme === SiteTheme.VINTAGE || theme === SiteTheme.GARDEN;
+
 	return (
 		<>
 			<HashScrollFix />
+			{hasInvitationOpening && (
+				<InvitationOpening
+					coupleNames={coupleNames}
+					theme={theme}
+					openLabel={dictionary.site.openInvitationLabel}
+				/>
+			)}
 			<SiteNav
 				coupleNames={coupleNames}
 				locale={locale}
