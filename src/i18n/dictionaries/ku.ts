@@ -12,10 +12,23 @@ export const ku: Dictionary = {
 		adultLabel: "Mezin",
 		childLabel: "Zarok",
 	},
-	landing: {
-		title: "{coupleNames}",
-		tagline:
-			"Em dizewicin. Vexwendî bi e-mailê tên şandin, digel girêdaneke taybet ji bo bersivdanê.",
+	site: {
+		navStory: "Çîroka me",
+		navEvents: "Bûyer",
+		navGallery: "Wêne",
+		navRsvp: "Bersiv",
+		countdownDays: "Roj",
+		countdownHours: "Saet",
+		countdownMinutes: "Deqe",
+		countdownSeconds: "Çirke",
+		countdownToday: "Îro roja mezin e",
+		storyHeading: "Çîroka me",
+		eventsHeading: "Bûyer",
+		galleryHeading: "Wêne",
+		rsvpHeading: "Bersiv",
+		rsvpDeadlineLabel: "Ji kerema xwe berî {date} bersivê bide",
+		rsvpQuestions: "Pirs hene? Ji {email} re binivîse",
+		footerLine: "{coupleNames} · {year}",
 	},
 	rsvp: {
 		heading: "Tu vexwendî yî, {name}",
