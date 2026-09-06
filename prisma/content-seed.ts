@@ -264,46 +264,74 @@ export async function seedContent() {
 
 /*
  * Stand-in photography so a site with no pictures yet still reads as designed rather than as a
- * page of empty frames. Lorem Picsum serves a stable image per seed over https, which is what
- * `isAllowedImageUrl` and `next/image` require.
+ * page of empty frames. These are couples and wedding details rather than scenery, because a
+ * wedding page illustrated with landscapes reads as a template nobody finished.
  *
- * This only ever fills a site that has no photography at all. The moment a hero, a gallery entry,
- * or a single milestone photo is set in the admin, the guard below stops matching and a later
- * deploy leaves every image alone — including a deliberate removal of these.
+ * The source is Flickr's Creative Commons pool via loremflickr, addressed by tag and lock so a
+ * given URL keeps returning the same photograph. Treat them as temporary: they are strangers'
+ * photographs, and the point is to be replaced by the couple's own in `/admin/website`.
  */
-const PLACEHOLDER_HERO = "https://picsum.photos/seed/wed-hero/1800/1200";
+const PLACEHOLDER_HERO = "https://loremflickr.com/1800/1200/wedding,couple?lock=14";
 
 const PLACEHOLDER_GALLERY = [
-	"https://picsum.photos/seed/wed-g1/900/1200",
-	"https://picsum.photos/seed/wed-g2/1200/900",
-	"https://picsum.photos/seed/wed-g3/900/900",
-	"https://picsum.photos/seed/wed-g4/900/1200",
-	"https://picsum.photos/seed/wed-g5/1200/900",
-	"https://picsum.photos/seed/wed-g6/900/1100",
+	"https://loremflickr.com/900/1200/wedding,couple?lock=15",
+	"https://loremflickr.com/1200/900/wedding,couple?lock=11",
+	"https://loremflickr.com/900/900/wedding,ceremony?lock=31",
+	"https://loremflickr.com/900/1200/wedding,ceremony?lock=32",
+	"https://loremflickr.com/1200/900/wedding,ceremony?lock=33",
+	"https://loremflickr.com/900/1100/wedding,couple?lock=16",
 ];
 
 const PLACEHOLDER_MILESTONES = [
-	"https://picsum.photos/seed/wed-m1/1000/800",
-	"https://picsum.photos/seed/wed-m2/1000/800",
-	"https://picsum.photos/seed/wed-m3/1000/800",
+	"https://loremflickr.com/1000/800/wedding,couple?lock=13",
+	"https://loremflickr.com/1000/800/wedding,couple?lock=16",
+	"https://loremflickr.com/1000/800/wedding,couple?lock=12",
 ];
+
+/*
+ * Bump when the placeholder set above changes. A site still carrying an older generation, and
+ * nothing but that generation, gets upgraded; a site already on this one is left alone, which is
+ * what makes deleting every placeholder in the admin stick instead of reappearing on the next
+ * deploy. Generation 1 was a set of scenery shots, replaced because a wedding page illustrated
+ * with landscapes reads as an unfinished template.
+ */
+const PLACEHOLDER_GENERATION = 2;
+
+// Anything the deploy seed has ever written. A photo from outside this list is the couple's own.
+function isSeededPlaceholder(url: string): boolean {
+	return url.includes("loremflickr.com/") || url.includes("picsum.photos/seed/wed-");
+}
 
 async function seedPlaceholderPhotos() {
 	const siteContent = await db.siteContent.findUnique({ where: { id: 1 } });
+
+	if (!siteContent || siteContent.placeholderPhotoGeneration >= PLACEHOLDER_GENERATION) {
+		return;
+	}
+
 	const milestones = await db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" } });
+	const currentPhotos = [
+		siteContent.heroImageUrl,
+		...siteContent.galleryUrls,
+		...milestones.map((milestone) => milestone.imageUrl),
+	].filter((url): url is string => Boolean(url));
 
-	const hasAnyPhoto =
-		Boolean(siteContent?.heroImageUrl) ||
-		(siteContent?.galleryUrls.length ?? 0) > 0 ||
-		milestones.some((milestone) => milestone.imageUrl !== null);
-
-	if (hasAnyPhoto) {
+	// Real photography present: record the generation so this never runs again, and change nothing.
+	if (currentPhotos.some((url) => !isSeededPlaceholder(url))) {
+		await db.siteContent.update({
+			where: { id: 1 },
+			data: { placeholderPhotoGeneration: PLACEHOLDER_GENERATION },
+		});
 		return;
 	}
 
 	await db.siteContent.update({
 		where: { id: 1 },
-		data: { heroImageUrl: PLACEHOLDER_HERO, galleryUrls: PLACEHOLDER_GALLERY },
+		data: {
+			heroImageUrl: PLACEHOLDER_HERO,
+			galleryUrls: PLACEHOLDER_GALLERY,
+			placeholderPhotoGeneration: PLACEHOLDER_GENERATION,
+		},
 	});
 
 	for (const [index, milestone] of milestones.entries()) {
