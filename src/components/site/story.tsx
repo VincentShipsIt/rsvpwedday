@@ -1,6 +1,13 @@
 import Image from "next/image";
+import { Parallax } from "@/components/site/parallax";
 import { Reveal } from "@/components/site/reveal";
 import { SiteTheme } from "@/generated/prisma/enums";
+
+// Shared across every theme's milestone list: incremental stagger delay, capped so a long story
+// doesn't push the last milestones' reveal far past the first.
+function staggerDelay(index: number): number {
+	return Math.min(index * 80, 400);
+}
 
 export type StoryMilestoneView = {
 	id: string;
@@ -49,23 +56,26 @@ function EditorialMilestones({ milestones }: { milestones: StoryMilestoneView[] 
 			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
+					delay={staggerDelay(index)}
 					className={`flex flex-col items-center gap-8 md:flex-row ${
 						index % 2 === 1 ? "md:flex-row-reverse" : ""
 					}`}
 				>
-					<div className="aspect-[4/3] w-full overflow-hidden rounded-xl md:w-1/2">
-						{milestone.imageUrl ? (
+					{milestone.imageUrl ? (
+						<Parallax factor={0.12} className="aspect-[4/3] w-full rounded-xl md:w-1/2">
 							<Image
 								src={milestone.imageUrl}
 								alt=""
-								width={640}
-								height={480}
-								className="h-full w-full object-cover"
+								fill
+								sizes="(min-width: 768px) 50vw, 100vw"
+								className="reveal-photo-frame object-cover"
 							/>
-						) : (
+						</Parallax>
+					) : (
+						<div className="aspect-[4/3] w-full overflow-hidden rounded-xl md:w-1/2">
 							<div className="h-full w-full bg-gradient-to-br from-ivory-dark to-green/20" />
-						)}
-					</div>
+						</div>
+					)}
 					<div className="flex w-full flex-col gap-2 md:w-1/2">
 						<span className="text-xs font-medium uppercase tracking-widest text-green">
 							{milestone.dateLabel}
@@ -83,7 +93,11 @@ function ModernMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 	return (
 		<div className="flex flex-col gap-10">
 			{milestones.map((milestone, index) => (
-				<Reveal key={milestone.id} className="flex gap-6 border-l border-ink/15 pl-6">
+				<Reveal
+					key={milestone.id}
+					delay={staggerDelay(index)}
+					className="flex gap-6 border-l border-ink/15 pl-6"
+				>
 					<span className="font-accent pt-1 text-sm text-ink/40">
 						{String(index + 1).padStart(2, "0")}
 					</span>
@@ -94,7 +108,7 @@ function ModernMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 								alt=""
 								width={160}
 								height={160}
-								className="h-full w-full object-cover"
+								className="reveal-photo-frame h-full w-full object-cover"
 							/>
 						)}
 					</div>
@@ -117,23 +131,26 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
+					delay={staggerDelay(index)}
 					// No tilt below `sm` so a single narrow column of cards doesn't visually
 					// collide; the polaroid tilt only kicks in once there's room to breathe.
 					className={`w-64 bg-white p-3 pb-6 shadow-md ${index % 2 === 0 ? "sm:rotate-1" : "sm:-rotate-1"}`}
 				>
-					<div className="aspect-square w-full overflow-hidden">
-						{milestone.imageUrl ? (
+					{milestone.imageUrl ? (
+						<Parallax factor={0.12} className="aspect-square w-full">
 							<Image
 								src={milestone.imageUrl}
 								alt=""
-								width={320}
-								height={320}
-								className="h-full w-full object-cover"
+								fill
+								sizes="16rem"
+								className="reveal-photo-frame object-cover"
 							/>
-						) : (
+						</Parallax>
+					) : (
+						<div className="aspect-square w-full overflow-hidden">
 							<div className="h-full w-full bg-ivory-dark" />
-						)}
-					</div>
+						</div>
+					)}
 					<p className="mt-3 text-center text-xs uppercase tracking-widest text-green">
 						{milestone.dateLabel}
 					</p>
@@ -148,19 +165,22 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 	return (
 		<div className="mx-auto flex max-w-2xl flex-col gap-10">
-			{milestones.map((milestone) => (
+			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
+					delay={staggerDelay(index)}
 					className="relative aspect-[16/10] w-full overflow-hidden rounded-xl"
 				>
 					{milestone.imageUrl ? (
-						<Image
-							src={milestone.imageUrl}
-							alt=""
-							fill
-							sizes="(min-width: 768px) 42rem, 100vw"
-							className="object-cover"
-						/>
+						<Parallax factor={0.12} className="absolute inset-0">
+							<Image
+								src={milestone.imageUrl}
+								alt=""
+								fill
+								sizes="(min-width: 768px) 42rem, 100vw"
+								className="reveal-photo-frame object-cover"
+							/>
+						</Parallax>
 					) : (
 						<div className="absolute inset-0 bg-gradient-to-br from-ivory-dark to-green/20" />
 					)}
@@ -188,6 +208,7 @@ function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
+					delay={staggerDelay(index)}
 					className={`flex flex-col items-center gap-6 rounded-3xl p-6 sm:flex-row ${
 						blockClassNames[index % blockClassNames.length]
 					}`}
@@ -195,20 +216,21 @@ function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 					<span className="font-accent shrink-0 text-6xl leading-none text-green/50">
 						{String(index + 1).padStart(2, "0")}
 					</span>
-					<div className="aspect-square w-full shrink-0 overflow-hidden rounded-2xl sm:w-40">
-						{milestone.imageUrl ? (
+					{milestone.imageUrl ? (
+						<Parallax factor={0.12} className="aspect-square w-full shrink-0 rounded-2xl sm:w-40">
 							<Image
 								src={milestone.imageUrl}
 								alt=""
-								width={320}
-								height={320}
+								fill
 								sizes="(min-width: 640px) 10rem, 100vw"
-								className="h-full w-full object-cover"
+								className="reveal-photo-frame object-cover"
 							/>
-						) : (
+						</Parallax>
+					) : (
+						<div className="aspect-square w-full shrink-0 overflow-hidden rounded-2xl sm:w-40">
 							<div className="h-full w-full bg-ivory-dark" />
-						)}
-					</div>
+						</div>
+					)}
 					<div className="flex flex-col gap-1 text-center sm:text-left">
 						<span className="text-xs font-medium uppercase tracking-widest text-green">
 							{milestone.dateLabel}

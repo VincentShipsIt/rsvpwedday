@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Parallax } from "@/components/site/parallax";
 import { Reveal } from "@/components/site/reveal";
 import { SiteTheme } from "@/generated/prisma/enums";
 
@@ -55,20 +56,35 @@ export function Gallery({
 			<Reveal className="text-center">
 				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
 			</Reveal>
-			<Reveal className={wrapperClassNames[theme]}>
-				{imageUrls.map((url) => (
-					<div key={url} className={imageWrapperClassNames[theme]}>
-						<Image
-							src={url}
-							alt=""
-							width={640}
-							height={isModern ? 640 : 800}
-							sizes={imageSizes[theme]}
-							className={isModern ? "aspect-square h-full w-full object-cover" : "h-auto w-full"}
-						/>
-					</div>
+			<div className={wrapperClassNames[theme]}>
+				{imageUrls.map((url, index) => (
+					<Reveal key={url} delay={Math.min(index * 80, 400)} variant="scale">
+						{/* Only Modern's tiles are a fixed aspect-square frame with `object-cover`;
+						    the other themes deliberately keep each image's natural aspect ratio
+						    (masonry columns), which has no fixed frame for `Parallax`'s oversized
+						    `fill` image to overflow within, so parallax is scoped to Modern here. */}
+						{isModern ? (
+							<Parallax
+								factor={0.12}
+								className={`aspect-square ${imageWrapperClassNames[theme]} hover-lift hover-zoom-img`}
+							>
+								<Image src={url} alt="" fill sizes={imageSizes[theme]} className="object-cover" />
+							</Parallax>
+						) : (
+							<div className={`${imageWrapperClassNames[theme]} hover-lift hover-zoom-img`}>
+								<Image
+									src={url}
+									alt=""
+									width={640}
+									height={800}
+									sizes={imageSizes[theme]}
+									className="h-auto w-full"
+								/>
+							</div>
+						)}
+					</Reveal>
 				))}
-			</Reveal>
+			</div>
 		</section>
 	);
 }
