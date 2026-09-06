@@ -1,12 +1,20 @@
 "use client";
 
-import type { ChangeEvent } from "react";
 import { useMemo, useState, useTransition } from "react";
-import { commitImport } from "@/app/admin/import/actions";
-import { Button } from "@/components/button";
+import { commitImport } from "@/app/admin/guests/actions";
+import { Button } from "@/components/ui/button";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { IMPORT_CSV_HEADER, parseImportCsv } from "@/domain/csv";
 
-export function ImportForm() {
+export function GuestsImportForm() {
 	const [text, setText] = useState(`${IMPORT_CSV_HEADER.join(",")}\n`);
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
@@ -25,55 +33,54 @@ export function ImportForm() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<textarea
-				className="h-48 w-full rounded-md border border-ink/15 bg-white p-3 font-mono text-xs"
+			<Textarea
+				className="h-48 font-mono text-xs"
 				value={text}
-				onChange={(changeEvent: ChangeEvent<HTMLTextAreaElement>) =>
-					setText(changeEvent.target.value)
-				}
+				onChange={(event) => setText(event.target.value)}
 			/>
 
 			{preview.errors.length > 0 && (
-				<ul className="list-inside list-disc text-sm text-red-700">
+				<ul className="list-inside list-disc text-sm text-destructive">
 					{preview.errors.map((rowError) => (
 						<li key={rowError}>{rowError}</li>
 					))}
 				</ul>
 			)}
 
-			<table className="w-full text-left text-sm">
-				<thead>
-					<tr>
-						<th className="pb-2">Email</th>
-						<th className="pb-2">Locale</th>
-						<th className="pb-2">Allowance</th>
-						<th className="pb-2">Guests</th>
-					</tr>
-				</thead>
-				<tbody>
+			<Table>
+				<TableHeader>
+					<TableRow>
+						<TableHead>Email</TableHead>
+						<TableHead>Locale</TableHead>
+						<TableHead>Allowance</TableHead>
+						<TableHead>Guests</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
 					{preview.invitations.map((invitation) => (
-						<tr key={invitation.email} className="border-t border-ink/10">
-							<td className="py-1">{invitation.email}</td>
-							<td className="py-1">{invitation.locale}</td>
-							<td className="py-1">{invitation.companionAllowance}</td>
-							<td className="py-1">
+						<TableRow key={invitation.email}>
+							<TableCell>{invitation.email}</TableCell>
+							<TableCell>{invitation.locale}</TableCell>
+							<TableCell>{invitation.companionAllowance}</TableCell>
+							<TableCell>
 								{invitation.guests
 									.map((guest) => `${guest.firstName} ${guest.lastName}`)
 									.join(", ")}
-							</td>
-						</tr>
+							</TableCell>
+						</TableRow>
 					))}
-				</tbody>
-			</table>
+				</TableBody>
+			</Table>
 
-			{error && <p className="text-sm text-red-700">{error}</p>}
+			{error && <p className="text-sm text-destructive">{error}</p>}
 
 			<Button
 				type="button"
 				disabled={isPending || preview.invitations.length === 0 || preview.errors.length > 0}
 				onClick={handleCommit}
+				className="self-start"
 			>
-				Commit import
+				Import guests
 			</Button>
 		</div>
 	);

@@ -58,5 +58,6 @@ export async function commitImport(text: string): Promise<FormActionResult> {
 	});
 
 	revalidatePath("/admin");
+	revalidatePath("/admin/guests");
 	redirect("/admin");
 }
