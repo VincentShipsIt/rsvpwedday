@@ -1,6 +1,6 @@
 import { Body, Container, Head, Html, Preview } from "@react-email/components";
 import type { ReactNode } from "react";
-import type { Locale } from "@/generated/prisma/client";
+import type { Locale } from "@/generated/prisma/enums";
 import { locales } from "@/i18n/locales";
 
 export function EmailShell({

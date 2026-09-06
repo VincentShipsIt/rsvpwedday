@@ -1,11 +1,11 @@
 "use client";
 
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useState, useTransition } from "react";
 import { submitRsvp } from "@/app/rsvp/[token]/actions";
 import { Button } from "@/components/button";
 import { fieldClassName, Input } from "@/components/input";
-import { GuestKind } from "@/generated/prisma/client";
+import { GuestKind } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
 import { t } from "@/i18n";
 
@@ -122,7 +122,7 @@ export function RsvpForm({
 		);
 	}
 
-	function handleSubmit(formEvent: FormEvent) {
+	function handleSubmit(formEvent: SubmitEvent) {
 		formEvent.preventDefault();
 
 		const payload = {

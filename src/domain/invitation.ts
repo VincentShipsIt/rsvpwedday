@@ -1,4 +1,4 @@
-import { Attendance } from "@/generated/prisma/client";
+import { Attendance } from "@/generated/prisma/enums";
 
 export type InvitationStatus = "pending" | "accepted" | "declined";
 

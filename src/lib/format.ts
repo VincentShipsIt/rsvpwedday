@@ -1,4 +1,4 @@
-import type { Locale } from "@/generated/prisma/client";
+import type { Locale } from "@/generated/prisma/enums";
 import { locales } from "@/i18n/locales";
 
 export function formatDate(date: Date, locale: Locale): string {

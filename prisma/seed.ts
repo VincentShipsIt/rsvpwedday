@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { newToken } from "@/domain/token";
-import { GuestKind, Locale } from "@/generated/prisma/client";
+import { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 

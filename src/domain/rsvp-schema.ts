@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GuestKind } from "@/generated/prisma/client";
+import { GuestKind } from "@/generated/prisma/enums";
 
 const guestAttendanceSchema = z.object({
 	eventId: z.string().min(1),

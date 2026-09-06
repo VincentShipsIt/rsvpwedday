@@ -51,5 +51,5 @@ secrets so nothing connects to a real database at build time.
 ## No personal data in code
 
 Names, the venue, dates, and every other guest- or couple-specific fact live in the database, not
-in source. The repository is public; a fresh checkout has no wedding details until it is seeded
+in source, so the repository can be made public; a fresh checkout has no wedding details until it is seeded
 or configured.

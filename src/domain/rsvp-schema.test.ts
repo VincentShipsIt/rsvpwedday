@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRsvpSubmissionSchema } from "@/domain/rsvp-schema";
-import { GuestKind } from "@/generated/prisma/client";
+import { GuestKind } from "@/generated/prisma/enums";
 
 const baseGuests = [
 	{ guestId: "g1", dietary: "", attendance: [{ eventId: "wedding", attending: true }] },
