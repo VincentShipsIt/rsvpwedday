@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://u:p@localhost:5432/db
+      ADMIN_PASSWORD: dummy-password
+      ADMIN_SESSION_SECRET: dummy-session-secret
+      APP_URL: http://localhost:3010
+      EMAIL_FROM: "RSVP <rsvp@example.com>"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
