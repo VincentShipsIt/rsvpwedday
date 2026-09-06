@@ -74,9 +74,13 @@ export function Countdown({
 				<div key={label} className={unitClassName}>
 					{/* `overflow-hidden` frames the digit slot; keying the inner span by `value`
 					    remounts it on every change, which is what plays the `countdown-digit-in`
-					    slide-up (globals.css) instead of the text just snapping to the new digit. */}
-					<span className="block overflow-hidden font-display text-3xl sm:text-4xl">
-						<span key={value} className="countdown-digit">
+					    slide-up (globals.css) instead of the text just snapping to the new digit.
+					    `leading-none` on both spans pins the slot's height to exactly one em
+					    (matching `h-[1em]`) instead of the font's default half-leading, which the
+					    seconds unit — remounting every second — would otherwise drift against and
+					    render partway clipped by `overflow-hidden` mid-animation. */}
+					<span className="block h-[1em] overflow-hidden font-display text-3xl leading-none sm:text-4xl">
+						<span key={value} className="countdown-digit leading-none">
 							{String(value).padStart(2, "0")}
 						</span>
 					</span>
