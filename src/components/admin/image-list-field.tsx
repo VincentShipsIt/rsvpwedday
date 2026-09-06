@@ -59,7 +59,7 @@ export function ImageListField({
 		}
 	}
 
-	function handleDrop(event: DragEvent<HTMLDivElement>) {
+	function handleDrop(event: DragEvent<HTMLButtonElement>) {
 		event.preventDefault();
 		setIsDraggingOver(false);
 		if (disabled || !blobConfigured || isUploading) {
