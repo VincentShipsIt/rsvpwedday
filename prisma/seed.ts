@@ -17,32 +17,168 @@ async function main() {
 		update: {},
 	});
 
-	const event = await db.event.upsert({
-		where: { slug: "wedding" },
-		create: {
-			slug: "wedding",
-			startsAt: weddingDate,
-			venue: "Placeholder Venue",
-			address: "123 Placeholder Street",
-			sortOrder: 0,
-			translations: {
-				create: [
-					{ locale: Locale.en, name: "Wedding Ceremony", description: "Join us as we say I do." },
-					{
-						locale: Locale.de,
-						name: "Hochzeitszeremonie",
-						description: "Sei dabei, wenn wir Ja sagen.",
-					},
-					{
-						locale: Locale.ku,
-						name: "Merasîma Zewacê",
-						description: "Werin em bi hev re erê bibêjin.",
-					},
-				],
+	// The full four-event lineup (welcome dinner, wedding, reception, farewell brunch) only gets
+	// created once, from a clean database — an already-seeded environment that predates this
+	// event keeps whatever single "wedding" event it has, via the upsert below, so re-running the
+	// seed never duplicates or reorders existing events.
+	const eventCount = await db.event.count();
+
+	if (eventCount === 0) {
+		const welcomeDinnerDate = new Date(weddingDate);
+		welcomeDinnerDate.setDate(welcomeDinnerDate.getDate() - 1);
+		welcomeDinnerDate.setHours(18, 0, 0, 0);
+
+		const receptionDate = new Date(weddingDate);
+		receptionDate.setHours(receptionDate.getHours() + 7);
+
+		const farewellBrunchDate = new Date(weddingDate);
+		farewellBrunchDate.setDate(farewellBrunchDate.getDate() + 1);
+		farewellBrunchDate.setHours(10, 0, 0, 0);
+
+		await db.event.create({
+			data: {
+				slug: "welcome-dinner",
+				startsAt: welcomeDinnerDate,
+				venue: "Placeholder Venue",
+				address: "123 Placeholder Street",
+				dressCode: "Smart casual",
+				sortOrder: 0,
+				translations: {
+					create: [
+						{
+							locale: Locale.en,
+							name: "Welcome Dinner",
+							description: "An easy start to the weekend — food, drinks, and good company.",
+						},
+						{
+							locale: Locale.de,
+							name: "Begrüßungsessen",
+							description:
+								"Ein entspannter Start ins Wochenende — Essen, Getränke und gute Gesellschaft.",
+						},
+						{
+							locale: Locale.ku,
+							name: "Şîva Bixêrhatinê",
+							description: "Destpêkek hêsan a dawiya hefteyê — xwarin, vexwarin û hevaltiya baş.",
+						},
+					],
+				},
 			},
-		},
-		update: {},
-	});
+		});
+
+		await db.event.create({
+			data: {
+				slug: "wedding",
+				startsAt: weddingDate,
+				venue: "Placeholder Venue",
+				address: "123 Placeholder Street",
+				sortOrder: 1,
+				translations: {
+					create: [
+						{ locale: Locale.en, name: "Wedding Ceremony", description: "Join us as we say I do." },
+						{
+							locale: Locale.de,
+							name: "Hochzeitszeremonie",
+							description: "Sei dabei, wenn wir Ja sagen.",
+						},
+						{
+							locale: Locale.ku,
+							name: "Merasîma Zewacê",
+							description: "Werin em bi hev re erê bibêjin.",
+						},
+					],
+				},
+			},
+		});
+
+		await db.event.create({
+			data: {
+				slug: "reception",
+				startsAt: receptionDate,
+				venue: "Placeholder Venue",
+				address: "123 Placeholder Street",
+				dressCode: "Black tie optional",
+				sortOrder: 2,
+				translations: {
+					create: [
+						{
+							locale: Locale.en,
+							name: "Reception",
+							description: "Dinner, dancing, and celebrating into the night.",
+						},
+						{
+							locale: Locale.de,
+							name: "Empfang",
+							description: "Abendessen, Tanz und Feiern bis in die Nacht.",
+						},
+						{
+							locale: Locale.ku,
+							name: "Pêşwazî",
+							description: "Şîv, reqisîn û pîrozkirin heta şevê.",
+						},
+					],
+				},
+			},
+		});
+
+		await db.event.create({
+			data: {
+				slug: "farewell-brunch",
+				startsAt: farewellBrunchDate,
+				venue: "Placeholder Venue",
+				address: "123 Placeholder Street",
+				sortOrder: 3,
+				translations: {
+					create: [
+						{
+							locale: Locale.en,
+							name: "Farewell Brunch",
+							description: "One last catch-up before everyone heads home.",
+						},
+						{
+							locale: Locale.de,
+							name: "Abschieds-Brunch",
+							description: "Ein letztes Beisammensein, bevor alle nach Hause fahren.",
+						},
+						{
+							locale: Locale.ku,
+							name: "Taştêya Xatirxwestinê",
+							description: "Civîna dawî berî ku her kes here mala xwe.",
+						},
+					],
+				},
+			},
+		});
+	} else {
+		await db.event.upsert({
+			where: { slug: "wedding" },
+			create: {
+				slug: "wedding",
+				startsAt: weddingDate,
+				venue: "Placeholder Venue",
+				address: "123 Placeholder Street",
+				sortOrder: 0,
+				translations: {
+					create: [
+						{ locale: Locale.en, name: "Wedding Ceremony", description: "Join us as we say I do." },
+						{
+							locale: Locale.de,
+							name: "Hochzeitszeremonie",
+							description: "Sei dabei, wenn wir Ja sagen.",
+						},
+						{
+							locale: Locale.ku,
+							name: "Merasîma Zewacê",
+							description: "Werin em bi hev re erê bibêjin.",
+						},
+					],
+				},
+			},
+			update: {},
+		});
+	}
+
+	const events = await db.event.findMany({ orderBy: { sortOrder: "asc" } });
 
 	await db.siteContent.upsert({
 		where: { id: 1 },
@@ -122,11 +258,27 @@ async function main() {
 
 	const existingInvitation = await db.invitation.findUnique({
 		where: { email: "sample.guest@example.com" },
+		include: { guests: true },
 	});
 
-	const invitation =
-		existingInvitation ??
-		(await db.invitation.create({
+	let invitation: { token: string };
+
+	if (existingInvitation) {
+		invitation = existingInvitation;
+		// Backfills attendance for any event seeded after this invitation already existed (e.g. an
+		// environment upgraded from the single-event seed), rather than only covering events that
+		// existed the first time this invitation was created.
+		for (const guest of existingInvitation.guests) {
+			for (const seededEvent of events) {
+				await db.eventAttendance.upsert({
+					where: { guestId_eventId: { guestId: guest.id, eventId: seededEvent.id } },
+					create: { guestId: guest.id, eventId: seededEvent.id },
+					update: {},
+				});
+			}
+		}
+	} else {
+		invitation = await db.invitation.create({
 			data: {
 				email: "sample.guest@example.com",
 				token: newToken(),
@@ -138,18 +290,19 @@ async function main() {
 							firstName: "Sam",
 							lastName: "Guest",
 							kind: GuestKind.ADULT,
-							attendance: { create: [{ eventId: event.id }] },
+							attendance: { create: events.map((seededEvent) => ({ eventId: seededEvent.id })) },
 						},
 						{
 							firstName: "Robin",
 							lastName: "Guest",
 							kind: GuestKind.ADULT,
-							attendance: { create: [{ eventId: event.id }] },
+							attendance: { create: events.map((seededEvent) => ({ eventId: seededEvent.id })) },
 						},
 					],
 				},
 			},
-		}));
+		});
+	}
 
 	console.info(`RSVP link: ${env.APP_URL}/rsvp/${invitation.token}`);
 }
