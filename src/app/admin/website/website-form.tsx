@@ -258,30 +258,40 @@ export function WebsiteForm({
 				{milestones.map((milestone) => (
 					<Card key={milestone.key}>
 						<CardContent className="flex flex-col gap-4">
-							<div className="grid gap-2 sm:grid-cols-2">
-								<Input
-									placeholder="Date label"
-									value={milestone.dateLabel}
-									onChange={(event) =>
-										updateMilestone(milestone.key, { dateLabel: event.target.value })
-									}
-								/>
-								<Input
-									type="number"
-									placeholder="Sort order"
-									value={milestone.sortOrder}
-									onChange={(event) =>
-										updateMilestone(milestone.key, { sortOrder: Number(event.target.value) })
-									}
-								/>
-								<Input
-									placeholder="Image URL"
-									className="sm:col-span-2"
-									value={milestone.imageUrl}
-									onChange={(event) =>
-										updateMilestone(milestone.key, { imageUrl: event.target.value })
-									}
-								/>
+							<div className="grid gap-3 sm:grid-cols-2">
+								<div className="flex flex-col gap-1.5">
+									<Label htmlFor={`${milestone.key}-date`}>Date label</Label>
+									<Input
+										id={`${milestone.key}-date`}
+										placeholder="Summer 2019"
+										value={milestone.dateLabel}
+										onChange={(event) =>
+											updateMilestone(milestone.key, { dateLabel: event.target.value })
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<Label htmlFor={`${milestone.key}-order`}>Order</Label>
+									<Input
+										id={`${milestone.key}-order`}
+										type="number"
+										value={milestone.sortOrder}
+										onChange={(event) =>
+											updateMilestone(milestone.key, { sortOrder: Number(event.target.value) })
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5 sm:col-span-2">
+									<Label htmlFor={`${milestone.key}-image`}>Image URL</Label>
+									<Input
+										id={`${milestone.key}-image`}
+										placeholder="https://"
+										value={milestone.imageUrl}
+										onChange={(event) =>
+											updateMilestone(milestone.key, { imageUrl: event.target.value })
+										}
+									/>
+								</div>
 							</div>
 
 							<Tabs defaultValue={localeCodes[0]}>
