@@ -142,6 +142,7 @@ export default async function LandingPage({
 			<SiteFooter
 				line={t(dictionary.site.footerLine, { coupleNames, year: new Date().getFullYear() })}
 				theme={theme}
+				hasThemePicker={showThemePicker}
 			/>
 			{showThemePicker && <ThemePicker currentTheme={theme} />}
 		</>

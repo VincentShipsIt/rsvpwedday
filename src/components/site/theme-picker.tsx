@@ -42,7 +42,10 @@ export function ThemePicker({ currentTheme }: { currentTheme: SiteTheme }) {
 	}
 
 	return (
-		<div className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2">
+		<div
+			className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2"
+			style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+		>
 			<div className="flex max-w-[calc(100vw-2rem)] items-center gap-2 overflow-x-auto rounded-full bg-black/80 px-2 py-2 text-white backdrop-blur">
 				{themeChoices.map((choice) => (
 					<button
