@@ -35,6 +35,8 @@ export const ku: Dictionary = {
 		companionFirstNameLabel: "Nav",
 		companionLastNameLabel: "Paşnav",
 		companionKindLabel: "Cureyê mêvan",
+		companionEmailLabel: "E-mail",
+		companionPhoneLabel: "Têlefon",
 		companionContactHint: "E-mail an jimareya têlefonê bide da ku em bikaribin bigihîjin wan.",
 		addCompanionButton: "Mêvan zêde bike",
 		removeCompanionButton: "Rake",
@@ -51,8 +53,6 @@ export const ku: Dictionary = {
 		statusPending: "Li benda bersiva te",
 		statusAccepted: "Tu beşdar dibî",
 		statusDeclined: "Te red kir",
-		firstNameLabel: "Nav",
-		lastNameLabel: "Paşnav",
 		validation: {
 			companionContact: "E-mail an jimareya têlefonê bide",
 			required: "Ev qad pêwîst e",

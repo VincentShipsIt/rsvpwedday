@@ -35,6 +35,8 @@ export const de: Dictionary = {
 		companionFirstNameLabel: "Vorname",
 		companionLastNameLabel: "Nachname",
 		companionKindLabel: "Art des Gastes",
+		companionEmailLabel: "E-Mail",
+		companionPhoneLabel: "Telefon",
 		companionContactHint:
 			"Gib eine E-Mail-Adresse oder Telefonnummer an, damit wir die Person erreichen können.",
 		addCompanionButton: "Person hinzufügen",
@@ -52,8 +54,6 @@ export const de: Dictionary = {
 		statusPending: "Antwort steht noch aus",
 		statusAccepted: "Du nimmst teil",
 		statusDeclined: "Du hast abgesagt",
-		firstNameLabel: "Vorname",
-		lastNameLabel: "Nachname",
 		validation: {
 			companionContact: "Gib eine E-Mail-Adresse oder Telefonnummer an",
 			required: "Dieses Feld ist erforderlich",

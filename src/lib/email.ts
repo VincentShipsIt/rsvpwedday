@@ -33,7 +33,10 @@ export async function sendInvitationEmail(kind: EmailKind, invitationId: string)
 
 	const props: EmailTemplateProps = {
 		dictionary,
-		invitation: { locale: invitation.locale, guests: invitation.guests },
+		invitation: {
+			locale: invitation.locale,
+			guests: invitation.guests.filter((guest) => !guest.addedByGuest),
+		},
 		settings: {
 			coupleNames: settings.coupleNames,
 			rsvpDeadline: settings.rsvpDeadline,
