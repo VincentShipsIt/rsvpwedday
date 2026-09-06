@@ -12,7 +12,7 @@ export function resolveSiteTheme(
 	themeParam: string | undefined,
 	storedTheme: SiteTheme
 ): SiteTheme {
-	if (themeParam && themeParam in themeParams) {
+	if (themeParam && Object.hasOwn(themeParams, themeParam)) {
 		return themeParams[themeParam];
 	}
 

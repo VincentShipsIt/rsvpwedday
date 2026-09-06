@@ -19,11 +19,17 @@ export function SiteNav({
 	locale,
 	theme,
 	labels,
+	hasStory,
+	hasEvents,
+	hasGallery,
 }: {
 	coupleNames: string;
 	locale: Locale;
 	theme: SiteTheme;
 	labels: { story: string; events: string; gallery: string; rsvp: string; language: string };
+	hasStory: boolean;
+	hasEvents: boolean;
+	hasGallery: boolean;
 }) {
 	return (
 		<header data-theme={dataTheme[theme]} className={`sticky top-0 z-20 ${navClassNames[theme]}`}>
@@ -32,15 +38,21 @@ export function SiteNav({
 					{coupleNames}
 				</a>
 				<div className="flex flex-wrap items-center gap-6">
-					<a href="#story" className={`hover:text-green ${linkClassNames[theme]}`}>
-						{labels.story}
-					</a>
-					<a href="#events" className={`hover:text-green ${linkClassNames[theme]}`}>
-						{labels.events}
-					</a>
-					<a href="#gallery" className={`hover:text-green ${linkClassNames[theme]}`}>
-						{labels.gallery}
-					</a>
+					{hasStory && (
+						<a href="#story" className={`hover:text-green ${linkClassNames[theme]}`}>
+							{labels.story}
+						</a>
+					)}
+					{hasEvents && (
+						<a href="#events" className={`hover:text-green ${linkClassNames[theme]}`}>
+							{labels.events}
+						</a>
+					)}
+					{hasGallery && (
+						<a href="#gallery" className={`hover:text-green ${linkClassNames[theme]}`}>
+							{labels.gallery}
+						</a>
+					)}
 					<a href="#rsvp" className={`hover:text-green ${linkClassNames[theme]}`}>
 						{labels.rsvp}
 					</a>

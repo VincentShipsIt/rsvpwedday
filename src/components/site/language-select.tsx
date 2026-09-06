@@ -1,16 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ChangeEvent } from "react";
 import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
 export function LanguageSelect({ locale, label }: { locale: Locale; label: string }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 
 	function handleChange(changeEvent: ChangeEvent<HTMLSelectElement>) {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("lang", changeEvent.target.value);
 		const hash = typeof window === "undefined" ? "" : window.location.hash;
-		router.push(`/?lang=${changeEvent.target.value}${hash}`);
+		router.push(`/?${params.toString()}${hash}`);
 	}
 
 	return (
