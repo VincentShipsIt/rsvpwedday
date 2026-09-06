@@ -19,7 +19,9 @@ Bun, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19, Pr
 - `bun run typecheck` — `tsc --noEmit`
 - `bun run test` — Vitest (domain layer only; no DOM)
 - `bun run db:push` — sync `prisma/schema.prisma` to the database (no migrations directory; this
-  is a one-database family site)
+  is a one-database family site). On Vercel the `vercel-build` script runs the same push before
+  `next build` whenever `DATABASE_URL` is set, so a production deployment syncs the database and a
+  preview without a database still builds.
 - `bun run db:seed` — placeholder settings, one `wedding` event, one sample invitation
 - `bun run db:studio` — Prisma Studio
 
