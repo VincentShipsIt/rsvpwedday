@@ -1,5 +1,6 @@
 import { LanguageSelect } from "@/components/site/language-select";
 import { NavMobileMenu } from "@/components/site/nav-mobile-menu";
+import { StickyHeader } from "@/components/site/sticky-header";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
 import { dataTheme } from "@/lib/site-theme";
 
@@ -47,7 +48,10 @@ export function SiteNav({
 	].filter((link): link is { href: string; label: string } => Boolean(link));
 
 	return (
-		<header data-theme={dataTheme[theme]} className={`sticky top-0 z-20 ${navClassNames[theme]}`}>
+		<StickyHeader
+			dataTheme={dataTheme[theme]}
+			className={`sticky top-0 z-20 ${navClassNames[theme]}`}
+		>
 			<nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-sm">
 				<a href="#top" className="font-accent text-lg">
 					{coupleNames}
@@ -60,7 +64,7 @@ export function SiteNav({
 							<a
 								key={link.href}
 								href={link.href}
-								className={`hover:text-green ${linkClassNames[theme]}`}
+								className={`link-underline hover:text-green ${linkClassNames[theme]}`}
 							>
 								{link.label}
 							</a>
@@ -70,6 +74,6 @@ export function SiteNav({
 					<NavMobileMenu links={navLinks} linkClassName={linkClassNames[theme]} />
 				</div>
 			</nav>
-		</header>
+		</StickyHeader>
 	);
 }

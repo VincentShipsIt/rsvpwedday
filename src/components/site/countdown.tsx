@@ -72,8 +72,13 @@ export function Countdown({
 		<div className="flex flex-wrap justify-center gap-4 text-center sm:flex-nowrap sm:gap-8">
 			{units.map(([value, label]) => (
 				<div key={label} className={unitClassName}>
-					<span className="font-display text-3xl sm:text-4xl">
-						{String(value).padStart(2, "0")}
+					{/* `overflow-hidden` frames the digit slot; keying the inner span by `value`
+					    remounts it on every change, which is what plays the `countdown-digit-in`
+					    slide-up (globals.css) instead of the text just snapping to the new digit. */}
+					<span className="block overflow-hidden font-display text-3xl sm:text-4xl">
+						<span key={value} className="countdown-digit">
+							{String(value).padStart(2, "0")}
+						</span>
 					</span>
 					{/* `opacity-70` (not a hardcoded color) so this reads correctly against every
 					    theme's ambient text color, light or dark. */}
