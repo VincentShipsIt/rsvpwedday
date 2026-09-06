@@ -61,7 +61,11 @@ export function Events({
 	);
 }
 
-function EventDetails({ event, locale, dictionary }: { event: EventView } & Omit<EventListProps, "events">) {
+function EventDetails({
+	event,
+	locale,
+	dictionary,
+}: { event: EventView } & Omit<EventListProps, "events">) {
 	return (
 		<>
 			<h3 className="text-xl">{event.name}</h3>
