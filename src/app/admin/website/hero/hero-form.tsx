@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateHero } from "@/app/admin/website/actions";
 import { ImageField } from "@/components/admin/image-field";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,11 +25,13 @@ export function HeroForm({
 	initialTranslations,
 	blobConfigured,
 }: HeroFormProps) {
-	const router = useRouter();
 	const [heroImageUrl, setHeroImageUrl] = useState(initialHeroImageUrl);
 	const [translations, setTranslations] = useState(initialTranslations);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
+
+	const { status, error, retry } = useAutosave({
+		value: { heroImageUrl, translations },
+		save: updateHero,
+	});
 
 	function updateTranslation(locale: Locale, tagline: string) {
 		setTranslations((current) =>
@@ -37,19 +39,6 @@ export function HeroForm({
 				translation.locale === locale ? { ...translation, tagline } : translation
 			)
 		);
-	}
-
-	function handleSave() {
-		setError(null);
-		startTransition(async () => {
-			const result = await updateHero({ heroImageUrl, translations });
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("Hero saved");
-			router.refresh();
-		});
 	}
 
 	return (
@@ -94,11 +83,12 @@ export function HeroForm({
 				</CardContent>
 			</Card>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save hero
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }

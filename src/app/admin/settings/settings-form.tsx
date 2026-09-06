@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateSettings } from "@/app/admin/settings/actions";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,26 +20,14 @@ export function SettingsForm({
 	initialRsvpDeadline,
 	initialReplyTo,
 }: SettingsFormProps) {
-	const router = useRouter();
 	const [coupleNames, setCoupleNames] = useState(initialCoupleNames);
 	const [rsvpDeadline, setRsvpDeadline] = useState(initialRsvpDeadline);
 	const [replyTo, setReplyTo] = useState(initialReplyTo);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
 
-	function handleSave() {
-		setError(null);
-
-		startTransition(async () => {
-			const result = await updateSettings({ coupleNames, rsvpDeadline, replyTo });
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("Settings saved");
-			router.refresh();
-		});
-	}
+	const { status, error, retry } = useAutosave({
+		value: { coupleNames, rsvpDeadline, replyTo },
+		save: updateSettings,
+	});
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -76,11 +64,12 @@ export function SettingsForm({
 				</CardContent>
 			</Card>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save settings
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }

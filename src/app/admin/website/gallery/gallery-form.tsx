@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateGallery } from "@/app/admin/website/actions";
 import { ImageListField } from "@/components/admin/image-list-field";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -14,25 +14,12 @@ export type GalleryFormProps = {
 };
 
 export function GalleryForm({ initialGalleryUrls, blobConfigured }: GalleryFormProps) {
-	const router = useRouter();
 	const [galleryUrls, setGalleryUrls] = useState(initialGalleryUrls);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
 
-	function handleSave() {
-		setError(null);
-		startTransition(async () => {
-			const result = await updateGallery({
-				galleryUrls: galleryUrls.filter((url) => url.trim().length > 0),
-			});
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("Gallery saved");
-			router.refresh();
-		});
-	}
+	const { status, error, retry } = useAutosave({
+		value: galleryUrls,
+		save: (urls) => updateGallery({ galleryUrls: urls.filter((url) => url.trim().length > 0) }),
+	});
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -47,11 +34,12 @@ export function GalleryForm({ initialGalleryUrls, blobConfigured }: GalleryFormP
 				</CardContent>
 			</Card>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save gallery
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }

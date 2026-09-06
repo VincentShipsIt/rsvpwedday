@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateRsvpNote } from "@/app/admin/website/actions";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,10 +18,12 @@ export type RsvpFormProps = {
 };
 
 export function RsvpForm({ initialTranslations }: RsvpFormProps) {
-	const router = useRouter();
 	const [translations, setTranslations] = useState(initialTranslations);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
+
+	const { status, error, retry } = useAutosave({
+		value: translations,
+		save: (nextTranslations) => updateRsvpNote({ translations: nextTranslations }),
+	});
 
 	function updateTranslation(locale: Locale, rsvpNote: string) {
 		setTranslations((current) =>
@@ -29,19 +31,6 @@ export function RsvpForm({ initialTranslations }: RsvpFormProps) {
 				translation.locale === locale ? { ...translation, rsvpNote } : translation
 			)
 		);
-	}
-
-	function handleSave() {
-		setError(null);
-		startTransition(async () => {
-			const result = await updateRsvpNote({ translations });
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("RSVP note saved");
-			router.refresh();
-		});
 	}
 
 	return (
@@ -69,11 +58,12 @@ export function RsvpForm({ initialTranslations }: RsvpFormProps) {
 				</CardContent>
 			</Card>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save RSVP note
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }

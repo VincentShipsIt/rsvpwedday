@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateStory } from "@/app/admin/website/actions";
 import { ImageField } from "@/components/admin/image-field";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,13 +45,19 @@ export function StoryForm({
 	initialMilestones,
 	blobConfigured,
 }: StoryFormProps) {
-	const router = useRouter();
 	const [translations, setTranslations] = useState(initialTranslations);
 	const [milestones, setMilestones] = useState<MilestoneState[]>(() =>
 		initialMilestones.map((milestone) => ({ ...milestone, key: createKey() }))
 	);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
+
+	const { status, error, retry } = useAutosave({
+		value: { translations, milestones },
+		save: ({ translations: nextTranslations, milestones: nextMilestones }) =>
+			updateStory({
+				translations: nextTranslations,
+				milestones: nextMilestones.map(({ key, ...milestone }) => milestone),
+			}),
+	});
 
 	function updateTranslation(locale: Locale, storyIntro: string) {
 		setTranslations((current) =>
@@ -105,22 +111,6 @@ export function StoryForm({
 					: milestone
 			)
 		);
-	}
-
-	function handleSave() {
-		setError(null);
-		startTransition(async () => {
-			const result = await updateStory({
-				translations,
-				milestones: milestones.map(({ key, ...milestone }) => milestone),
-			});
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("Story saved");
-			router.refresh();
-		});
 	}
 
 	return (
@@ -248,11 +238,12 @@ export function StoryForm({
 				</Button>
 			</div>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save story
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }
