@@ -57,6 +57,12 @@ export function Events({
 			{theme === SiteTheme.EDITORIAL && (
 				<EditorialEventCards events={events} locale={locale} dictionary={dictionary} />
 			)}
+			{theme === SiteTheme.MIDNIGHT && (
+				<MidnightEventCards events={events} locale={locale} dictionary={dictionary} />
+			)}
+			{theme === SiteTheme.BOHO && (
+				<BohoEventCards events={events} locale={locale} dictionary={dictionary} />
+			)}
 		</section>
 	);
 }
@@ -133,6 +139,34 @@ function GardenEventCards({ events, locale, dictionary }: EventListProps) {
 			{events.map((event) => (
 				<Reveal key={event.id}>
 					<div className="flex h-full flex-col gap-2 rounded-2xl border-t-4 border-[var(--wed-secondary)] bg-white/70 p-6 shadow-sm">
+						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+					</div>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+function MidnightEventCards({ events, locale, dictionary }: EventListProps) {
+	return (
+		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+			{events.map((event) => (
+				<Reveal key={event.id}>
+					<div className="flex h-full flex-col gap-2 rounded-lg border border-green/40 bg-transparent p-6">
+						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+					</div>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+function BohoEventCards({ events, locale, dictionary }: EventListProps) {
+	return (
+		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+			{events.map((event) => (
+				<Reveal key={event.id}>
+					<div className="flex h-full flex-col gap-2 rounded-3xl border-t-4 border-green bg-green-dark p-6 text-ivory [&_a]:text-ivory [&_h3]:text-ivory [&_p]:text-ivory/80">
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</div>
 				</Reveal>

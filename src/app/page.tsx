@@ -6,6 +6,7 @@ import { SectionDivider } from "@/components/site/section-divider";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import { Story, type StoryMilestoneView } from "@/components/site/story";
+import { ThemePicker } from "@/components/site/theme-picker";
 import { SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -18,9 +19,10 @@ export const dynamic = "force-dynamic";
 export default async function LandingPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ lang?: string; theme?: string }>;
+	searchParams: Promise<{ lang?: string; theme?: string; pick?: string }>;
 }) {
-	const { lang, theme: themeParam } = await searchParams;
+	const { lang, theme: themeParam, pick: pickParam } = await searchParams;
+	const showThemePicker = pickParam === "1";
 	const locale = await resolveSiteLocale(lang);
 	const dictionary = getDictionary(locale);
 	const localeDefinition = locales[locale];
@@ -141,6 +143,7 @@ export default async function LandingPage({
 				line={t(dictionary.site.footerLine, { coupleNames, year: new Date().getFullYear() })}
 				theme={theme}
 			/>
+			{showThemePicker && <ThemePicker currentTheme={theme} />}
 		</>
 	);
 }

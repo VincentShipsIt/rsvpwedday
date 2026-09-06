@@ -12,6 +12,8 @@ const themeOptions: { value: SiteTheme; label: string }[] = [
 	{ value: SiteTheme.EDITORIAL, label: "Editorial" },
 	{ value: SiteTheme.MODERN, label: "Modern" },
 	{ value: SiteTheme.GARDEN, label: "Garden" },
+	{ value: SiteTheme.MIDNIGHT, label: "Midnight" },
+	{ value: SiteTheme.BOHO, label: "Boho" },
 ];
 
 function createKey(): string {

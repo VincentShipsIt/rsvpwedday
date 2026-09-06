@@ -37,6 +37,8 @@ export function Story({
 			{theme === SiteTheme.MODERN && <ModernMilestones milestones={milestones} />}
 			{theme === SiteTheme.GARDEN && <GardenMilestones milestones={milestones} />}
 			{theme === SiteTheme.EDITORIAL && <EditorialMilestones milestones={milestones} />}
+			{theme === SiteTheme.MIDNIGHT && <MidnightMilestones milestones={milestones} />}
+			{theme === SiteTheme.BOHO && <BohoMilestones milestones={milestones} />}
 		</section>
 	);
 }
@@ -115,7 +117,9 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
-					className={`w-64 bg-white p-3 pb-6 shadow-md ${index % 2 === 0 ? "rotate-1" : "-rotate-1"}`}
+					// No tilt below `sm` so a single narrow column of cards doesn't visually
+					// collide; the polaroid tilt only kicks in once there's room to breathe.
+					className={`w-64 bg-white p-3 pb-6 shadow-md ${index % 2 === 0 ? "sm:rotate-1" : "sm:-rotate-1"}`}
 				>
 					<div className="aspect-square w-full overflow-hidden">
 						{milestone.imageUrl ? (
@@ -135,6 +139,83 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 					</p>
 					<h3 className="text-center text-lg">{milestone.title}</h3>
 					<p className="text-center text-sm text-ink/70 italic">{milestone.body}</p>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
+	return (
+		<div className="mx-auto flex max-w-2xl flex-col gap-10">
+			{milestones.map((milestone) => (
+				<Reveal
+					key={milestone.id}
+					className="relative aspect-[16/10] w-full overflow-hidden rounded-xl"
+				>
+					{milestone.imageUrl ? (
+						<Image
+							src={milestone.imageUrl}
+							alt=""
+							fill
+							sizes="(min-width: 768px) 42rem, 100vw"
+							className="object-cover"
+						/>
+					) : (
+						<div className="absolute inset-0 bg-gradient-to-br from-ivory-dark to-green/20" />
+					)}
+					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+					{/* `max-w-*` keeps caption lines readable on a 360px-wide image instead of
+					    running edge-to-edge. */}
+					<div className="absolute inset-x-0 bottom-0 flex max-w-sm flex-col gap-1 px-5 pb-5 text-ivory">
+						<span className="text-xs font-medium uppercase tracking-widest text-green">
+							{milestone.dateLabel}
+						</span>
+						<h3 className="text-2xl">{milestone.title}</h3>
+						<p className="text-ivory/80">{milestone.body}</p>
+					</div>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
+	const blockClassNames = ["bg-ivory-dark", "bg-green/15", "bg-green-dark/15"];
+
+	return (
+		<div className="flex flex-col gap-6">
+			{milestones.map((milestone, index) => (
+				<Reveal
+					key={milestone.id}
+					className={`flex flex-col items-center gap-6 rounded-3xl p-6 sm:flex-row ${
+						blockClassNames[index % blockClassNames.length]
+					}`}
+				>
+					<span className="font-accent shrink-0 text-6xl leading-none text-green/50">
+						{String(index + 1).padStart(2, "0")}
+					</span>
+					<div className="aspect-square w-full shrink-0 overflow-hidden rounded-2xl sm:w-40">
+						{milestone.imageUrl ? (
+							<Image
+								src={milestone.imageUrl}
+								alt=""
+								width={320}
+								height={320}
+								sizes="(min-width: 640px) 10rem, 100vw"
+								className="h-full w-full object-cover"
+							/>
+						) : (
+							<div className="h-full w-full bg-ivory-dark" />
+						)}
+					</div>
+					<div className="flex flex-col gap-1 text-center sm:text-left">
+						<span className="text-xs font-medium uppercase tracking-widest text-green">
+							{milestone.dateLabel}
+						</span>
+						<h3 className="text-xl">{milestone.title}</h3>
+						<p className="text-ink/70">{milestone.body}</p>
+					</div>
 				</Reveal>
 			))}
 		</div>

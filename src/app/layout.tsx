@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
 	Cormorant_Garamond,
+	Fraunces,
 	Instrument_Sans,
 	Instrument_Serif,
 	Inter,
@@ -47,6 +48,16 @@ const pinyonScript = Pinyon_Script({
 	variable: "--font-pinyon",
 });
 
+// BOHO theme: Fraunces for display, Instrument Sans (already loaded above) for body.
+// `next/font/google` only allows the `opsz` optical-size axis alongside `weight: "variable"` — it
+// throws when explicit weights are given instead — so fixed heavy weights and `axes` are mutually
+// exclusive here; we want the fixed weights, so `axes` is omitted rather than left to throw.
+const fraunces = Fraunces({
+	subsets: ["latin"],
+	weight: ["600", "700", "900"],
+	variable: "--font-fraunces",
+});
+
 export const metadata: Metadata = {
 	title: "Wedding RSVP",
 };
@@ -55,7 +66,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html
 			lang="en"
-			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable}`}
+			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable} ${fraunces.variable}`}
 		>
 			<body>{children}</body>
 		</html>
