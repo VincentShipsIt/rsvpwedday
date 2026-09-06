@@ -12,6 +12,7 @@ const navClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.GARDEN]: "border-b",
 	[SiteTheme.MIDNIGHT]: "border-b",
 	[SiteTheme.BOHO]: "border-b-4",
+	[SiteTheme.VINTAGE]: "border-b",
 };
 
 const linkClassNames: Record<SiteTheme, string> = {
@@ -20,6 +21,7 @@ const linkClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.GARDEN]: "",
 	[SiteTheme.MIDNIGHT]: "",
 	[SiteTheme.BOHO]: "rounded-full px-3 py-1",
+	[SiteTheme.VINTAGE]: "",
 };
 
 export function SiteNav({

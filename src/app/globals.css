@@ -8,6 +8,11 @@
 	--color-green: #2f4d3a;
 	--color-green-dark: #1f3327;
 	--color-ink: #26241f;
+	/* VINTAGE-only accents: a faded rose for small details (seal, secondary nav accent) and a
+	   worn gold for the wax-seal fill. No other theme references these tokens, so the default
+	   value here is simply the real VINTAGE value rather than a neutral placeholder. */
+	--color-rose: #b97a73;
+	--color-gold: #cd9f3f;
 	--font-display: var(--font-cormorant), Georgia, serif;
 	--font-accent: var(--font-cormorant), Georgia, serif;
 	--font-body: var(--font-inter), system-ui, sans-serif;
@@ -211,6 +216,24 @@ h3 {
 	--wed-nav-border: #2b2622;
 }
 
+[data-theme="vintage"] {
+	/* Soft butter yellow / cream ground, sage + deep bottle green, faded rose accent, ink brown
+	   text — a pressed-flower, slightly aged palette derived from GARDEN's structure. */
+	--color-ivory: #f8f0d7;
+	--color-ivory-dark: #efe3b8;
+	--color-green: #8a9a72;
+	--color-green-dark: #38492f;
+	--color-ink: #4a3826;
+	--font-display: var(--font-cormorant), Georgia, serif;
+	--font-accent: var(--font-pinyon), cursive;
+	--font-body: var(--font-lora), Georgia, serif;
+	/* Same mobile-toggle-button arithmetic as midnight's block above. */
+	--wed-nav-height: 4.75rem;
+	--wed-secondary: var(--color-rose);
+	--wed-nav-bg: rgb(248 240 215 / 0.9);
+	--wed-nav-border: rgb(74 56 38 / 0.12);
+}
+
 /*
  * The Part 3 mobile nav toggle gave every theme's below-`sm` bar the same fixed content height —
  * 32px of `py-4` padding plus the 44px `NavMobileMenu` button, 76px total — taller than
@@ -241,6 +264,11 @@ h3 {
 	/* Floor lowered from 3.5rem so ~30-character couple names don't force horizontal overflow
 	   at 360px viewports (see Part 3 mobile pass). */
 	font-size: clamp(2.25rem, 9vw, 7rem);
+}
+
+[data-theme="vintage"] .hero-couple-names {
+	font-family: var(--font-accent);
+	font-size: clamp(2.25rem, 9vw, 6.5rem);
 }
 
 /*

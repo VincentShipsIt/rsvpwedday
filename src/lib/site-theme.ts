@@ -6,6 +6,7 @@ const themeParams: Record<string, SiteTheme> = {
 	garden: SiteTheme.GARDEN,
 	midnight: SiteTheme.MIDNIGHT,
 	boho: SiteTheme.BOHO,
+	vintage: SiteTheme.VINTAGE,
 };
 
 // The landing page also accepts `?theme=` so every theme can be previewed by URL; a stored
@@ -27,6 +28,7 @@ export const dataTheme: Record<SiteTheme, string> = {
 	[SiteTheme.GARDEN]: "garden",
 	[SiteTheme.MIDNIGHT]: "midnight",
 	[SiteTheme.BOHO]: "boho",
+	[SiteTheme.VINTAGE]: "vintage",
 };
 
 // The theme picker (Part 2) needs the `?theme=` param key alongside the enum and a display label.
@@ -39,4 +41,5 @@ export const themeChoices: { key: string; theme: SiteTheme; label: string }[] = 
 	{ key: "garden", theme: SiteTheme.GARDEN, label: "Garden" },
 	{ key: "midnight", theme: SiteTheme.MIDNIGHT, label: "Midnight" },
 	{ key: "boho", theme: SiteTheme.BOHO, label: "Boho" },
+	{ key: "vintage", theme: SiteTheme.VINTAGE, label: "Vintage" },
 ];

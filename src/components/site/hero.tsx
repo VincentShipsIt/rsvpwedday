@@ -34,9 +34,10 @@ function heroDelayStyle(step: number): CSSProperties {
 	return { "--hero-delay": `${step * 120}ms` } as CSSProperties;
 }
 
-// The five themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
-// an arched frame vs. a bottom-anchored dark overlay vs. a two-tone block-and-frame split), so
-// this branches on `theme` rather than trying to fold everything into one shared markup tree.
+// The six themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
+// an arched frame vs. a bottom-anchored dark overlay vs. a two-tone block-and-frame split vs. a
+// pressed-flower arched frame with a botanical rule), so this branches on `theme` rather than
+// trying to fold everything into one shared markup tree.
 export function Hero(props: HeroProps) {
 	if (props.theme === SiteTheme.MODERN) {
 		return <ModernHero {...props} />;
@@ -49,6 +50,9 @@ export function Hero(props: HeroProps) {
 	}
 	if (props.theme === SiteTheme.BOHO) {
 		return <BohoHero {...props} />;
+	}
+	if (props.theme === SiteTheme.VINTAGE) {
+		return <VintageHero {...props} />;
 	}
 	return <EditorialHero {...props} />;
 }
@@ -396,6 +400,88 @@ function BohoHero({
 					</div>
 				</div>
 			</div>
+		</section>
+	);
+}
+
+function VintageHero({
+	coupleNames,
+	heroImageUrl,
+	tagline,
+	firstEventStartsAt,
+	locale,
+	dictionary,
+}: HeroProps) {
+	return (
+		<section
+			id="top"
+			className="relative flex scroll-mt-[var(--wed-nav-height)] flex-col items-center gap-8 overflow-hidden px-6 py-24 text-center"
+		>
+			{/* Faint paper texture behind everything, built from layered radial gradients only —
+			    no image asset. */}
+			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgb(224_200_140/0.35),transparent_55%),radial-gradient(circle_at_82%_78%,rgb(56_73_47/0.1),transparent_50%)]" />
+			<h1 className="hero-couple-names relative text-green-dark">{coupleNames}</h1>
+			{/* Thin botanical rule: two hairlines flanking a small leaf glyph. */}
+			<svg
+				aria-hidden="true"
+				viewBox="0 0 200 16"
+				className="relative h-4 w-40 text-green"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1"
+			>
+				<path d="M0 8h76" strokeLinecap="round" />
+				<path d="M124 8h76" strokeLinecap="round" />
+				<path
+					d="M100 8c-4-6-12-6-16 0 4 6 12 6 16 0Zm0 0c4-6 12-6 16 0-4 6-12 6-16 0Z"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				/>
+			</svg>
+			<div className="relative aspect-[3/4] w-full max-w-md">
+				<div className="absolute -inset-3 rounded-t-[999px] rounded-b-3xl bg-[radial-gradient(circle_at_30%_22%,rgb(224_200_140/0.45),transparent_60%),radial-gradient(circle_at_74%_76%,rgb(138_154_114/0.3),transparent_55%)]" />
+				<div className="relative h-full w-full overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark ring-1 ring-ink/10">
+					{heroImageUrl && (
+						<Parallax factor={0.25} className="h-full w-full rounded-t-[999px] rounded-b-3xl">
+							<Image
+								src={heroImageUrl}
+								alt=""
+								fill
+								priority
+								sizes="(min-width: 768px) 28rem, 100vw"
+								className="hero-photo-img object-cover"
+							/>
+						</Parallax>
+					)}
+				</div>
+			</div>
+			<HeroEntrance className="flex flex-col items-center gap-4">
+				{firstEventStartsAt && (
+					<p
+						className="hero-entrance-item text-lg tracking-wide text-ink/70"
+						style={heroDelayStyle(0)}
+					>
+						{formatDate(firstEventStartsAt, locale)}
+					</p>
+				)}
+				{tagline && (
+					<p
+						className="hero-entrance-item max-w-xl text-balance text-ink/70"
+						style={heroDelayStyle(1)}
+					>
+						{tagline}
+					</p>
+				)}
+				{firstEventStartsAt && (
+					<div className="hero-entrance-item" style={heroDelayStyle(2)}>
+						<Countdown
+							targetDate={firstEventStartsAt.toISOString()}
+							labels={countdownLabels(dictionary)}
+							variant="pills"
+						/>
+					</div>
+				)}
+			</HeroEntrance>
 		</section>
 	);
 }
