@@ -94,6 +94,10 @@ export default async function LandingPage({
 				hasStory={hasStory}
 				hasEvents={hasEvents}
 				hasGallery={hasGallery}
+				isOverPhoto={
+					Boolean(siteContent?.heroImageUrl) &&
+					(theme === SiteTheme.EDITORIAL || theme === SiteTheme.MIDNIGHT)
+				}
 			/>
 			<main lang={locale} dir={localeDefinition.dir} data-theme={dataTheme[theme]}>
 				<Hero
