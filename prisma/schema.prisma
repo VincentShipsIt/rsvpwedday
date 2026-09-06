@@ -1,0 +1,112 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+enum Locale {
+  en
+  de
+  ku
+}
+
+enum GuestKind {
+  ADULT
+  CHILD
+}
+
+enum Attendance {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum EmailKind {
+  INVITE
+  REMINDER
+  CONFIRMATION
+}
+
+model Settings {
+  id           Int      @id @default(1)
+  coupleNames  String
+  rsvpDeadline DateTime
+  replyTo      String?
+  updatedAt    DateTime @updatedAt
+}
+
+model Event {
+  id           String             @id @default(cuid())
+  slug         String             @unique
+  startsAt     DateTime
+  endsAt       DateTime?
+  venue        String
+  address      String
+  mapsUrl      String?
+  dressCode    String?
+  sortOrder    Int                @default(0)
+  translations EventTranslation[]
+  attendance   EventAttendance[]
+}
+
+model EventTranslation {
+  eventId     String
+  locale      Locale
+  name        String
+  description String?
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, locale])
+}
+
+model Invitation {
+  id                 String    @id @default(cuid())
+  token              String    @unique
+  email              String    @unique
+  locale             Locale    @default(en)
+  companionAllowance Int       @default(0)
+  respondedAt        DateTime?
+  note               String?
+  songRequest        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  guests             Guest[]
+  emails             EmailLog[]
+}
+
+model Guest {
+  id           String            @id @default(cuid())
+  invitationId String
+  firstName    String
+  lastName     String
+  kind         GuestKind         @default(ADULT)
+  email        String?
+  phone        String?
+  dietary      String?
+  addedByGuest Boolean           @default(false)
+  invitation   Invitation        @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  attendance   EventAttendance[]
+}
+
+model EventAttendance {
+  guestId String
+  eventId String
+  status  Attendance @default(PENDING)
+  guest   Guest      @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([guestId, eventId])
+}
+
+model EmailLog {
+  id           String     @id @default(cuid())
+  invitationId String
+  kind         EmailKind
+  resendId     String?
+  error        String?
+  sentAt       DateTime   @default(now())
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+}
