@@ -56,7 +56,7 @@ export async function createInvitation(input: InvitationInput): Promise<FormActi
 	});
 
 	revalidatePath("/admin");
-	redirect("/admin");
+	return { ok: true };
 }
 
 export async function updateInvitation(
@@ -108,7 +108,7 @@ export async function updateInvitation(
 	});
 
 	revalidatePath("/admin");
-	redirect(`/admin/invitations/${invitationId}`);
+	return { ok: true };
 }
 
 export async function deleteInvitation(invitationId: string): Promise<void> {
