@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { isAllowedImageUrl } from "@/domain/image-url";
 import type { Locale, SiteTheme } from "@/generated/prisma/enums";
@@ -165,5 +164,5 @@ export async function updateSiteContent(input: SiteContentInput): Promise<FormAc
 	revalidatePath("/admin");
 	revalidatePath("/admin/website");
 	revalidatePath("/");
-	redirect("/admin/website");
+	return { ok: true };
 }

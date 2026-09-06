@@ -1,10 +1,15 @@
 "use client";
 
-import type { ChangeEvent, SubmitEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { updateSettings } from "@/app/admin/settings/actions";
-import { Button } from "@/components/button";
-import { fieldClassName, Input } from "@/components/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
@@ -45,6 +50,7 @@ export function SettingsForm({
 	initialReplyTo,
 	initialEvents,
 }: SettingsFormProps) {
+	const router = useRouter();
 	const [coupleNames, setCoupleNames] = useState(initialCoupleNames);
 	const [rsvpDeadline, setRsvpDeadline] = useState(initialRsvpDeadline);
 	const [replyTo, setReplyTo] = useState(initialReplyTo);
@@ -97,8 +103,7 @@ export function SettingsForm({
 		);
 	}
 
-	function handleSubmit(formEvent: SubmitEvent) {
-		formEvent.preventDefault();
+	function handleSave() {
 		setError(null);
 
 		const payload = {
@@ -112,150 +117,177 @@ export function SettingsForm({
 			const result = await updateSettings(payload);
 			if (!result.ok) {
 				setError(result.error);
+				return;
 			}
+			toast.success("Settings saved");
+			router.refresh();
 		});
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="flex flex-col gap-8">
-			<fieldset className="flex flex-col gap-4 rounded-lg border border-ink/10 p-4">
-				<legend className="px-1 font-medium">Wedding details</legend>
-				<label htmlFor="coupleNames" className="flex flex-col gap-1 text-sm">
-					Couple names
-					<Input
-						id="coupleNames"
-						value={coupleNames}
-						onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-							setCoupleNames(changeEvent.target.value)
-						}
-					/>
-				</label>
-				<label htmlFor="rsvpDeadline" className="flex flex-col gap-1 text-sm">
-					RSVP deadline
-					<Input
-						id="rsvpDeadline"
-						type="datetime-local"
-						value={rsvpDeadline}
-						onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-							setRsvpDeadline(changeEvent.target.value)
-						}
-					/>
-				</label>
-				<label htmlFor="replyTo" className="flex flex-col gap-1 text-sm">
-					Reply-to contact
-					<Input
-						id="replyTo"
-						value={replyTo}
-						onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-							setReplyTo(changeEvent.target.value)
-						}
-					/>
-				</label>
-			</fieldset>
+		<div className="flex flex-col gap-8">
+			<Card>
+				<CardHeader>
+					<CardTitle>Wedding details</CardTitle>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4">
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="coupleNames">Couple names</Label>
+						<Input
+							id="coupleNames"
+							value={coupleNames}
+							onChange={(event) => setCoupleNames(event.target.value)}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="rsvpDeadline">RSVP deadline</Label>
+						<Input
+							id="rsvpDeadline"
+							type="datetime-local"
+							value={rsvpDeadline}
+							onChange={(event) => setRsvpDeadline(event.target.value)}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="replyTo">Reply-to contact</Label>
+						<Input
+							id="replyTo"
+							value={replyTo}
+							onChange={(event) => setReplyTo(event.target.value)}
+						/>
+					</div>
+				</CardContent>
+			</Card>
 
-			<fieldset className="flex flex-col gap-6 rounded-lg border border-ink/10 p-4">
-				<legend className="px-1 font-medium">Events</legend>
+			<div className="flex flex-col gap-4">
+				<h2 className="text-lg font-medium">Events</h2>
 				{events.map((event) => (
-					<div key={event.key} className="flex flex-col gap-3 rounded-md border border-ink/10 p-3">
-						<div className="grid gap-2 sm:grid-cols-2">
-							<Input
-								placeholder="Slug"
-								value={event.slug}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { slug: changeEvent.target.value })
-								}
-							/>
-							<Input
-								type="number"
-								placeholder="Sort order"
-								value={event.sortOrder}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { sortOrder: Number(changeEvent.target.value) })
-								}
-							/>
-							<Input
-								type="datetime-local"
-								value={event.startsAt}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { startsAt: changeEvent.target.value })
-								}
-							/>
-							<Input
-								type="datetime-local"
-								value={event.endsAt}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { endsAt: changeEvent.target.value })
-								}
-							/>
-							<Input
-								placeholder="Venue"
-								value={event.venue}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { venue: changeEvent.target.value })
-								}
-							/>
-							<Input
-								placeholder="Address"
-								value={event.address}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { address: changeEvent.target.value })
-								}
-							/>
-							<Input
-								placeholder="Maps URL"
-								value={event.mapsUrl}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { mapsUrl: changeEvent.target.value })
-								}
-							/>
-							<Input
-								placeholder="Dress code"
-								value={event.dressCode}
-								onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-									updateEvent(event.key, { dressCode: changeEvent.target.value })
-								}
-							/>
-						</div>
-
-						{event.translations.map((translation) => (
-							<div key={translation.locale} className="grid gap-2 sm:grid-cols-2">
+					<Card key={event.key}>
+						<CardContent className="flex flex-col gap-4">
+							<div className="grid gap-2 sm:grid-cols-2">
 								<Input
-									placeholder={`Name (${locales[translation.locale].label})`}
-									value={translation.name}
-									onChange={(changeEvent: ChangeEvent<HTMLInputElement>) =>
-										updateTranslation(event.key, translation.locale, {
-											name: changeEvent.target.value,
-										})
+									placeholder="Slug"
+									value={event.slug}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { slug: changeEvent.target.value })
 									}
 								/>
-								<textarea
-									className={fieldClassName}
-									placeholder={`Description (${locales[translation.locale].label})`}
-									value={translation.description}
-									onChange={(changeEvent: ChangeEvent<HTMLTextAreaElement>) =>
-										updateTranslation(event.key, translation.locale, {
-											description: changeEvent.target.value,
-										})
+								<Input
+									type="number"
+									placeholder="Sort order"
+									value={event.sortOrder}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { sortOrder: Number(changeEvent.target.value) })
+									}
+								/>
+								<Input
+									type="datetime-local"
+									value={event.startsAt}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { startsAt: changeEvent.target.value })
+									}
+								/>
+								<Input
+									type="datetime-local"
+									value={event.endsAt}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { endsAt: changeEvent.target.value })
+									}
+								/>
+								<Input
+									placeholder="Venue"
+									value={event.venue}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { venue: changeEvent.target.value })
+									}
+								/>
+								<Input
+									placeholder="Address"
+									value={event.address}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { address: changeEvent.target.value })
+									}
+								/>
+								<Input
+									placeholder="Maps URL"
+									value={event.mapsUrl}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { mapsUrl: changeEvent.target.value })
+									}
+								/>
+								<Input
+									placeholder="Dress code"
+									value={event.dressCode}
+									onChange={(changeEvent) =>
+										updateEvent(event.key, { dressCode: changeEvent.target.value })
 									}
 								/>
 							</div>
-						))}
 
-						<Button type="button" variant="ghost" onClick={() => removeEvent(event.key)}>
-							Remove event
-						</Button>
-					</div>
+							<Tabs defaultValue={localeCodes[0]}>
+								<TabsList>
+									{localeCodes.map((code) => (
+										<TabsTrigger key={code} value={code}>
+											{locales[code].label}
+										</TabsTrigger>
+									))}
+								</TabsList>
+								{event.translations.map((translation) => (
+									<TabsContent
+										key={translation.locale}
+										value={translation.locale}
+										className="flex flex-col gap-2"
+									>
+										<Input
+											placeholder="Name"
+											value={translation.name}
+											onChange={(changeEvent) =>
+												updateTranslation(event.key, translation.locale, {
+													name: changeEvent.target.value,
+												})
+											}
+										/>
+										<Textarea
+											placeholder="Description"
+											value={translation.description}
+											onChange={(changeEvent) =>
+												updateTranslation(event.key, translation.locale, {
+													description: changeEvent.target.value,
+												})
+											}
+										/>
+									</TabsContent>
+								))}
+							</Tabs>
+
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="self-start"
+								onClick={() => removeEvent(event.key)}
+							>
+								Remove event
+							</Button>
+						</CardContent>
+					</Card>
 				))}
-				<Button type="button" variant="secondary" onClick={addEvent}>
+				<Button
+					type="button"
+					variant="secondary"
+					size="sm"
+					className="self-start"
+					onClick={addEvent}
+				>
 					Add event
 				</Button>
-			</fieldset>
+			</div>
 
-			{error && <p className="text-sm text-red-700">{error}</p>}
+			{error && <p className="text-sm text-destructive">{error}</p>}
 
-			<Button type="submit" disabled={isPending}>
+			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
 				Save settings
 			</Button>
-		</form>
+		</div>
 	);
 }

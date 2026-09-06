@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
@@ -113,5 +112,5 @@ export async function updateSettings(input: SettingsInput): Promise<FormActionRe
 
 	revalidatePath("/admin");
 	revalidatePath("/admin/settings");
-	redirect("/admin/settings");
+	return { ok: true };
 }
