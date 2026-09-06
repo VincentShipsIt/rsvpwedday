@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "next dev --port 3010",
 		"build": "prisma generate && next build",
-		"vercel-build": "prisma generate && bun run scripts/db-push-if-configured.ts && next build",
+		"vercel-build": "prisma generate && bun run scripts/prepare-database.ts && next build",
 		"start": "next start",
 		"check": "biome check .",
 		"check:fix": "biome check --write .",
