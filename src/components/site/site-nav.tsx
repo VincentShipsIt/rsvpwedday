@@ -51,7 +51,7 @@ export function SiteNav({
 	return (
 		<StickyHeader
 			dataTheme={dataTheme[theme]}
-			className={`sticky top-0 z-20 ${navClassNames[theme]}${isOverPhoto ? " nav-over-photo" : ""}`}
+			className={`fixed inset-x-0 top-0 z-20 ${navClassNames[theme]}${isOverPhoto ? " nav-over-photo" : ""}`}
 		>
 			<nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-sm">
 				<a href="#top" className="font-accent text-lg">
