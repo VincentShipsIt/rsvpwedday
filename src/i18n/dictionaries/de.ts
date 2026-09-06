@@ -12,10 +12,23 @@ export const de: Dictionary = {
 		adultLabel: "Erwachsene(r)",
 		childLabel: "Kind",
 	},
-	landing: {
-		title: "{coupleNames}",
-		tagline:
-			"Wir heiraten. Einladungen werden per E-Mail mit einem persönlichen Link zur Anmeldung verschickt.",
+	site: {
+		navStory: "Unsere Geschichte",
+		navEvents: "Die Feierlichkeiten",
+		navGallery: "Galerie",
+		navRsvp: "Anmeldung",
+		countdownDays: "Tage",
+		countdownHours: "Stunden",
+		countdownMinutes: "Minuten",
+		countdownSeconds: "Sekunden",
+		countdownToday: "Heute ist der Tag",
+		storyHeading: "Unsere Geschichte",
+		eventsHeading: "Die Feierlichkeiten",
+		galleryHeading: "Galerie",
+		rsvpHeading: "Anmeldung",
+		rsvpDeadlineLabel: "Bitte antworte bis {date}",
+		rsvpQuestions: "Fragen? Schreib an {email}",
+		footerLine: "{coupleNames} · {year}",
 	},
 	rsvp: {
 		heading: "Du bist eingeladen, {name}",

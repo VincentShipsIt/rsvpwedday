@@ -1,0 +1,37 @@
+import { Reveal } from "@/components/site/reveal";
+import type { Locale } from "@/generated/prisma/enums";
+import { t } from "@/i18n";
+import { formatDate } from "@/lib/format";
+
+export function RsvpSection({
+	heading,
+	note,
+	deadline,
+	replyTo,
+	locale,
+	deadlineTemplate,
+	questionsTemplate,
+}: {
+	heading: string;
+	note: string;
+	deadline: Date;
+	replyTo: string | null;
+	locale: Locale;
+	deadlineTemplate: string;
+	questionsTemplate: string;
+}) {
+	return (
+		<section id="rsvp" className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-24 text-center">
+			<Reveal className="flex flex-col gap-4">
+				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
+				{note && <p className="text-ink/70">{note}</p>}
+				<p className="text-sm text-ink/60">
+					{t(deadlineTemplate, { date: formatDate(deadline, locale) })}
+				</p>
+				{replyTo && (
+					<p className="text-sm text-ink/60">{t(questionsTemplate, { email: replyTo })}</p>
+				)}
+			</Reveal>
+		</section>
+	);
+}
