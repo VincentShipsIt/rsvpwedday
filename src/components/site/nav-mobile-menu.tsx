@@ -32,7 +32,7 @@ export function NavMobileMenu({
 			{/* Plain conditional render, no open/close transition, so this stays
 			    reduced-motion-safe without needing its own media-query gate. */}
 			{isOpen && (
-				<div className="absolute top-full right-0 z-30 mt-2 flex min-w-40 flex-col gap-1 rounded-md border border-ink/10 bg-ivory p-2 shadow-md">
+				<div className="absolute top-full right-0 z-30 mt-2 flex min-w-40 flex-col gap-1 rounded-md border border-ink/10 bg-ivory p-2 text-ink shadow-md">
 					{links.map((link) => (
 						<a
 							key={link.href}

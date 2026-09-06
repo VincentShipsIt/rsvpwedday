@@ -4,15 +4,14 @@ import { StickyHeader } from "@/components/site/sticky-header";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
 import { dataTheme } from "@/lib/site-theme";
 
+// Background, border colour, and blur live in `globals.css` under `[data-nav]`, so the bar is
+// transparent at rest and fills in once scrolled. Only structural differences stay here.
 const navClassNames: Record<SiteTheme, string> = {
-	[SiteTheme.EDITORIAL]: "border-b border-ink/10 bg-ivory/80 backdrop-blur",
-	[SiteTheme.MODERN]: "border-b border-ink/15 bg-ivory/95",
-	[SiteTheme.GARDEN]: "border-b border-ink/10 bg-ivory/85 backdrop-blur",
-	// `SiteNav` has no scroll state (a server component), so rather than adding scroll-tracking
-	// JS for one theme, this always-on translucent dark bar is the pragmatic choice: it reads
-	// fine both over the dark hero and once sticky.
-	[SiteTheme.MIDNIGHT]: "border-b border-green/20 bg-black/30 backdrop-blur",
-	[SiteTheme.BOHO]: "border-b-4 border-ink bg-ivory",
+	[SiteTheme.EDITORIAL]: "border-b",
+	[SiteTheme.MODERN]: "border-b",
+	[SiteTheme.GARDEN]: "border-b",
+	[SiteTheme.MIDNIGHT]: "border-b",
+	[SiteTheme.BOHO]: "border-b-4",
 };
 
 const linkClassNames: Record<SiteTheme, string> = {
@@ -31,6 +30,7 @@ export function SiteNav({
 	hasStory,
 	hasEvents,
 	hasGallery,
+	isOverPhoto,
 }: {
 	coupleNames: string;
 	locale: Locale;
@@ -39,6 +39,7 @@ export function SiteNav({
 	hasStory: boolean;
 	hasEvents: boolean;
 	hasGallery: boolean;
+	isOverPhoto: boolean;
 }) {
 	const navLinks = [
 		hasStory && { href: "#story", label: labels.story },
@@ -50,7 +51,7 @@ export function SiteNav({
 	return (
 		<StickyHeader
 			dataTheme={dataTheme[theme]}
-			className={`sticky top-0 z-20 ${navClassNames[theme]}`}
+			className={`sticky top-0 z-20 ${navClassNames[theme]}${isOverPhoto ? " nav-over-photo" : ""}`}
 		>
 			<nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-sm">
 				<a href="#top" className="font-accent text-lg">
