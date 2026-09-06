@@ -36,6 +36,9 @@ export default async function LandingPage({
 	]);
 
 	const theme = resolveSiteTheme(themeParam, siteContent?.theme ?? SiteTheme.EDITORIAL);
+	const isNavOverPhoto =
+		Boolean(siteContent?.heroImageUrl) &&
+		(theme === SiteTheme.EDITORIAL || theme === SiteTheme.MIDNIGHT);
 
 	const coupleNames = settings?.coupleNames ?? "";
 
@@ -94,12 +97,14 @@ export default async function LandingPage({
 				hasStory={hasStory}
 				hasEvents={hasEvents}
 				hasGallery={hasGallery}
-				isOverPhoto={
-					Boolean(siteContent?.heroImageUrl) &&
-					(theme === SiteTheme.EDITORIAL || theme === SiteTheme.MIDNIGHT)
-				}
+				isOverPhoto={isNavOverPhoto}
 			/>
-			<main lang={locale} dir={localeDefinition.dir} data-theme={dataTheme[theme]}>
+			<main
+				lang={locale}
+				dir={localeDefinition.dir}
+				data-theme={dataTheme[theme]}
+				className={isNavOverPhoto ? undefined : "pt-[var(--wed-nav-height)]"}
+			>
 				<Hero
 					coupleNames={coupleNames}
 					heroImageUrl={siteContent?.heroImageUrl ?? null}

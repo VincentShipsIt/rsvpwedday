@@ -260,7 +260,9 @@ h3 {
 		transition: none;
 	}
 
-	.reveal.is-armed:not(.reveal-visible) {
+	.reveal.is-armed:not(.reveal-visible),
+	.reveal-fade.is-armed:not(.reveal-visible),
+	.reveal-scale.is-armed:not(.reveal-visible) {
 		opacity: 1;
 		transform: none;
 	}
