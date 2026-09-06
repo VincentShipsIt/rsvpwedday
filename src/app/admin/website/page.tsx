@@ -1,4 +1,5 @@
 import { WebsiteForm } from "@/app/admin/website/website-form";
+import { SiteTheme } from "@/generated/prisma/enums";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
 
@@ -16,6 +17,7 @@ export default async function WebsitePage() {
 			<WebsiteForm
 				initialHeroImageUrl={siteContent?.heroImageUrl ?? ""}
 				initialGalleryUrls={(siteContent?.galleryUrls ?? []).join("\n")}
+				initialTheme={siteContent?.theme ?? SiteTheme.EDITORIAL}
 				initialTranslations={localeCodes.map((code) => {
 					const translation = siteContent?.translations.find(
 						(candidate) => candidate.locale === code

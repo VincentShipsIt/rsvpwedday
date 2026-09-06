@@ -5,8 +5,14 @@ import { useState, useTransition } from "react";
 import { updateSiteContent } from "@/app/admin/website/actions";
 import { Button } from "@/components/button";
 import { fieldClassName, Input } from "@/components/input";
-import type { Locale } from "@/generated/prisma/enums";
+import { type Locale, SiteTheme } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
+
+const themeOptions: { value: SiteTheme; label: string }[] = [
+	{ value: SiteTheme.EDITORIAL, label: "Editorial" },
+	{ value: SiteTheme.MODERN, label: "Modern" },
+	{ value: SiteTheme.GARDEN, label: "Garden" },
+];
 
 function createKey(): string {
 	return crypto.randomUUID();
@@ -41,6 +47,7 @@ type MilestoneState = {
 export type WebsiteFormProps = {
 	initialHeroImageUrl: string;
 	initialGalleryUrls: string;
+	initialTheme: SiteTheme;
 	initialTranslations: SiteTranslationState[];
 	initialMilestones: Omit<MilestoneState, "key">[];
 };
@@ -48,11 +55,13 @@ export type WebsiteFormProps = {
 export function WebsiteForm({
 	initialHeroImageUrl,
 	initialGalleryUrls,
+	initialTheme,
 	initialTranslations,
 	initialMilestones,
 }: WebsiteFormProps) {
 	const [heroImageUrl, setHeroImageUrl] = useState(initialHeroImageUrl);
 	const [galleryUrls, setGalleryUrls] = useState(initialGalleryUrls);
+	const [theme, setTheme] = useState<SiteTheme>(initialTheme);
 	const [translations, setTranslations] = useState<SiteTranslationState[]>(
 		initialTranslations.length > 0 ? initialTranslations : emptySiteTranslations()
 	);
@@ -122,6 +131,7 @@ export function WebsiteForm({
 				.split("\n")
 				.map((url) => url.trim())
 				.filter((url) => url.length > 0),
+			theme,
 			translations,
 			milestones: milestones.map(({ key, ...milestone }) => milestone),
 		};
@@ -138,6 +148,23 @@ export function WebsiteForm({
 		<form onSubmit={handleSubmit} className="flex flex-col gap-8">
 			<fieldset className="flex flex-col gap-4 rounded-lg border border-ink/10 p-4">
 				<legend className="px-1 font-medium">Hero &amp; gallery</legend>
+				<label htmlFor="theme" className="flex flex-col gap-1 text-sm">
+					Theme
+					<select
+						id="theme"
+						className={fieldClassName}
+						value={theme}
+						onChange={(changeEvent: ChangeEvent<HTMLSelectElement>) =>
+							setTheme(changeEvent.target.value as SiteTheme)
+						}
+					>
+						{themeOptions.map((option) => (
+							<option key={option.value} value={option.value}>
+								{option.label}
+							</option>
+						))}
+					</select>
+				</label>
 				<label htmlFor="heroImageUrl" className="flex flex-col gap-1 text-sm">
 					Hero image URL
 					<Input

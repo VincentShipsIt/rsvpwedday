@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { Locale } from "@/generated/prisma/enums";
+import type { Locale, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
 
@@ -30,6 +30,7 @@ export type StoryMilestoneInput = {
 export type SiteContentInput = {
 	heroImageUrl: string;
 	galleryUrls: string[];
+	theme: SiteTheme;
 	translations: SiteContentTranslationInput[];
 	milestones: StoryMilestoneInput[];
 };
@@ -48,10 +49,12 @@ export async function updateSiteContent(input: SiteContentInput): Promise<FormAc
 				id: 1,
 				heroImageUrl: input.heroImageUrl || null,
 				galleryUrls: input.galleryUrls,
+				theme: input.theme,
 			},
 			update: {
 				heroImageUrl: input.heroImageUrl || null,
 				galleryUrls: input.galleryUrls,
+				theme: input.theme,
 			},
 		});
 
