@@ -63,6 +63,9 @@ export function Events({
 			{theme === SiteTheme.BOHO && (
 				<BohoEventCards events={events} locale={locale} dictionary={dictionary} />
 			)}
+			{theme === SiteTheme.VINTAGE && (
+				<VintageEventCards events={events} locale={locale} dictionary={dictionary} />
+			)}
 		</section>
 	);
 }
@@ -173,6 +176,24 @@ function BohoEventCards({ events, locale, dictionary }: EventListProps) {
 			{events.map((event, index) => (
 				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<div className="hover-lift flex h-full flex-col gap-2 rounded-3xl border-t-4 border-green bg-green-dark p-6 text-ivory [&_a]:text-ivory [&_h3]:text-ivory [&_p]:text-ivory/80">
+						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+					</div>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+function VintageEventCards({ events, locale, dictionary }: EventListProps) {
+	return (
+		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+			{events.map((event, index) => (
+				<Reveal key={event.id} delay={staggerDelay(index)}>
+					<div className="hover-lift relative flex h-full flex-col gap-2 border-t-2 border-green bg-ivory p-6 shadow-sm">
+						{/* A small wax-seal-style badge, pure CSS/Tailwind, no image asset. */}
+						<span className="absolute -top-3 right-6 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-[10px] font-semibold text-ink shadow-sm">
+							{String(index + 1).padStart(2, "0")}
+						</span>
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</div>
 				</Reveal>

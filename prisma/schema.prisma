@@ -36,6 +36,7 @@ enum SiteTheme {
   GARDEN
   MIDNIGHT
   BOHO
+  VINTAGE
 }
 
 model Settings {

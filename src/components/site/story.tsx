@@ -46,6 +46,7 @@ export function Story({
 			{theme === SiteTheme.EDITORIAL && <EditorialMilestones milestones={milestones} />}
 			{theme === SiteTheme.MIDNIGHT && <MidnightMilestones milestones={milestones} />}
 			{theme === SiteTheme.BOHO && <BohoMilestones milestones={milestones} />}
+			{theme === SiteTheme.VINTAGE && <VintageMilestones milestones={milestones} />}
 		</section>
 	);
 }
@@ -240,6 +241,57 @@ function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 						<h3 className="text-xl">{milestone.title}</h3>
 						<p className="text-ink/70">{milestone.body}</p>
 					</div>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+// A small corner flourish reused (rotated per corner) on VINTAGE's pressed-flower cards below.
+function CornerOrnament({ className }: { className?: string }) {
+	return (
+		<svg
+			aria-hidden="true"
+			viewBox="0 0 24 24"
+			className={className}
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.25"
+		>
+			<path d="M2 2c6 0 10 4 10 10M2 2c0 6 4 10 10 10M2 2c4 4 4 8 2 12" strokeLinecap="round" />
+		</svg>
+	);
+}
+
+function VintageMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
+	return (
+		<div className="flex flex-wrap justify-center gap-8">
+			{milestones.map((milestone, index) => (
+				<Reveal
+					key={milestone.id}
+					delay={staggerDelay(index)}
+					className="relative w-64 border border-ink/15 bg-ivory p-4 pb-6 shadow-sm"
+				>
+					<CornerOrnament className="absolute top-1 left-1 h-5 w-5 text-green/50" />
+					<CornerOrnament className="absolute top-1 right-1 h-5 w-5 rotate-90 text-green/50" />
+					<CornerOrnament className="absolute bottom-1 left-1 h-5 w-5 -rotate-90 text-green/50" />
+					<CornerOrnament className="absolute right-1 bottom-1 h-5 w-5 rotate-180 text-green/50" />
+					{milestone.imageUrl && (
+						<Parallax factor={0.12} className="aspect-square w-full">
+							<Image
+								src={milestone.imageUrl}
+								alt=""
+								fill
+								sizes="16rem"
+								className="reveal-photo-frame object-cover"
+							/>
+						</Parallax>
+					)}
+					<p className="mt-3 text-center text-xs uppercase tracking-widest text-green-dark">
+						{milestone.dateLabel}
+					</p>
+					<h3 className="text-center text-lg">{milestone.title}</h3>
+					<p className="text-center text-sm text-ink/70">{milestone.body}</p>
 				</Reveal>
 			))}
 		</div>
