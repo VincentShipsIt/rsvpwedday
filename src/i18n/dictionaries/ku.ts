@@ -29,6 +29,7 @@ export const ku: Dictionary = {
 		rsvpDeadlineLabel: "Ji kerema xwe berî {date} bersivê bide",
 		rsvpQuestions: "Pirs hene? Ji {email} re binivîse",
 		footerLine: "{coupleNames} · {year}",
+		openInvitationLabel: "Vexwendinê veke",
 	},
 	rsvp: {
 		heading: "Tu vexwendî yî, {name}",
