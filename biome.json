@@ -48,5 +48,10 @@
 			"enabled": true
 		}
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"assist": { "actions": { "source": { "organizeImports": "on" } } }
 }
