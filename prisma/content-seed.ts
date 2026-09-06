@@ -1,4 +1,4 @@
-import { Locale } from "@/generated/prisma/enums";
+import { Locale, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 
 /*
@@ -293,9 +293,11 @@ const PLACEHOLDER_MILESTONES = [
  * nothing but that generation, gets upgraded; a site already on this one is left alone, which is
  * what makes deleting every placeholder in the admin stick instead of reappearing on the next
  * deploy. Generation 1 was a set of scenery shots, replaced because a wedding page illustrated
- * with landscapes reads as an unfinished template.
+ * with landscapes reads as an unfinished template. Generation 3 rides along a one-time nudge of
+ * `SiteContent.theme` to GARDEN (see `seedPlaceholderPhotos` below) for any site still sitting on
+ * the default EDITORIAL theme.
  */
-const PLACEHOLDER_GENERATION = 2;
+const PLACEHOLDER_GENERATION = 3;
 
 // Anything the deploy seed has ever written. A photo from outside this list is the couple's own.
 function isSeededPlaceholder(url: string): boolean {
@@ -309,6 +311,11 @@ async function seedPlaceholderPhotos() {
 		return;
 	}
 
+	// A one-time nudge to the couple's chosen theme, not an override: only touches a site still
+	// sitting on the default EDITORIAL theme, tied to this same generation bump so it only ever
+	// applies once, regardless of which branch below runs.
+	const themeNudge = siteContent.theme === SiteTheme.EDITORIAL ? { theme: SiteTheme.GARDEN } : {};
+
 	const milestones = await db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" } });
 	const currentPhotos = [
 		siteContent.heroImageUrl,
@@ -316,11 +323,12 @@ async function seedPlaceholderPhotos() {
 		...milestones.map((milestone) => milestone.imageUrl),
 	].filter((url): url is string => Boolean(url));
 
-	// Real photography present: record the generation so this never runs again, and change nothing.
+	// Real photography present: record the generation so this never runs again, and change nothing
+	// but the theme nudge above.
 	if (currentPhotos.some((url) => !isSeededPlaceholder(url))) {
 		await db.siteContent.update({
 			where: { id: 1 },
-			data: { placeholderPhotoGeneration: PLACEHOLDER_GENERATION },
+			data: { placeholderPhotoGeneration: PLACEHOLDER_GENERATION, ...themeNudge },
 		});
 		return;
 	}
@@ -331,6 +339,7 @@ async function seedPlaceholderPhotos() {
 			heroImageUrl: PLACEHOLDER_HERO,
 			galleryUrls: PLACEHOLDER_GALLERY,
 			placeholderPhotoGeneration: PLACEHOLDER_GENERATION,
+			...themeNudge,
 		},
 	});
 
