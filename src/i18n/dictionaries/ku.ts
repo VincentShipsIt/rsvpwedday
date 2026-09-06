@@ -1,0 +1,80 @@
+import type { Dictionary } from "@/i18n/dictionaries/en";
+
+export const ku: Dictionary = {
+	common: {
+		yes: "Erê",
+		no: "Na",
+		save: "Tomar bike",
+		submit: "Bişîne",
+		edit: "Biguherîne",
+		back: "Vegere",
+		languageLabel: "Ziman",
+		adultLabel: "Mezin",
+		childLabel: "Zarok",
+	},
+	landing: {
+		title: "{coupleNames}",
+		tagline:
+			"Em dizewicin. Vexwendî bi e-mailê tên şandin, digel girêdaneke taybet ji bo bersivdanê.",
+	},
+	rsvp: {
+		heading: "Tu vexwendî yî, {name}",
+		notFoundTitle: "Me ev vexwendî nedît",
+		notFoundBody:
+			"Ji kerema xwe girêdana di e-maila xwe de kontrol bike, an bi me re têkiliyê deyne heke hê jî kar nake.",
+		eventVenueLabel: "Cih",
+		eventAddressLabel: "Navnîşan",
+		eventDressCodeLabel: "Kodê cilan",
+		eventMapsLinkLabel: "Di Nexşeyan de veke",
+		eventCalendarLabel: "Li salnameyê zêde bike",
+		attendingLabel: "Tu yê beşdarî {event} bibî?",
+		dietaryLabel: "Hewcedariyên xwarinê",
+		dietaryPlaceholder: "Alerjî, riwekî, vegan...",
+		companionsHeading: "Tu yê kesekî bînî?",
+		companionsHint: "Tu dikarî heta {count} mêvanên din jî bînî.",
+		companionFirstNameLabel: "Nav",
+		companionLastNameLabel: "Paşnav",
+		companionKindLabel: "Cureyê mêvan",
+		companionContactHint: "E-mail an jimareya têlefonê bide da ku em bikaribin bigihîjin wan.",
+		addCompanionButton: "Mêvan zêde bike",
+		removeCompanionButton: "Rake",
+		noteLabel: "Peyameke ji bo cotê",
+		notePlaceholder: "Her tişta tu dixwazî em pê bizanin",
+		songRequestLabel: "Daxwaza stranê",
+		songRequestPlaceholder: "Strana ku te tîne ser pîstê reqasê",
+		submitButton: "Bersivê bişîne",
+		submitSuccessMessage: "Spas, bersiva te hate tomarkirin.",
+		editButton: "Bersiva xwe biguherîne",
+		summaryHeading: "Bersiva te",
+		deadlinePassedMessage:
+			"Dema bersivdanê borî ye. Ji bo guherînan, bi {replyTo} re têkiliyê deyne.",
+		statusPending: "Li benda bersiva te",
+		statusAccepted: "Tu beşdar dibî",
+		statusDeclined: "Te red kir",
+		firstNameLabel: "Nav",
+		lastNameLabel: "Paşnav",
+		validation: {
+			companionContact: "E-mail an jimareya têlefonê bide",
+			required: "Ev qad pêwîst e",
+		},
+	},
+	emails: {
+		invite: {
+			subject: "Tu vexwendî yî: {coupleNames}",
+			heading: "Tu vexwendî yî, {name}",
+			body: "Emê pir kêfxweş bibin ku tu bi me re pîroz bikî. Ji kerema xwe berî {deadline} ji me re bêje ka tu tê an na.",
+			cta: "Niha bersivê bide",
+		},
+		reminder: {
+			subject: "Bîranîn: Bersiv ji bo {coupleNames}",
+			heading: "Tenê bîranînek, {name}",
+			body: "Me hê bersiveke te wernegirtiye. Ji kerema xwe berî {deadline} bersivê bide.",
+			cta: "Niha bersivê bide",
+		},
+		confirmation: {
+			subject: "Bersiv hate wergirtin: {coupleNames}",
+			heading: "Spas, {name}",
+			body: "Me bersiva te tomar kir. Tu dikarî bersivên xwe her dem berî {deadline} biguherînî.",
+		},
+	},
+};
