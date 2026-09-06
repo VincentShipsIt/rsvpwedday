@@ -9,4 +9,18 @@ const envSchema = z.object({
 	RESEND_API_KEY: z.string().min(1).optional(),
 });
 
-export const env = envSchema.parse(process.env);
+export type Env = z.infer<typeof envSchema>;
+
+let parsed: Env | undefined;
+
+function load(): Env {
+	parsed ??= envSchema.parse(process.env);
+	return parsed;
+}
+
+// Parsed on first access so `next build` succeeds without runtime secrets.
+export const env: Env = new Proxy({} as Env, {
+	get(_target, key) {
+		return load()[key as keyof Env];
+	},
+});
