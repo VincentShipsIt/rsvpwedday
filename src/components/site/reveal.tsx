@@ -31,6 +31,13 @@ export function Reveal({
 
 		setIsArmed(true);
 
+		// `rootMargin` extends the intersection root 20% past the real viewport bottom, and the
+		// near-zero `threshold` accepts the first visible pixel rather than requiring 15% of the
+		// target's own area. Without both, a tall single-column tile (the Gallery masonry grid
+		// collapses to one column below `sm`) needs a long scroll past its top edge before 15% of
+		// its own height clears the viewport, so it sits at `opacity: 0` — visually "empty" behind
+		// its own frame/border — for much longer than the short sections this component was tuned
+		// against (Story milestones, Event cards).
 		const observer = new IntersectionObserver(
 			([entry]) => {
 				if (entry?.isIntersecting) {
@@ -38,7 +45,7 @@ export function Reveal({
 					observer.disconnect();
 				}
 			},
-			{ threshold: 0.15 }
+			{ threshold: 0.01, rootMargin: "0px 0px 20% 0px" }
 		);
 		observer.observe(node);
 
