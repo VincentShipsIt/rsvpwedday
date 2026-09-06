@@ -29,7 +29,7 @@ describe("getInvitationStatus", () => {
 		expect(status).toBe("accepted");
 	});
 
-	it("is accepted even when respondedAt is set but no guests exist yet", () => {
+	it("is declined when respondedAt is set but no guests exist yet", () => {
 		expect(getInvitationStatus({ respondedAt: new Date(), guests: [] })).toBe("declined");
 	});
 });
