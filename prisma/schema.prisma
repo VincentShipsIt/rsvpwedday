@@ -110,3 +110,40 @@ model EmailLog {
   sentAt       DateTime   @default(now())
   invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
 }
+
+model SiteContent {
+  id           Int                      @id @default(1)
+  heroImageUrl String?
+  galleryUrls  String[]                 @default([])
+  updatedAt    DateTime                 @updatedAt
+  translations SiteContentTranslation[]
+}
+
+model SiteContentTranslation {
+  siteContentId Int
+  locale        Locale
+  tagline       String      @default("")
+  storyIntro    String      @default("")
+  rsvpNote      String      @default("")
+  siteContent   SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
+
+  @@id([siteContentId, locale])
+}
+
+model StoryMilestone {
+  id           String                        @id @default(cuid())
+  sortOrder    Int                           @default(0)
+  dateLabel    String
+  imageUrl     String?
+  translations StoryMilestoneTranslation[]
+}
+
+model StoryMilestoneTranslation {
+  milestoneId String
+  locale      Locale
+  title       String
+  body        String
+  milestone   StoryMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@id([milestoneId, locale])
+}
