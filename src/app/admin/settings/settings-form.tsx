@@ -1,11 +1,11 @@
 "use client";
 
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useState, useTransition } from "react";
 import { updateSettings } from "@/app/admin/settings/actions";
 import { Button } from "@/components/button";
 import { fieldClassName, Input } from "@/components/input";
-import type { Locale } from "@/generated/prisma/client";
+import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
 function createKey(): string {
@@ -97,7 +97,7 @@ export function SettingsForm({
 		);
 	}
 
-	function handleSubmit(formEvent: FormEvent) {
+	function handleSubmit(formEvent: SubmitEvent) {
 		formEvent.preventDefault();
 		setError(null);
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { newToken } from "@/domain/token";
-import type { GuestKind, Locale } from "@/generated/prisma/client";
+import type { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
 

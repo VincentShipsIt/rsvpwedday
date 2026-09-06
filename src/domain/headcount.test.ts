@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeHeadcount, type HeadcountInvitationInput } from "@/domain/headcount";
-import { Attendance, GuestKind } from "@/generated/prisma/client";
+import { Attendance, GuestKind } from "@/generated/prisma/enums";
 
 const events = [{ id: "wedding" }, { id: "brunch" }];
 

@@ -6,7 +6,7 @@ import { ConfirmationEmail } from "@/emails/confirmation";
 import { InviteEmail } from "@/emails/invite";
 import { ReminderEmail } from "@/emails/reminder";
 import type { EmailTemplateProps } from "@/emails/types";
-import { EmailKind } from "@/generated/prisma/client";
+import { EmailKind } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";

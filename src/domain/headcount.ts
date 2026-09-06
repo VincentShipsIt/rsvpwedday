@@ -1,5 +1,5 @@
 import { getInvitationStatus, type InvitationStatusInput } from "@/domain/invitation";
-import { Attendance, GuestKind } from "@/generated/prisma/client";
+import { Attendance, GuestKind } from "@/generated/prisma/enums";
 
 export type HeadcountGuestInput = {
 	kind: GuestKind;

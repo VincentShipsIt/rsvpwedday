@@ -1,4 +1,4 @@
-import { Locale } from "@/generated/prisma/client";
+import { Locale } from "@/generated/prisma/enums";
 
 export type LocaleDefinition = {
 	code: Locale;

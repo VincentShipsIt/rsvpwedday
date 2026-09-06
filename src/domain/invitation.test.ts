@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canRespond, getInvitationStatus } from "@/domain/invitation";
-import { Attendance } from "@/generated/prisma/client";
+import { Attendance } from "@/generated/prisma/enums";
 
 describe("getInvitationStatus", () => {
 	it("is pending when the invitation has not responded", () => {

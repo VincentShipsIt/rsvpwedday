@@ -1,12 +1,12 @@
 "use client";
 
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useState, useTransition } from "react";
 import type { InvitationGuestInput } from "@/app/admin/invitations/actions";
 import { createInvitation, updateInvitation } from "@/app/admin/invitations/actions";
 import { Button } from "@/components/button";
 import { fieldClassName, Input } from "@/components/input";
-import { GuestKind, type Locale } from "@/generated/prisma/client";
+import { GuestKind, type Locale } from "@/generated/prisma/enums";
 import { isLocale, localeCodes, locales } from "@/i18n/locales";
 
 type GuestRow = InvitationGuestInput & { key: string };
@@ -65,7 +65,7 @@ export function InvitationForm(props: InvitationFormProps) {
 		);
 	}
 
-	function handleSubmit(formEvent: FormEvent) {
+	function handleSubmit(formEvent: SubmitEvent) {
 		formEvent.preventDefault();
 		setError(null);
 

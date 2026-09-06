@@ -1,4 +1,4 @@
-import { Locale } from "@/generated/prisma/client";
+import { Locale } from "@/generated/prisma/enums";
 import { isLocale } from "@/i18n/locales";
 import { db } from "@/lib/db";
 

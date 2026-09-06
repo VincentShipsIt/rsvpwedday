@@ -1,5 +1,5 @@
 import type { InvitationStatus } from "@/domain/invitation";
-import { GuestKind, Locale } from "@/generated/prisma/client";
+import { GuestKind, Locale } from "@/generated/prisma/enums";
 
 export function parseCsvRows(text: string): string[][] {
 	const rows: string[][] = [];

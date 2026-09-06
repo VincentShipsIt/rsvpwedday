@@ -1,4 +1,4 @@
-import type { Locale } from "@/generated/prisma/client";
+import type { Locale } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
 
 export type EmailGuest = {

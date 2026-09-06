@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getInvitationStatus } from "@/domain/invitation";
-import { EmailKind } from "@/generated/prisma/client";
+import { EmailKind } from "@/generated/prisma/enums";
 import { ADMIN_SESSION_COOKIE } from "@/lib/admin-session";
 import { db } from "@/lib/db";
 import { sendInvitationEmail } from "@/lib/email";

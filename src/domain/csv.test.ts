@@ -6,7 +6,7 @@ import {
 	serializeCsvRow,
 	serializeExportCsv,
 } from "@/domain/csv";
-import { GuestKind, Locale } from "@/generated/prisma/client";
+import { GuestKind, Locale } from "@/generated/prisma/enums";
 
 describe("parseCsvRows", () => {
 	it("splits plain rows on commas and newlines", () => {

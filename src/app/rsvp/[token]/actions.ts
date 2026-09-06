@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { canRespond } from "@/domain/invitation";
 import { createRsvpSubmissionSchema } from "@/domain/rsvp-schema";
-import { Attendance, EmailKind } from "@/generated/prisma/client";
+import { Attendance, EmailKind } from "@/generated/prisma/enums";
 import { isLocale } from "@/i18n/locales";
 import { db } from "@/lib/db";
 import { sendInvitationEmail } from "@/lib/email";
@@ -110,7 +110,11 @@ export async function submitRsvp(token: string, payload: unknown): Promise<FormA
 		});
 	});
 
-	await sendInvitationEmail(EmailKind.CONFIRMATION, invitation.id);
+	try {
+		await sendInvitationEmail(EmailKind.CONFIRMATION, invitation.id);
+	} catch (error) {
+		console.error("confirmation email failed", error);
+	}
 	revalidatePath(`/rsvp/${token}`);
 
 	return { ok: true };

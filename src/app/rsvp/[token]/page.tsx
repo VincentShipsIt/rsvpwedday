@@ -6,7 +6,7 @@ import { Card } from "@/components/card";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { StatusBadge } from "@/components/status-badge";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
-import { Attendance } from "@/generated/prisma/client";
+import { Attendance } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
 import { db } from "@/lib/db";

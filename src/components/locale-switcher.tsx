@@ -1,4 +1,4 @@
-import type { Locale } from "@/generated/prisma/client";
+import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
 export function LocaleSwitcher({

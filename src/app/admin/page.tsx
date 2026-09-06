@@ -12,7 +12,7 @@ import { fieldClassName, Input } from "@/components/input";
 import { StatusBadge } from "@/components/status-badge";
 import { computeHeadcount } from "@/domain/headcount";
 import { getInvitationStatus } from "@/domain/invitation";
-import { EmailKind, Locale } from "@/generated/prisma/client";
+import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
