@@ -1,5 +1,6 @@
 import { Events, type EventView } from "@/components/site/events";
 import { Gallery } from "@/components/site/gallery";
+import { HashScrollFix } from "@/components/site/hash-scroll";
 import { Hero } from "@/components/site/hero";
 import { RsvpSection } from "@/components/site/rsvp-section";
 import { SectionDivider } from "@/components/site/section-divider";
@@ -78,6 +79,7 @@ export default async function LandingPage({
 
 	return (
 		<>
+			<HashScrollFix />
 			<SiteNav
 				coupleNames={coupleNames}
 				locale={locale}
