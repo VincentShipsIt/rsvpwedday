@@ -17,15 +17,32 @@ export function LanguageSelect({ locale, label }: { locale: Locale; label: strin
 	}
 
 	return (
-		<div className="relative inline-flex items-center">
+		// `text-current`/`border-current` (not a hardcoded ink color) so the closed control, its
+		// hairline border, and the chevron all pick up whatever color the nav bar has resolved to —
+		// light over a photo (`nav-over-photo`) in every theme including Midnight's dark bar, ink
+		// once scrolled — instead of reading as a default grey form control dropped on the page.
+		// The real `<select>` sits on top with its own text made transparent (`text-transparent`,
+		// plus the WebKit-only fill property Safari needs to actually honor that), so it stays the
+		// full-box click/tap target and keeps native keyboard behavior; the two spans beneath it
+		// render the visible value instead, a short code below `sm:` and the full label from
+		// `locales` from `sm:` up. `<option>` gets its own explicit dark-on-light colors because the
+		// native option list renders on an opaque system background regardless of the closed
+		// control's color, so inheriting a light `currentColor` there would make it unreadable.
+		<div className="relative inline-flex min-h-11 min-w-16 items-center rounded-md border border-current/30 bg-transparent pr-8 pl-3 text-sm text-current transition-colors hover:border-current/60 focus-within:border-current focus-within:ring-1 focus-within:ring-current sm:min-w-28">
+			<span aria-hidden="true" className="sm:hidden">
+				{locale.toUpperCase()}
+			</span>
+			<span aria-hidden="true" className="hidden sm:inline">
+				{locales[locale].label}
+			</span>
 			<select
 				aria-label={label}
 				value={locale}
 				onChange={handleChange}
-				className="appearance-none rounded-md border border-ink/15 bg-transparent py-1.5 pl-3 pr-8 text-sm text-ink/80 hover:border-green hover:text-green focus:border-green focus:outline-none focus:ring-1 focus:ring-green"
+				className="absolute inset-0 h-full w-full cursor-pointer appearance-none text-transparent outline-none [-webkit-text-fill-color:transparent]"
 			>
 				{localeCodes.map((code) => (
-					<option key={code} value={code}>
+					<option key={code} value={code} className="bg-ivory text-ink">
 						{locales[code].label}
 					</option>
 				))}
@@ -33,7 +50,7 @@ export function LanguageSelect({ locale, label }: { locale: Locale; label: strin
 			<svg
 				aria-hidden="true"
 				viewBox="0 0 20 20"
-				className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-ink/50"
+				className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-current/70"
 			>
 				<path
 					fill="currentColor"
