@@ -31,6 +31,8 @@ export const en = {
 		companionFirstNameLabel: "First name",
 		companionLastNameLabel: "Last name",
 		companionKindLabel: "Guest type",
+		companionEmailLabel: "Email",
+		companionPhoneLabel: "Phone",
 		companionContactHint: "Provide an email or a phone number so we can reach them.",
 		addCompanionButton: "Add a guest",
 		removeCompanionButton: "Remove",
@@ -46,8 +48,6 @@ export const en = {
 		statusPending: "Awaiting your response",
 		statusAccepted: "You're attending",
 		statusDeclined: "You've declined",
-		firstNameLabel: "First name",
-		lastNameLabel: "Last name",
 		validation: {
 			companionContact: "Provide an email or a phone number",
 			required: "This field is required",
