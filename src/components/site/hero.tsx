@@ -64,7 +64,12 @@ function EditorialHero({
 	return (
 		<section
 			id="top"
-			className="relative flex min-h-dvh scroll-mt-[var(--wed-nav-height)] items-center justify-center overflow-hidden text-ivory"
+			// A photo hero earns a full viewport. Without one there is nothing to fill it, so the
+			// gradient stops at a height the content actually occupies instead of opening on a
+			// screen of empty colour.
+			className={`relative flex scroll-mt-[var(--wed-nav-height)] items-center justify-center overflow-hidden text-ivory ${
+				heroImageUrl ? "min-h-dvh" : "min-h-[62svh] py-24"
+			}`}
 		>
 			{heroImageUrl ? (
 				<>
@@ -258,7 +263,10 @@ function MidnightHero({
 		// `ink` for the same reason: those are the tokens that are actually dark in MIDNIGHT.
 		<section
 			id="top"
-			className="relative flex min-h-dvh scroll-mt-[var(--wed-nav-height)] items-end overflow-hidden text-ink"
+			// Same reasoning as the editorial hero: full viewport only when a photo fills it.
+			className={`relative flex scroll-mt-[var(--wed-nav-height)] items-end overflow-hidden text-ink ${
+				heroImageUrl ? "min-h-dvh" : "min-h-[62svh] py-24"
+			}`}
 		>
 			{heroImageUrl ? (
 				<>

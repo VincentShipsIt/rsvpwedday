@@ -61,7 +61,7 @@ function EditorialMilestones({ milestones }: { milestones: StoryMilestoneView[] 
 						index % 2 === 1 ? "md:flex-row-reverse" : ""
 					}`}
 				>
-					{milestone.imageUrl ? (
+					{milestone.imageUrl && (
 						<Parallax factor={0.12} className="aspect-[4/3] w-full rounded-xl md:w-1/2">
 							<Image
 								src={milestone.imageUrl}
@@ -71,12 +71,10 @@ function EditorialMilestones({ milestones }: { milestones: StoryMilestoneView[] 
 								className="reveal-photo-frame object-cover"
 							/>
 						</Parallax>
-					) : (
-						<div className="aspect-[4/3] w-full overflow-hidden rounded-xl md:w-1/2">
-							<div className="h-full w-full bg-gradient-to-br from-ivory-dark to-green/20" />
-						</div>
 					)}
-					<div className="flex w-full flex-col gap-2 md:w-1/2">
+					<div
+						className={`flex w-full flex-col gap-2 ${milestone.imageUrl ? "md:w-1/2" : "md:text-center"}`}
+					>
 						<span className="text-xs font-medium uppercase tracking-widest text-green">
 							{milestone.dateLabel}
 						</span>
@@ -101,8 +99,8 @@ function ModernMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 					<span className="font-accent pt-1 text-sm text-ink/40">
 						{String(index + 1).padStart(2, "0")}
 					</span>
-					<div className="h-20 w-20 shrink-0 overflow-hidden bg-ivory-dark">
-						{milestone.imageUrl && (
+					{milestone.imageUrl && (
+						<div className="h-20 w-20 shrink-0 overflow-hidden bg-ivory-dark">
 							<Image
 								src={milestone.imageUrl}
 								alt=""
@@ -110,8 +108,8 @@ function ModernMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 								height={160}
 								className="reveal-photo-frame h-full w-full object-cover"
 							/>
-						)}
-					</div>
+						</div>
+					)}
 					<div className="flex flex-col gap-1">
 						<span className="text-xs uppercase tracking-widest text-green">
 							{milestone.dateLabel}
@@ -136,7 +134,7 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 					// collide; the polaroid tilt only kicks in once there's room to breathe.
 					className={`w-64 bg-white p-3 pb-6 shadow-md ${index % 2 === 0 ? "sm:rotate-1" : "sm:-rotate-1"}`}
 				>
-					{milestone.imageUrl ? (
+					{milestone.imageUrl && (
 						<Parallax factor={0.12} className="aspect-square w-full">
 							<Image
 								src={milestone.imageUrl}
@@ -146,10 +144,6 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 								className="reveal-photo-frame object-cover"
 							/>
 						</Parallax>
-					) : (
-						<div className="aspect-square w-full overflow-hidden">
-							<div className="h-full w-full bg-ivory-dark" />
-						</div>
 					)}
 					<p className="mt-3 text-center text-xs uppercase tracking-widest text-green">
 						{milestone.dateLabel}
@@ -165,13 +159,13 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 	return (
 		<div className="mx-auto flex max-w-2xl flex-col gap-10">
-			{milestones.map((milestone, index) => (
-				<Reveal
-					key={milestone.id}
-					delay={staggerDelay(index)}
-					className="relative aspect-[16/10] w-full overflow-hidden rounded-xl"
-				>
-					{milestone.imageUrl ? (
+			{milestones.map((milestone, index) =>
+				milestone.imageUrl ? (
+					<Reveal
+						key={milestone.id}
+						delay={staggerDelay(index)}
+						className="relative aspect-[16/10] w-full overflow-hidden rounded-xl"
+					>
 						<Parallax factor={0.12} className="absolute inset-0">
 							<Image
 								src={milestone.imageUrl}
@@ -181,21 +175,33 @@ function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }
 								className="reveal-photo-frame object-cover"
 							/>
 						</Parallax>
-					) : (
-						<div className="absolute inset-0 bg-gradient-to-br from-ivory-dark to-green/20" />
-					)}
-					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-					{/* `max-w-*` keeps caption lines readable on a 360px-wide image instead of
-					    running edge-to-edge. */}
-					<div className="absolute inset-x-0 bottom-0 flex max-w-sm flex-col gap-1 px-5 pb-5 text-ivory">
+						<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+						{/* `max-w-*` keeps caption lines readable on a 360px-wide image instead of
+						    running edge-to-edge. */}
+						<div className="absolute inset-x-0 bottom-0 flex max-w-sm flex-col gap-1 px-5 pb-5 text-ivory">
+							<span className="text-xs font-medium uppercase tracking-widest text-green">
+								{milestone.dateLabel}
+							</span>
+							<h3 className="text-2xl">{milestone.title}</h3>
+							<p className="text-ivory/80">{milestone.body}</p>
+						</div>
+					</Reveal>
+				) : (
+					// Without a photo there is no image to overlay, so the caption becomes the card
+					// itself rather than floating at the bottom of an empty 16:10 box.
+					<Reveal
+						key={milestone.id}
+						delay={staggerDelay(index)}
+						className="flex flex-col gap-1 rounded-xl border border-green/25 px-5 py-6"
+					>
 						<span className="text-xs font-medium uppercase tracking-widest text-green">
 							{milestone.dateLabel}
 						</span>
 						<h3 className="text-2xl">{milestone.title}</h3>
-						<p className="text-ivory/80">{milestone.body}</p>
-					</div>
-				</Reveal>
-			))}
+						<p className="text-ink/70">{milestone.body}</p>
+					</Reveal>
+				)
+			)}
 		</div>
 	);
 }
@@ -216,7 +222,7 @@ function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 					<span className="font-accent shrink-0 text-6xl leading-none text-green/50">
 						{String(index + 1).padStart(2, "0")}
 					</span>
-					{milestone.imageUrl ? (
+					{milestone.imageUrl && (
 						<Parallax factor={0.12} className="aspect-square w-full shrink-0 rounded-2xl sm:w-40">
 							<Image
 								src={milestone.imageUrl}
@@ -226,10 +232,6 @@ function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 								className="reveal-photo-frame object-cover"
 							/>
 						</Parallax>
-					) : (
-						<div className="aspect-square w-full shrink-0 overflow-hidden rounded-2xl sm:w-40">
-							<div className="h-full w-full bg-ivory-dark" />
-						</div>
 					)}
 					<div className="flex flex-col gap-1 text-center sm:text-left">
 						<span className="text-xs font-medium uppercase tracking-widest text-green">
