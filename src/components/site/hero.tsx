@@ -251,9 +251,14 @@ function MidnightHero({
 	dictionary,
 }: HeroProps) {
 	return (
+		// `text-ink` on the section below, not `text-ivory`: MIDNIGHT is the one theme where the
+		// ivory/ink tokens flip (ivory becomes the dark page background, ink becomes the light
+		// foreground), so this section's photo-overlay text needs the token that's actually
+		// light here. The no-photo fallback gradient below reads `ivory`/`ivory-dark` instead of
+		// `ink` for the same reason: those are the tokens that are actually dark in MIDNIGHT.
 		<section
 			id="top"
-			className="relative flex min-h-dvh scroll-mt-[var(--wed-nav-height)] items-end overflow-hidden text-ivory"
+			className="relative flex min-h-dvh scroll-mt-[var(--wed-nav-height)] items-end overflow-hidden text-ink"
 		>
 			{heroImageUrl ? (
 				<>
@@ -272,13 +277,13 @@ function MidnightHero({
 					<div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 				</>
 			) : (
-				<div className="absolute inset-0 bg-gradient-to-b from-ink via-ink to-black" />
+				<div className="absolute inset-0 bg-gradient-to-b from-ivory via-ivory-dark to-black" />
 			)}
 			<HeroEntrance className="relative z-10 flex w-full flex-col gap-8 px-6 pb-16 sm:px-12 sm:pb-20">
 				<div className="flex flex-col items-start gap-3 text-left">
 					{firstEventStartsAt && (
 						<p
-							className="hero-entrance-item text-xs uppercase tracking-[0.3em] text-ivory/70"
+							className="hero-entrance-item text-xs uppercase tracking-[0.3em] text-ink/70"
 							style={heroDelayStyle(0)}
 						>
 							{formatDate(firstEventStartsAt, locale)}
@@ -292,7 +297,7 @@ function MidnightHero({
 					</h1>
 					{tagline && (
 						<p
-							className="hero-entrance-item max-w-md text-balance text-ivory/70"
+							className="hero-entrance-item max-w-md text-balance text-ink/70"
 							style={heroDelayStyle(2)}
 						>
 							{tagline}
