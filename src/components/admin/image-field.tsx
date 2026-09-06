@@ -6,6 +6,7 @@ import { type DragEvent, useId, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadImage } from "@/lib/blob-upload";
+import { downscaleImage } from "@/lib/downscale-image";
 
 export type ImageFieldProps = {
 	label: string;
@@ -23,6 +24,7 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 	const inputId = useId();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
+	const [isPreparing, setIsPreparing] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -31,10 +33,13 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 			return;
 		}
 		setUploadError(null);
+		setIsPreparing(true);
+		const prepared = await downscaleImage(file);
+		setIsPreparing(false);
 		setIsUploading(true);
 		try {
 			const formData = new FormData();
-			formData.set("file", file);
+			formData.set("file", prepared);
 			const result = await uploadImage(formData);
 			if (result.ok) {
 				onChange(result.url);
@@ -49,13 +54,18 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 	function handleDrop(event: DragEvent<HTMLButtonElement>) {
 		event.preventDefault();
 		setIsDraggingOver(false);
-		if (disabled || !blobConfigured || isUploading) {
+		if (disabled || !blobConfigured || isPreparing || isUploading) {
 			return;
 		}
 		handleFile(event.dataTransfer.files[0]);
 	}
 
 	const dropZoneDisabled = disabled || !blobConfigured;
+	const dropZoneLabel = isPreparing
+		? "Preparing…"
+		: isUploading
+			? "Uploading…"
+			: "Drag a photo here, or click to browse";
 
 	return (
 		<div className="flex flex-col gap-1.5">
@@ -89,7 +99,7 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 						)}
 					>
 						<UploadIcon className="size-4" aria-hidden="true" />
-						{isUploading ? "Uploading…" : "Drag a photo here, or click to browse"}
+						{dropZoneLabel}
 					</button>
 					<input
 						ref={fileInputRef}

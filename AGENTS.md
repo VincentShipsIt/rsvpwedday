@@ -50,7 +50,21 @@ unchanged. The invitation create/edit form is a single `InvitationDialog` compon
 here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
 (hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
 drag-and-drop upload via `src/lib/blob.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set, always
-with a plain URL input underneath so a pasted link keeps working either way.
+with a plain URL input underneath so a pasted link keeps working either way. Before either field
+calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
+fit under the 8 MB upload cap: draws it to a canvas capped at 2400px on the long edge and
+re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparency) and GIF/SVG
+pass through untouched. It never throws — a decode or canvas failure just returns the original
+file, so a browser without canvas support still uploads, it just skips the shrink.
+
+Every website-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
+a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
+differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save
+is queued and run once the current save settles), and flushes immediately on `visibilitychange`
+to hidden and on `beforeunload`. `src/components/admin/save-status.tsx` renders the resulting
+saving/saved/error state next to a secondary "Save now" button, which stays as a manual fallback
+and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,
+one-shot actions and do not autosave.
 
 ## Translations
 
