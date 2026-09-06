@@ -168,6 +168,40 @@ h3 {
 	transform: translateY(0);
 }
 
+/* `reveal-fade` drops the rise transform, keeping only the opacity fade. `reveal-scale` settles
+   in from a slight zoom instead of a rise; both share the base `.reveal` opacity/transition rules
+   above and only override the transform. Equal-specificity rules placed after the base ones win
+   per source order. */
+.reveal-fade.is-armed:not(.reveal-visible) {
+	transform: none;
+}
+
+.reveal-scale.is-armed:not(.reveal-visible) {
+	transform: scale(1.04);
+}
+
+.reveal-scale.reveal-visible {
+	transform: scale(1);
+}
+
+/* Nested photo inside any `.reveal` variant: settles from a slight zoom independently of the
+   parent's own rise/fade, so a milestone or gallery tile can rise while its photo also zooms in. */
+.reveal-photo-frame {
+	transition:
+		opacity 0.6s ease,
+		transform 0.6s ease;
+}
+
+.reveal.reveal-visible .reveal-photo-frame {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.reveal.is-armed:not(.reveal-visible) .reveal-photo-frame {
+	opacity: 0;
+	transform: scale(1.04);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.reveal {
 		transition: none;
@@ -177,10 +211,192 @@ h3 {
 		opacity: 1;
 		transform: none;
 	}
+
+	.reveal-photo-frame {
+		transition: none;
+	}
+
+	.reveal.is-armed:not(.reveal-visible) .reveal-photo-frame {
+		opacity: 1;
+		transform: none;
+	}
 }
 
 @media (prefers-reduced-motion: no-preference) {
 	html {
 		scroll-behavior: smooth;
+	}
+}
+
+/*
+ * Hero entrance (Part: motion pass). `HeroEntrance` adds `.is-armed` on mount, mirroring
+ * `Reveal`'s pattern, so server HTML and no-JS clients render every element in place with no
+ * animation at all. `--hero-delay` is set per element for the 120ms-step sequence; `both` fill
+ * mode applies the `from` keyframe during the delay (so the element stays hidden until its turn)
+ * and holds the `to` keyframe afterward.
+ */
+@keyframes hero-rise {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.hero-entrance.is-armed .hero-entrance-item {
+		animation: hero-rise 0.8s ease both;
+		animation-delay: var(--hero-delay, 0ms);
+	}
+
+	@keyframes hero-photo-zoom {
+		from {
+			transform: scale(1.06);
+		}
+		to {
+			transform: scale(1);
+		}
+	}
+
+	.hero-photo-img {
+		animation: hero-photo-zoom 6s ease-out forwards;
+	}
+}
+
+/*
+ * Countdown digit slide (Part: motion pass). Each unit's number sits in an overflow-hidden box;
+ * `Countdown` keys the inner span by value so React remounts it on change, and the fresh mount
+ * plays this animation from its `from` state (`fill-mode: both` keeps it there during any delay
+ * and holds `to` afterward — there's no delay here, but `both` is harmless and cheap).
+ */
+@media (prefers-reduced-motion: no-preference) {
+	@keyframes countdown-digit-in {
+		from {
+			opacity: 0;
+			transform: translateY(40%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.countdown-digit {
+		display: inline-block;
+		animation: countdown-digit-in 0.3s ease both;
+	}
+}
+
+/*
+ * Section divider draw (Garden theme). `pathLength="100"` on the SVG paths normalizes their
+ * length to 100 regardless of actual geometry, so `stroke-dasharray: 100` plus an animated
+ * `stroke-dashoffset` draws the whole shape the same way for every path. Gated by the ancestor
+ * `Reveal`'s state classes, same as `.reveal-photo-frame` above.
+ */
+.divider-path {
+	stroke-dasharray: 100;
+	stroke-dashoffset: 100;
+	transition: stroke-dashoffset 1.2s ease;
+}
+
+.reveal.reveal-visible .divider-path {
+	stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.divider-path {
+		transition: none;
+		stroke-dashoffset: 0;
+	}
+}
+
+/*
+ * Sticky nav shadow (Part: motion pass). `StickyHeader` toggles `.nav-scrolled` from a scroll
+ * listener once the bar has moved 24px; the class only adds a shadow/blur layer, so there's no
+ * layout shift to gate behind reduced motion, just the transition smoothing it.
+ */
+.nav-scrolled {
+	box-shadow: 0 8px 24px -16px rgb(0 0 0 / 0.35);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	[data-nav] {
+		transition:
+			box-shadow 0.3s ease,
+			background-color 0.3s ease;
+	}
+}
+
+/*
+ * Hover lift for event cards and gallery tiles, and the zoom-in-frame treatment for gallery
+ * photos. `.hover-zoom-img` goes on the overflow-hidden frame; the `img`/Image inside it scales
+ * up, so the crop always stays inside the frame.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	.hover-lift {
+		transition:
+			transform 0.25s ease,
+			box-shadow 0.25s ease;
+	}
+
+	.hover-lift:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 16px 32px -20px rgb(0 0 0 / 0.4);
+	}
+
+	.hover-zoom-img img {
+		transition: transform 0.25s ease;
+	}
+
+	.hover-zoom-img:hover img {
+		transform: scale(1.03);
+	}
+}
+
+/*
+ * Underline-grows-from-the-left link treatment: a background-size trick rather than a real
+ * `<u>`/border so the line sits below the text baseline. `background-position: left` plus a
+ * horizontal-only gradient means the line only ever grows rightward from the left edge.
+ */
+.link-underline {
+	background-image: linear-gradient(currentColor, currentColor);
+	background-position: left bottom;
+	background-repeat: no-repeat;
+	background-size: 0% 1px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.link-underline {
+		transition: background-size 0.25s ease;
+	}
+}
+
+.link-underline:hover,
+.link-underline:focus-visible {
+	background-size: 100% 1px;
+}
+
+/*
+ * Parallax (Part: motion pass). `.parallax-inner` is rendered 130% tall, offset -15%, so a
+ * `Parallax`-wrapped `<Image fill>` always overflows its frame and the JS translateY never
+ * exposes an edge. Reduced motion and no-hover (touch) devices get the plain, untranslated frame
+ * instead — the JS effect also no-ops there, this just removes the now-pointless overflow.
+ */
+.parallax-inner {
+	position: absolute;
+	inset: -15% 0;
+	height: 130%;
+	width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce), (hover: none) {
+	.parallax-inner {
+		position: static;
+		inset: auto;
+		height: 100%;
+		width: 100%;
 	}
 }

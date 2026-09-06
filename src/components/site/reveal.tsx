@@ -1,9 +1,22 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
-export function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
+export type RevealVariant = "rise" | "fade" | "scale";
+
+export function Reveal({
+	children,
+	className = "",
+	delay = 0,
+	variant = "rise",
+}: {
+	children: ReactNode;
+	className?: string;
+	/** Stagger delay in milliseconds, applied as a transition-delay once revealed. */
+	delay?: number;
+	variant?: RevealVariant;
+}) {
 	const ref = useRef<HTMLDivElement>(null);
 	const [isVisible, setIsVisible] = useState(false);
 	// Starts unarmed so server HTML and no-JS clients show content in place; the effect arms the
@@ -32,10 +45,13 @@ export function Reveal({ children, className = "" }: { children: ReactNode; clas
 		return () => observer.disconnect();
 	}, []);
 
+	const style = delay ? ({ transitionDelay: `${delay}ms` } satisfies CSSProperties) : undefined;
+
 	return (
 		<div
 			ref={ref}
-			className={`reveal ${isArmed ? "is-armed" : ""} ${isVisible ? "reveal-visible" : ""} ${className}`}
+			style={style}
+			className={`reveal reveal-${variant} ${isArmed ? "is-armed" : ""} ${isVisible ? "reveal-visible" : ""} ${className}`}
 		>
 			{children}
 		</div>
