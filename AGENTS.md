@@ -34,13 +34,23 @@ attendance, else `declined`. Recompute it, never store it.
 ## Admin UI
 
 `/admin` is built on shadcn/ui; components live in `src/components/ui` (`components.json` pins the
-Nova preset, radix base, neutral colour). shadcn's tokens and base-layer rules are scoped to the
-`.admin-root` class on `AdminLayout`'s root element, so they never touch the public site's own
-`globals.css` theming. The Guests page (`src/app/admin/guests`) replaces the old separate
-Import/Export pages; `/admin/import` now redirects there and `/admin/export` is unchanged. The
-invitation create/edit form is a single `InvitationDialog` component
+Nova preset, radix base, neutral colour). shadcn's tokens live on `:root` in `globals.css` (they
+don't collide with the public site's own `--wed-*`/`--color-*` names) so Radix's portalled content
+(Select, Dialog, AlertDialog, DropdownMenu, the Toaster — all rendered on `document.body`, outside
+`.admin-root`) resolves them too; only the base-layer rules that paint `.admin-root`'s own
+background/text stay scoped to that class. The Guests page (`src/app/admin/guests`) replaces the
+old separate Import/Export pages; `/admin/import` now redirects there and `/admin/export` is
+unchanged. The invitation create/edit form is a single `InvitationDialog` component
 (`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
 `/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
+
+`/admin/website` is a section index linking to one page per home-page section — `hero`, `story`,
+`events`, `gallery`, `rsvp`, `theme` — each saving through its own server action in
+`src/app/admin/website/actions.ts`. `events` edits the `Event` rows and their translations (moved
+here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
+(hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
+drag-and-drop upload via `src/lib/blob.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set, always
+with a plain URL input underneath so a pasted link keeps working either way.
 
 ## Translations
 
@@ -52,7 +62,9 @@ native speaker** — get that review before any real invite/reminder email goes 
 ## Environment
 
 `DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `APP_URL`, `EMAIL_FROM`, and optional
-`RESEND_API_KEY`. `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
+`RESEND_API_KEY` and `BLOB_READ_WRITE_TOKEN` (a Vercel Blob store token; when unset, the admin's
+image fields fall back to a plain URL input instead of drag-and-drop upload — see
+`src/lib/blob.ts`). `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
 prefixed `*_POSTGRES_URL` or `*_DATABASE_URL` that a Vercel storage integration injects, as long
 as it is a direct `postgres://` url; the `prisma+postgres://` Accelerate url is ignored because
 the pg adapter needs a TCP connection (unset in development: emails are logged to the console instead of sent). Parsed
