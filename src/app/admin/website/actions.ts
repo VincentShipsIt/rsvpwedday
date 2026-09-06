@@ -7,23 +7,55 @@ import type { Locale, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
 
+// Shared validation boundary for every image URL field across the split website sections below.
 const imageUrlSchema = z.string().refine((value) => value === "" || isAllowedImageUrl(value), {
 	message: "must be a valid https image URL",
 });
 
-export type SiteContentTranslationInput = {
-	locale: Locale;
-	tagline: string;
-	storyIntro: string;
-	rsvpNote: string;
-};
+function invalidImageUrlResult(label: string): FormActionResult {
+	return { ok: false, error: `Enter a valid https image URL for the ${label}.` };
+}
 
-export type StoryMilestoneTranslationInput = {
-	locale: Locale;
-	title: string;
-	body: string;
-};
+function revalidateWebsite(path: string) {
+	revalidatePath("/admin/website");
+	revalidatePath(path);
+	revalidatePath("/");
+}
 
+// ---- Hero (heroImageUrl + per-locale tagline) ----
+
+export type HeroTranslationInput = { locale: Locale; tagline: string };
+export type HeroInput = { heroImageUrl: string; translations: HeroTranslationInput[] };
+
+export async function updateHero(input: HeroInput): Promise<FormActionResult> {
+	if (!imageUrlSchema.safeParse(input.heroImageUrl).success) {
+		return invalidImageUrlResult("hero image");
+	}
+
+	await db.$transaction(async (tx) => {
+		await tx.siteContent.upsert({
+			where: { id: 1 },
+			create: { id: 1, heroImageUrl: input.heroImageUrl || null },
+			update: { heroImageUrl: input.heroImageUrl || null },
+		});
+
+		for (const translation of input.translations) {
+			await tx.siteContentTranslation.upsert({
+				where: { siteContentId_locale: { siteContentId: 1, locale: translation.locale } },
+				create: { siteContentId: 1, locale: translation.locale, tagline: translation.tagline },
+				update: { tagline: translation.tagline },
+			});
+		}
+	});
+
+	revalidateWebsite("/admin/website/hero");
+	return { ok: true };
+}
+
+// ---- Story (per-locale storyIntro + milestones) ----
+
+export type StoryIntroTranslationInput = { locale: Locale; storyIntro: string };
+export type StoryMilestoneTranslationInput = { locale: Locale; title: string; body: string };
 export type StoryMilestoneInput = {
 	id?: string;
 	sortOrder: number;
@@ -31,39 +63,16 @@ export type StoryMilestoneInput = {
 	imageUrl: string;
 	translations: StoryMilestoneTranslationInput[];
 };
-
-export type SiteContentInput = {
-	heroImageUrl: string;
-	galleryUrls: string[];
-	theme: SiteTheme;
-	translations: SiteContentTranslationInput[];
+export type StoryInput = {
+	translations: StoryIntroTranslationInput[];
 	milestones: StoryMilestoneInput[];
 };
 
-function findFirstInvalidImageUrlField(input: SiteContentInput): string | null {
-	if (!imageUrlSchema.safeParse(input.heroImageUrl).success) {
-		return "hero image";
-	}
-
-	for (const [index, url] of input.galleryUrls.entries()) {
-		if (!imageUrlSchema.safeParse(url).success) {
-			return `gallery image #${index + 1}`;
-		}
-	}
-
+export async function updateStory(input: StoryInput): Promise<FormActionResult> {
 	for (const [index, milestone] of input.milestones.entries()) {
 		if (!imageUrlSchema.safeParse(milestone.imageUrl).success) {
-			return `milestone #${index + 1} image`;
+			return invalidImageUrlResult(`milestone #${index + 1} image`);
 		}
-	}
-
-	return null;
-}
-
-export async function updateSiteContent(input: SiteContentInput): Promise<FormActionResult> {
-	const invalidImageField = findFirstInvalidImageUrlField(input);
-	if (invalidImageField) {
-		return { ok: false, error: `Enter a valid https image URL for the ${invalidImageField}.` };
 	}
 
 	// Duplicate `sortOrder` values could otherwise persist across saves (e.g. two milestones both
@@ -79,20 +88,7 @@ export async function updateSiteContent(input: SiteContentInput): Promise<FormAc
 	);
 
 	await db.$transaction(async (tx) => {
-		await tx.siteContent.upsert({
-			where: { id: 1 },
-			create: {
-				id: 1,
-				heroImageUrl: input.heroImageUrl || null,
-				galleryUrls: input.galleryUrls,
-				theme: input.theme,
-			},
-			update: {
-				heroImageUrl: input.heroImageUrl || null,
-				galleryUrls: input.galleryUrls,
-				theme: input.theme,
-			},
-		});
+		await tx.siteContent.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
 
 		for (const translation of input.translations) {
 			await tx.siteContentTranslation.upsert({
@@ -100,15 +96,9 @@ export async function updateSiteContent(input: SiteContentInput): Promise<FormAc
 				create: {
 					siteContentId: 1,
 					locale: translation.locale,
-					tagline: translation.tagline,
 					storyIntro: translation.storyIntro,
-					rsvpNote: translation.rsvpNote,
 				},
-				update: {
-					tagline: translation.tagline,
-					storyIntro: translation.storyIntro,
-					rsvpNote: translation.rsvpNote,
-				},
+				update: { storyIntro: translation.storyIntro },
 			});
 		}
 
@@ -161,8 +151,146 @@ export async function updateSiteContent(input: SiteContentInput): Promise<FormAc
 		}
 	});
 
+	revalidateWebsite("/admin/website/story");
+	return { ok: true };
+}
+
+// ---- Events (Event rows + their translations) ----
+
+export type EventTranslationInput = { locale: Locale; name: string; description: string };
+export type EventInput = {
+	id?: string;
+	slug: string;
+	startsAt: string;
+	endsAt: string;
+	venue: string;
+	address: string;
+	mapsUrl: string;
+	dressCode: string;
+	sortOrder: number;
+	translations: EventTranslationInput[];
+};
+export type EventsInput = { events: EventInput[] };
+
+export async function updateEvents(input: EventsInput): Promise<FormActionResult> {
+	const existingEvents = await db.event.findMany({ select: { id: true } });
+	const existingEventIds = new Set(existingEvents.map((event) => event.id));
+	const submittedEventIds = new Set(
+		input.events.filter((event) => event.id).map((event) => event.id)
+	);
+
+	await db.$transaction(async (tx) => {
+		for (const eventId of existingEventIds) {
+			if (!submittedEventIds.has(eventId)) {
+				await tx.event.delete({ where: { id: eventId } });
+			}
+		}
+
+		for (const event of input.events) {
+			const eventData = {
+				slug: event.slug,
+				startsAt: new Date(event.startsAt),
+				endsAt: event.endsAt ? new Date(event.endsAt) : null,
+				venue: event.venue,
+				address: event.address,
+				mapsUrl: event.mapsUrl || null,
+				dressCode: event.dressCode || null,
+				sortOrder: event.sortOrder,
+			};
+
+			if (event.id && existingEventIds.has(event.id)) {
+				await tx.event.update({ where: { id: event.id }, data: eventData });
+				for (const translation of event.translations) {
+					await tx.eventTranslation.upsert({
+						where: { eventId_locale: { eventId: event.id, locale: translation.locale } },
+						create: {
+							eventId: event.id,
+							locale: translation.locale,
+							name: translation.name,
+							description: translation.description || null,
+						},
+						update: {
+							name: translation.name,
+							description: translation.description || null,
+						},
+					});
+				}
+			} else {
+				await tx.event.create({
+					data: {
+						...eventData,
+						translations: {
+							create: event.translations.map((translation) => ({
+								locale: translation.locale,
+								name: translation.name,
+								description: translation.description || null,
+							})),
+						},
+					},
+				});
+			}
+		}
+	});
+
 	revalidatePath("/admin");
-	revalidatePath("/admin/website");
-	revalidatePath("/");
+	revalidateWebsite("/admin/website/events");
+	return { ok: true };
+}
+
+// ---- Gallery (galleryUrls) ----
+
+export type GalleryInput = { galleryUrls: string[] };
+
+export async function updateGallery(input: GalleryInput): Promise<FormActionResult> {
+	for (const [index, url] of input.galleryUrls.entries()) {
+		if (!imageUrlSchema.safeParse(url).success) {
+			return invalidImageUrlResult(`gallery image #${index + 1}`);
+		}
+	}
+
+	await db.siteContent.upsert({
+		where: { id: 1 },
+		create: { id: 1, galleryUrls: input.galleryUrls },
+		update: { galleryUrls: input.galleryUrls },
+	});
+
+	revalidateWebsite("/admin/website/gallery");
+	return { ok: true };
+}
+
+// ---- RSVP (per-locale rsvpNote) ----
+
+export type RsvpTranslationInput = { locale: Locale; rsvpNote: string };
+export type RsvpInput = { translations: RsvpTranslationInput[] };
+
+export async function updateRsvpNote(input: RsvpInput): Promise<FormActionResult> {
+	await db.$transaction(async (tx) => {
+		await tx.siteContent.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
+
+		for (const translation of input.translations) {
+			await tx.siteContentTranslation.upsert({
+				where: { siteContentId_locale: { siteContentId: 1, locale: translation.locale } },
+				create: { siteContentId: 1, locale: translation.locale, rsvpNote: translation.rsvpNote },
+				update: { rsvpNote: translation.rsvpNote },
+			});
+		}
+	});
+
+	revalidateWebsite("/admin/website/rsvp");
+	return { ok: true };
+}
+
+// ---- Theme ----
+
+export type ThemeInput = { theme: SiteTheme };
+
+export async function updateTheme(input: ThemeInput): Promise<FormActionResult> {
+	await db.siteContent.upsert({
+		where: { id: 1 },
+		create: { id: 1, theme: input.theme },
+		update: { theme: input.theme },
+	});
+
+	revalidateWebsite("/admin/website/theme");
 	return { ok: true };
 }
