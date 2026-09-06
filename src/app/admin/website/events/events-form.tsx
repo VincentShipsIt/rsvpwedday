@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateEvents } from "@/app/admin/website/actions";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,12 +41,14 @@ export type EventsFormProps = {
 };
 
 export function EventsForm({ initialEvents }: EventsFormProps) {
-	const router = useRouter();
 	const [events, setEvents] = useState<EventState[]>(() =>
 		initialEvents.map((event) => ({ ...event, key: createKey() }))
 	);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
+
+	const { status, error, retry } = useAutosave({
+		value: events,
+		save: (nextEvents) => updateEvents({ events: nextEvents.map(({ key, ...event }) => event) }),
+	});
 
 	function addEvent() {
 		setEvents((current) => [
@@ -89,19 +91,6 @@ export function EventsForm({ initialEvents }: EventsFormProps) {
 					: event
 			)
 		);
-	}
-
-	function handleSave() {
-		setError(null);
-		startTransition(async () => {
-			const result = await updateEvents({ events: events.map(({ key, ...event }) => event) });
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("Events saved");
-			router.refresh();
-		});
 	}
 
 	return (
@@ -229,11 +218,12 @@ export function EventsForm({ initialEvents }: EventsFormProps) {
 				</Button>
 			</div>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save events
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }

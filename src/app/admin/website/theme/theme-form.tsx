@@ -2,10 +2,10 @@
 
 import { cn } from "cn";
 import { ExternalLinkIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { updateTheme } from "@/app/admin/website/actions";
+import { SaveStatus } from "@/components/admin/save-status";
+import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import type { SiteTheme } from "@/generated/prisma/enums";
 import { themeChoices } from "@/lib/site-theme";
@@ -15,23 +15,12 @@ export type ThemeFormProps = {
 };
 
 export function ThemeForm({ initialTheme }: ThemeFormProps) {
-	const router = useRouter();
 	const [theme, setTheme] = useState<SiteTheme>(initialTheme);
-	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
 
-	function handleSave() {
-		setError(null);
-		startTransition(async () => {
-			const result = await updateTheme({ theme });
-			if (!result.ok) {
-				setError(result.error);
-				return;
-			}
-			toast.success("Theme saved");
-			router.refresh();
-		});
-	}
+	const { status, error, retry } = useAutosave({
+		value: theme,
+		save: (nextTheme) => updateTheme({ theme: nextTheme }),
+	});
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -77,11 +66,12 @@ export function ThemeForm({ initialTheme }: ThemeFormProps) {
 				})}
 			</div>
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
-
-			<Button type="button" disabled={isPending} onClick={handleSave} className="self-start">
-				Save theme
-			</Button>
+			<div className="flex items-center gap-3">
+				<Button type="button" variant="secondary" disabled={status === "saving"} onClick={retry}>
+					Save now
+				</Button>
+				<SaveStatus status={status} error={error} onRetry={retry} />
+			</div>
 		</div>
 	);
 }
