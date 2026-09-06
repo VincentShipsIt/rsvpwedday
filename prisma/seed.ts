@@ -101,27 +101,23 @@ async function main() {
 		},
 	];
 
-	for (const seed of milestoneSeeds) {
-		const existingMilestone = await db.storyMilestone.findFirst({
-			where: { dateLabel: seed.dateLabel },
-		});
-		if (existingMilestone) {
-			continue;
-		}
-
-		await db.storyMilestone.create({
-			data: {
-				sortOrder: seed.sortOrder,
-				dateLabel: seed.dateLabel,
-				translations: {
-					create: [
-						{ locale: Locale.en, title: seed.en.title, body: seed.en.body },
-						{ locale: Locale.de, title: seed.de.title, body: seed.de.body },
-						{ locale: Locale.ku, title: seed.ku.title, body: seed.ku.body },
-					],
+	const milestoneCount = await db.storyMilestone.count();
+	if (milestoneCount === 0) {
+		for (const seed of milestoneSeeds) {
+			await db.storyMilestone.create({
+				data: {
+					sortOrder: seed.sortOrder,
+					dateLabel: seed.dateLabel,
+					translations: {
+						create: [
+							{ locale: Locale.en, title: seed.en.title, body: seed.en.body },
+							{ locale: Locale.de, title: seed.de.title, body: seed.de.body },
+							{ locale: Locale.ku, title: seed.ku.title, body: seed.ku.body },
+						],
+					},
 				},
-			},
-		});
+			});
+		}
 	}
 
 	const existingInvitation = await db.invitation.findUnique({
