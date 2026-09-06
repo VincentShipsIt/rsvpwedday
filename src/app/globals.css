@@ -19,14 +19,15 @@
 	--wed-secondary: var(--color-green-dark);
 	--wed-nav-bg: rgb(250 247 240 / 0.85);
 	--wed-nav-border: rgb(38 36 31 / 0.1);
-}
 
-/*
- * shadcn/ui tokens (Nova preset, neutral base colour), scoped to `.admin-root` so they never
- * leak into the public site's `:root`/`--wed-*`/`--color-*` theming above. `AdminLayout` is the
- * only place that adds the `admin-root` class.
- */
-.admin-root {
+	/*
+	 * shadcn/ui tokens (Nova preset, neutral base colour). These names don't collide with the
+	 * public site's `--wed-*`/`--color-*` tokens above, so they live on `:root` rather than
+	 * scoped to `.admin-root`: Radix (Select, Dialog, AlertDialog, DropdownMenu, the Toaster)
+	 * renders its content into a portal on `document.body`, outside `.admin-root`, so tokens
+	 * scoped there resolve to nothing for any portalled content. Only the `@layer base` rules
+	 * that paint `body`-like surfaces stay scoped to `.admin-root` below.
+	 */
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);
@@ -546,8 +547,10 @@ h3 {
 }
 
 /*
- * shadcn base colours, scoped to `.admin-root` only (see comment above `.admin-root`) so the
- * public pages' own unlayered `body`/`main`/`header` color rules above are untouched.
+ * `.admin-root` itself only paints the admin app's own body-like surface (background/text); the
+ * shadcn tokens it reads live on `:root` (see comment above), not here, so Radix's portalled
+ * content resolves them too. This stays scoped so the public pages' own unlayered
+ * `body`/`main`/`header` color rules above are untouched.
  */
 @layer base {
 	.admin-root * {
