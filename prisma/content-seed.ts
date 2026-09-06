@@ -257,5 +257,59 @@ export async function seedContent() {
 		}
 	}
 
+	await seedPlaceholderPhotos();
+
 	return db.event.findMany({ orderBy: { sortOrder: "asc" } });
+}
+
+/*
+ * Stand-in photography so a site with no pictures yet still reads as designed rather than as a
+ * page of empty frames. Lorem Picsum serves a stable image per seed over https, which is what
+ * `isAllowedImageUrl` and `next/image` require.
+ *
+ * This only ever fills a site that has no photography at all. The moment a hero, a gallery entry,
+ * or a single milestone photo is set in the admin, the guard below stops matching and a later
+ * deploy leaves every image alone — including a deliberate removal of these.
+ */
+const PLACEHOLDER_HERO = "https://picsum.photos/seed/wed-hero/1800/1200";
+
+const PLACEHOLDER_GALLERY = [
+	"https://picsum.photos/seed/wed-g1/900/1200",
+	"https://picsum.photos/seed/wed-g2/1200/900",
+	"https://picsum.photos/seed/wed-g3/900/900",
+	"https://picsum.photos/seed/wed-g4/900/1200",
+	"https://picsum.photos/seed/wed-g5/1200/900",
+	"https://picsum.photos/seed/wed-g6/900/1100",
+];
+
+const PLACEHOLDER_MILESTONES = [
+	"https://picsum.photos/seed/wed-m1/1000/800",
+	"https://picsum.photos/seed/wed-m2/1000/800",
+	"https://picsum.photos/seed/wed-m3/1000/800",
+];
+
+async function seedPlaceholderPhotos() {
+	const siteContent = await db.siteContent.findUnique({ where: { id: 1 } });
+	const milestones = await db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" } });
+
+	const hasAnyPhoto =
+		Boolean(siteContent?.heroImageUrl) ||
+		(siteContent?.galleryUrls.length ?? 0) > 0 ||
+		milestones.some((milestone) => milestone.imageUrl !== null);
+
+	if (hasAnyPhoto) {
+		return;
+	}
+
+	await db.siteContent.update({
+		where: { id: 1 },
+		data: { heroImageUrl: PLACEHOLDER_HERO, galleryUrls: PLACEHOLDER_GALLERY },
+	});
+
+	for (const [index, milestone] of milestones.entries()) {
+		await db.storyMilestone.update({
+			where: { id: milestone.id },
+			data: { imageUrl: PLACEHOLDER_MILESTONES[index % PLACEHOLDER_MILESTONES.length] },
+		});
+	}
 }
