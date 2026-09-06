@@ -17,7 +17,8 @@ function escapeIcsText(value: string): string {
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
-	const { slug } = await params;
+	const { slug: slugParam } = await params;
+	const slug = slugParam.replace(/\.ics$/, "");
 	const url = new URL(request.url);
 	const localeParam = url.searchParams.get("locale");
 	const locale: Locale = localeParam && isLocale(localeParam) ? localeParam : Locale.en;
