@@ -23,6 +23,22 @@ body {
 	font-family: var(--font-body);
 }
 
+/*
+ * `header`/`main` carry their own `data-theme` (see below) so anything inside them that reads
+ * `var(--color-ink)` directly (an explicit `text-ink` class, say) already re-resolves correctly
+ * per section. But `color` is only ever explicitly set here and on `body` — any element with no
+ * color utility of its own just inherits the literal value `body` already resolved once, using
+ * the *default* theme, never re-evaluating against a themed `--color-ink` further down the tree.
+ * That was invisible while every theme's ink was some shade of dark-on-light; MIDNIGHT's ink is
+ * light-on-dark, so unstyled headings/nav text would otherwise render dark-on-dark. Re-declaring
+ * `color` here, scoped to each themed element, fixes the root cause instead of patching every
+ * heading and link individually.
+ */
+main,
+header {
+	color: var(--color-ink);
+}
+
 h1,
 h2,
 h3 {
@@ -30,10 +46,11 @@ h3 {
 }
 
 /*
- * Three landing-page themes (`SiteTheme` in prisma/schema.prisma), applied via `data-theme` on
+ * Landing-page themes (`SiteTheme` in prisma/schema.prisma), applied via `data-theme` on
  * `<main>`, the nav wrapper, and the footer. Each block overrides the same tokens used above so
  * every component that already reads `--color-*`/`--font-*` re-themes for free; only structural
- * differences (Hero, Story, Events, Gallery) branch in their own components.
+ * differences (Hero, Story, Events, Gallery) branch in their own components. Editorial has no
+ * block of its own — it's just the `:root` defaults above.
  */
 [data-theme="modern"] {
 	--color-ivory: #f7f5f1;
@@ -61,6 +78,62 @@ h3 {
 	--wed-secondary: #8a9a7b;
 }
 
+[data-theme="midnight"] {
+	/* Dark-mode theme: `--color-ivory` is the page background token in every theme's block, not
+	   literally cream, and `--color-ink` is the text color, so both flip here. */
+	--color-ivory: #0f1113;
+	--color-ivory-dark: #17191c;
+	--color-green: #c9a961;
+	--color-green-dark: #8b8578;
+	--color-ink: #ece7dd;
+	--font-display: var(--font-cormorant), Georgia, serif;
+	--font-accent: var(--font-cormorant), Georgia, serif;
+	--font-body: var(--font-inter), system-ui, sans-serif;
+	/* `SiteNav` is a `py-4` bar (32px) whose tallest row content, below `sm`, is the 44px
+	   `NavMobileMenu` toggle button — 76px total, taller than the wordmark/language-select row
+	   used at `sm:` and up (~32px content, 64px total). One CSS var can't be responsive, so this
+	   uses the taller mobile figure; on desktop `scroll-mt` just leaves a little extra headroom
+	   rather than letting mobile anchors land partly under the sticky bar. */
+	--wed-nav-height: 4.75rem;
+	--wed-secondary: var(--color-green-dark);
+}
+
+[data-theme="boho"] {
+	--color-ivory: #f3e9d2;
+	--color-ivory-dark: #ecdfc0;
+	--color-green: #d97b3a;
+	/* Darker than the initial olive suggestion (#6b7f4b, ~3.4:1 against sand) so `BohoEventCards`'
+	   full-strength olive fill still clears 4.5:1 for its sand-colored body text — the brief asks
+	   for WCAG AA body-text contrast, which the lighter shade didn't quite reach. */
+	--color-green-dark: #4f5f38;
+	--color-ink: #2b2622;
+	--font-display: var(--font-fraunces), Georgia, serif;
+	--font-accent: var(--font-fraunces), Georgia, serif;
+	--font-body: var(--font-instrument-sans), system-ui, sans-serif;
+	/* Same mobile-toggle-button arithmetic as midnight's block above. */
+	--wed-nav-height: 4.75rem;
+	--wed-secondary: var(--color-green-dark);
+}
+
+/*
+ * The Part 3 mobile nav toggle gave every theme's below-`sm` bar the same fixed content height —
+ * 32px of `py-4` padding plus the 44px `NavMobileMenu` button, 76px total — taller than
+ * editorial's and modern's desktop-tuned heights above (they were sized for a shorter row before
+ * the toggle existed). Garden's default already matches; midnight/boho are already set to this
+ * figure unconditionally. Only editorial (the unthemed `:root` default) and modern need a mobile
+ * override so `scroll-mt-[var(--wed-nav-height)]` anchors land below the sticky bar instead of
+ * partly under it.
+ */
+@media (max-width: 639px) {
+	:root {
+		--wed-nav-height: 4.75rem;
+	}
+
+	[data-theme="modern"] {
+		--wed-nav-height: 4.75rem;
+	}
+}
+
 /*
  * `h1, h2, h3` above is unlayered CSS, which always beats a Tailwind utility class regardless of
  * source order (Tailwind's utilities live in a cascade layer, and unlayered rules always win over
@@ -69,7 +142,9 @@ h3 {
  */
 [data-theme="garden"] .hero-couple-names {
 	font-family: var(--font-accent);
-	font-size: clamp(3.5rem, 9vw, 7rem);
+	/* Floor lowered from 3.5rem so ~30-character couple names don't force horizontal overflow
+	   at 360px viewports (see Part 3 mobile pass). */
+	font-size: clamp(2.25rem, 9vw, 7rem);
 }
 
 /*
