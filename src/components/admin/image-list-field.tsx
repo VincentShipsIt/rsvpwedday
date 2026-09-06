@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadImage } from "@/lib/blob-upload";
+import { downscaleImage } from "@/lib/downscale-image";
 
 export type ImageListFieldProps = {
 	label: string;
@@ -29,6 +30,7 @@ export function ImageListField({
 	const inputId = useId();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
+	const [isPreparing, setIsPreparing] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -37,10 +39,13 @@ export function ImageListField({
 			return;
 		}
 		setUploadError(null);
+		setIsPreparing(true);
+		const prepared = await Promise.all(Array.from(files).map(downscaleImage));
+		setIsPreparing(false);
 		setIsUploading(true);
 		try {
 			const uploaded: string[] = [];
-			for (const file of Array.from(files)) {
+			for (const file of prepared) {
 				const formData = new FormData();
 				formData.set("file", file);
 				const result = await uploadImage(formData);
@@ -62,7 +67,7 @@ export function ImageListField({
 	function handleDrop(event: DragEvent<HTMLButtonElement>) {
 		event.preventDefault();
 		setIsDraggingOver(false);
-		if (disabled || !blobConfigured || isUploading) {
+		if (disabled || !blobConfigured || isPreparing || isUploading) {
 			return;
 		}
 		handleFiles(event.dataTransfer.files);
@@ -91,6 +96,11 @@ export function ImageListField({
 	}
 
 	const dropZoneDisabled = disabled || !blobConfigured;
+	const dropZoneLabel = isPreparing
+		? "Preparing…"
+		: isUploading
+			? "Uploading…"
+			: "Drag photos here, or click to browse (multiple allowed)";
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -114,7 +124,7 @@ export function ImageListField({
 				)}
 			>
 				<UploadIcon className="size-4" aria-hidden="true" />
-				{isUploading ? "Uploading…" : "Drag photos here, or click to browse (multiple allowed)"}
+				{dropZoneLabel}
 			</button>
 			<input
 				id={inputId}
