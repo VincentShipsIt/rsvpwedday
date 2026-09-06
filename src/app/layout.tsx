@@ -10,6 +10,8 @@ import {
 } from "next/font/google";
 import type { ReactNode } from "react";
 import "@/app/globals.css";
+import { Locale } from "@/generated/prisma/enums";
+import { db } from "@/lib/db";
 
 const cormorant = Cormorant_Garamond({
 	subsets: ["latin"],
@@ -58,9 +60,33 @@ const fraunces = Fraunces({
 	variable: "--font-fraunces",
 });
 
-export const metadata: Metadata = {
-	title: "Wedding RSVP",
-};
+// `generateMetadata` (not a static `metadata` export) because the title/description/OG copy come
+// from the database at request time; `dynamic = "force-dynamic"` keeps `next build`'s static
+// analysis from ever calling `db` with no `DATABASE_URL` set (see AGENTS.md's CI note).
+export const dynamic = "force-dynamic";
+
+const DEFAULT_COUPLE_NAMES = "Our Wedding";
+const DEFAULT_TAGLINE = "We're getting married and can't wait to celebrate with you.";
+
+export async function generateMetadata(): Promise<Metadata> {
+	const [settings, siteContent] = await Promise.all([
+		db.settings.findUnique({ where: { id: 1 } }),
+		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
+	]);
+
+	const coupleNames = settings?.coupleNames || DEFAULT_COUPLE_NAMES;
+	const tagline =
+		siteContent?.translations.find((translation) => translation.locale === Locale.en)?.tagline ||
+		DEFAULT_TAGLINE;
+	const title = `${coupleNames} — Wedding RSVP`;
+
+	return {
+		title,
+		description: tagline,
+		openGraph: { title, description: tagline },
+		twitter: { card: "summary_large_image", title, description: tagline },
+	};
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
