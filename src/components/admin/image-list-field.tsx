@@ -6,7 +6,7 @@ import { type DragEvent, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { uploadImage } from "@/lib/blob";
+import { uploadImage } from "@/lib/blob-upload";
 
 export type ImageListFieldProps = {
 	label: string;

@@ -5,7 +5,7 @@ import { ImageIcon, UploadIcon } from "lucide-react";
 import { type DragEvent, useId, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { uploadImage } from "@/lib/blob";
+import { uploadImage } from "@/lib/blob-upload";
 
 export type ImageFieldProps = {
 	label: string;
