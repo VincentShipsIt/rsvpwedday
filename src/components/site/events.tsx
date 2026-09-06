@@ -90,13 +90,13 @@ function EventDetails({
 			)}
 			<div className="mt-auto flex gap-4 pt-2 text-sm">
 				{event.mapsUrl && (
-					<a href={event.mapsUrl} className="text-green underline underline-offset-4">
+					<a href={event.mapsUrl} className="link-underline text-green">
 						{dictionary.rsvp.eventMapsLinkLabel}
 					</a>
 				)}
 				<Link
 					href={`/calendar/${event.slug}.ics?locale=${locale}`}
-					className="text-green underline underline-offset-4"
+					className="link-underline text-green"
 				>
 					{dictionary.rsvp.eventCalendarLabel}
 				</Link>
@@ -105,12 +105,18 @@ function EventDetails({
 	);
 }
 
+// Shared across every theme's card grid: incremental stagger delay, capped so a long guest list
+// doesn't push the last cards' reveal far past the first.
+function staggerDelay(index: number): number {
+	return Math.min(index * 80, 400);
+}
+
 function EditorialEventCards({ events, locale, dictionary }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{events.map((event) => (
-				<Reveal key={event.id}>
-					<Card className="flex h-full flex-col gap-2">
+			{events.map((event, index) => (
+				<Reveal key={event.id} delay={staggerDelay(index)}>
+					<Card className="hover-lift flex h-full flex-col gap-2">
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</Card>
 				</Reveal>
@@ -122,8 +128,8 @@ function EditorialEventCards({ events, locale, dictionary }: EventListProps) {
 function ModernEventList({ events, locale, dictionary }: EventListProps) {
 	return (
 		<div className="flex flex-col divide-y divide-ink/15 border-y border-ink/15">
-			{events.map((event) => (
-				<Reveal key={event.id}>
+			{events.map((event, index) => (
+				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<div className="flex flex-col gap-2 py-6">
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</div>
@@ -136,9 +142,9 @@ function ModernEventList({ events, locale, dictionary }: EventListProps) {
 function GardenEventCards({ events, locale, dictionary }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{events.map((event) => (
-				<Reveal key={event.id}>
-					<div className="flex h-full flex-col gap-2 rounded-2xl border-t-4 border-[var(--wed-secondary)] bg-white/70 p-6 shadow-sm">
+			{events.map((event, index) => (
+				<Reveal key={event.id} delay={staggerDelay(index)}>
+					<div className="hover-lift flex h-full flex-col gap-2 rounded-2xl border-t-4 border-[var(--wed-secondary)] bg-white/70 p-6 shadow-sm">
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</div>
 				</Reveal>
@@ -150,9 +156,9 @@ function GardenEventCards({ events, locale, dictionary }: EventListProps) {
 function MidnightEventCards({ events, locale, dictionary }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{events.map((event) => (
-				<Reveal key={event.id}>
-					<div className="flex h-full flex-col gap-2 rounded-lg border border-green/40 bg-transparent p-6">
+			{events.map((event, index) => (
+				<Reveal key={event.id} delay={staggerDelay(index)}>
+					<div className="hover-lift flex h-full flex-col gap-2 rounded-lg border border-green/40 bg-transparent p-6">
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</div>
 				</Reveal>
@@ -164,9 +170,9 @@ function MidnightEventCards({ events, locale, dictionary }: EventListProps) {
 function BohoEventCards({ events, locale, dictionary }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{events.map((event) => (
-				<Reveal key={event.id}>
-					<div className="flex h-full flex-col gap-2 rounded-3xl border-t-4 border-green bg-green-dark p-6 text-ivory [&_a]:text-ivory [&_h3]:text-ivory [&_p]:text-ivory/80">
+			{events.map((event, index) => (
+				<Reveal key={event.id} delay={staggerDelay(index)}>
+					<div className="hover-lift flex h-full flex-col gap-2 rounded-3xl border-t-4 border-green bg-green-dark p-6 text-ivory [&_a]:text-ivory [&_h3]:text-ivory [&_p]:text-ivory/80">
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
 					</div>
 				</Reveal>
