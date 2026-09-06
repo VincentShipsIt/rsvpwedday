@@ -20,8 +20,8 @@ Bun, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19, Pr
 - `bun run test` — Vitest (domain layer only; no DOM)
 - `bun run db:push` — sync `prisma/schema.prisma` to the database (no migrations directory; this
   is a one-database family site). On Vercel the `vercel-build` script runs the same push before
-  `next build` whenever `DATABASE_URL` is set, so a production deployment syncs the database and a
-  preview without a database still builds.
+  `next build` whenever a direct database url resolves, so a production deployment syncs the
+  database and a preview without one still builds.
 - `bun run db:seed` — placeholder settings, one `wedding` event, one sample invitation
 - `bun run db:studio` — Prisma Studio
 
@@ -41,7 +41,10 @@ native speaker** — get that review before any real invite/reminder email goes 
 ## Environment
 
 `DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `APP_URL`, `EMAIL_FROM`, and optional
-`RESEND_API_KEY` (unset in development: emails are logged to the console instead of sent). Parsed
+`RESEND_API_KEY`. `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
+prefixed `*_POSTGRES_URL` or `*_DATABASE_URL` that a Vercel storage integration injects, as long
+as it is a direct `postgres://` url; the `prisma+postgres://` Accelerate url is ignored because
+the pg adapter needs a TCP connection (unset in development: emails are logged to the console instead of sent). Parsed
 once in `src/lib/env.ts`; import `env` from there, never read `process.env` elsewhere.
 
 ## Verification
