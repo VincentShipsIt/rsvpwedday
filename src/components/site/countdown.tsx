@@ -64,12 +64,16 @@ export function Countdown({
 
 	const unitClassName =
 		variant === "pills"
-			? "flex flex-col items-center rounded-full bg-ivory-dark px-4 py-3"
-			: "flex flex-col";
+			? "flex flex-col items-center rounded-full bg-ivory-dark px-1.5 py-1.5 sm:px-4 sm:py-3"
+			: "flex flex-col items-center";
 
 	return (
-		// `flex-wrap` so four unit blocks wrap 2-and-2 on ~360px screens instead of overflowing.
-		<div className="flex flex-wrap justify-center gap-4 text-center sm:flex-nowrap sm:gap-8">
+		// A fixed four-column grid (not `flex-wrap`) keeps all four units on one row down to the
+		// narrowest supported viewport (360px) instead of wrapping the fourth to its own line; the
+		// type, padding, and gap all shrink at the base size and grow back from `sm:` up, so the
+		// worst case (three-digit days plus an eight-letter label like "SEKUNDEN"/"ÇIRKE") still
+		// fits inside each column.
+		<div className="grid grid-cols-4 gap-1.5 text-center sm:gap-8">
 			{units.map(([value, label]) => (
 				<div key={label} className={unitClassName}>
 					{/* `overflow-hidden` frames the digit slot; keying the inner span by `value`
@@ -79,14 +83,18 @@ export function Countdown({
 					    (matching `h-[1em]`) instead of the font's default half-leading, which the
 					    seconds unit — remounting every second — would otherwise drift against and
 					    render partway clipped by `overflow-hidden` mid-animation. */}
-					<span className="block h-[1em] overflow-hidden font-display text-3xl leading-none sm:text-4xl">
+					<span className="block h-[1em] overflow-hidden font-display text-2xl leading-none sm:text-4xl">
 						<span key={value} className="countdown-digit leading-none">
 							{String(value).padStart(2, "0")}
 						</span>
 					</span>
 					{/* `opacity-70` (not a hardcoded color) so this reads correctly against every
-					    theme's ambient text color, light or dark. */}
-					<span className="text-xs uppercase tracking-wide opacity-70">{label}</span>
+					    theme's ambient text color, light or dark. Tracking tightens alongside the
+					    smaller base size — full `tracking-wide` at that size is what pushed the
+					    longest labels (German "SEKUNDEN", Kurmanji "ÇIRKE") past the column width. */}
+					<span className="text-[0.6rem] tracking-tight break-words opacity-70 uppercase sm:text-xs sm:tracking-wide">
+						{label}
+					</span>
 				</div>
 			))}
 		</div>
