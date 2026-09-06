@@ -31,6 +31,17 @@ Bun, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19, Pr
 it: `pending` while `respondedAt` is null, else `accepted` if any guest has any `ACCEPTED`
 attendance, else `declined`. Recompute it, never store it.
 
+## Admin UI
+
+`/admin` is built on shadcn/ui; components live in `src/components/ui` (`components.json` pins the
+Nova preset, radix base, neutral colour). shadcn's tokens and base-layer rules are scoped to the
+`.admin-root` class on `AdminLayout`'s root element, so they never touch the public site's own
+`globals.css` theming. The Guests page (`src/app/admin/guests`) replaces the old separate
+Import/Export pages; `/admin/import` now redirects there and `/admin/export` is unchanged. The
+invitation create/edit form is a single `InvitationDialog` component
+(`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
+`/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
+
 ## Translations
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
