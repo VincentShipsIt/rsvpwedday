@@ -7,7 +7,14 @@
 	--color-green-dark: #1f3327;
 	--color-ink: #26241f;
 	--font-display: var(--font-cormorant), Georgia, serif;
+	--font-accent: var(--font-cormorant), Georgia, serif;
 	--font-body: var(--font-inter), system-ui, sans-serif;
+}
+
+:root {
+	/* Layout knobs that vary per theme below; keep the editorial defaults here. */
+	--wed-nav-height: 4.5rem;
+	--wed-secondary: var(--color-green-dark);
 }
 
 body {
@@ -20,6 +27,38 @@ h1,
 h2,
 h3 {
 	font-family: var(--font-display);
+}
+
+/*
+ * Three landing-page themes (`SiteTheme` in prisma/schema.prisma), applied via `data-theme` on
+ * `<main>`, the nav wrapper, and the footer. Each block overrides the same tokens used above so
+ * every component that already reads `--color-*`/`--font-*` re-themes for free; only structural
+ * differences (Hero, Story, Events, Gallery) branch in their own components.
+ */
+[data-theme="modern"] {
+	--color-ivory: #f7f5f1;
+	--color-ivory-dark: #efece6;
+	--color-green: #c8552d;
+	--color-green-dark: #a8431f;
+	--color-ink: #111111;
+	--font-display: var(--font-instrument-serif), Georgia, serif;
+	--font-accent: var(--font-instrument-serif), Georgia, serif;
+	--font-body: var(--font-instrument-sans), system-ui, sans-serif;
+	--wed-nav-height: 4rem;
+	--wed-secondary: var(--color-ink);
+}
+
+[data-theme="garden"] {
+	--color-ivory: #f6e7e1;
+	--color-ivory-dark: #efd9d0;
+	--color-green: #b5533c;
+	--color-green-dark: #8a9a7b;
+	--color-ink: #3b2f2f;
+	--font-display: var(--font-lora), Georgia, serif;
+	--font-accent: var(--font-pinyon), cursive;
+	--font-body: var(--font-lora), Georgia, serif;
+	--wed-nav-height: 4.75rem;
+	--wed-secondary: #8a9a7b;
 }
 
 .reveal {
@@ -40,5 +79,11 @@ h3 {
 		opacity: 1;
 		transform: none;
 		transition: none;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
 	}
 }

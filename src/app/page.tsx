@@ -2,22 +2,25 @@ import { Events, type EventView } from "@/components/site/events";
 import { Gallery } from "@/components/site/gallery";
 import { Hero } from "@/components/site/hero";
 import { RsvpSection } from "@/components/site/rsvp-section";
+import { SectionDivider } from "@/components/site/section-divider";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import { Story, type StoryMilestoneView } from "@/components/site/story";
+import { SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
 import { db } from "@/lib/db";
 import { resolveSiteLocale } from "@/lib/site-locale";
+import { dataTheme, resolveSiteTheme } from "@/lib/site-theme";
 
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ lang?: string }>;
+	searchParams: Promise<{ lang?: string; theme?: string }>;
 }) {
-	const { lang } = await searchParams;
+	const { lang, theme: themeParam } = await searchParams;
 	const locale = await resolveSiteLocale(lang);
 	const dictionary = getDictionary(locale);
 	const localeDefinition = locales[locale];
@@ -28,6 +31,8 @@ export default async function LandingPage({
 		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
 		db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 	]);
+
+	const theme = resolveSiteTheme(themeParam, siteContent?.theme ?? SiteTheme.EDITORIAL);
 
 	const coupleNames = settings?.coupleNames ?? "";
 
@@ -71,14 +76,16 @@ export default async function LandingPage({
 			<SiteNav
 				coupleNames={coupleNames}
 				locale={locale}
+				theme={theme}
 				labels={{
 					story: dictionary.site.navStory,
 					events: dictionary.site.navEvents,
 					gallery: dictionary.site.navGallery,
 					rsvp: dictionary.site.navRsvp,
+					language: dictionary.common.languageLabel,
 				}}
 			/>
-			<main lang={locale} dir={localeDefinition.dir}>
+			<main lang={locale} dir={localeDefinition.dir} data-theme={dataTheme[theme]}>
 				<Hero
 					coupleNames={coupleNames}
 					heroImageUrl={siteContent?.heroImageUrl ?? null}
@@ -86,36 +93,47 @@ export default async function LandingPage({
 					firstEventStartsAt={firstEvent?.startsAt ?? null}
 					locale={locale}
 					dictionary={dictionary}
+					theme={theme}
 				/>
+				<SectionDivider theme={theme} />
 				<Story
 					heading={dictionary.site.storyHeading}
 					intro={siteTranslation?.storyIntro ?? ""}
 					milestones={localizedMilestones}
+					theme={theme}
 				/>
+				<SectionDivider theme={theme} />
 				<Events
 					heading={dictionary.site.eventsHeading}
 					events={localizedEvents}
 					locale={locale}
 					dictionary={dictionary}
+					theme={theme}
 				/>
+				<SectionDivider theme={theme} />
 				<Gallery
 					heading={dictionary.site.galleryHeading}
 					imageUrls={siteContent?.galleryUrls ?? []}
+					theme={theme}
 				/>
 				{settings && (
-					<RsvpSection
-						heading={dictionary.site.rsvpHeading}
-						note={siteTranslation?.rsvpNote ?? ""}
-						deadline={settings.rsvpDeadline}
-						replyTo={settings.replyTo}
-						locale={locale}
-						deadlineTemplate={dictionary.site.rsvpDeadlineLabel}
-						questionsTemplate={dictionary.site.rsvpQuestions}
-					/>
+					<>
+						<SectionDivider theme={theme} />
+						<RsvpSection
+							heading={dictionary.site.rsvpHeading}
+							note={siteTranslation?.rsvpNote ?? ""}
+							deadline={settings.rsvpDeadline}
+							replyTo={settings.replyTo}
+							locale={locale}
+							deadlineTemplate={dictionary.site.rsvpDeadlineLabel}
+							questionsTemplate={dictionary.site.rsvpQuestions}
+						/>
+					</>
 				)}
 			</main>
 			<SiteFooter
 				line={t(dictionary.site.footerLine, { coupleNames, year: new Date().getFullYear() })}
+				theme={theme}
 			/>
 		</>
 	);

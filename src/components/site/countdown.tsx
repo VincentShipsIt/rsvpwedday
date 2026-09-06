@@ -27,7 +27,15 @@ function computeRemaining(targetMs: number): Remaining | "today" {
 	};
 }
 
-export function Countdown({ targetDate, labels }: { targetDate: string; labels: CountdownLabels }) {
+export function Countdown({
+	targetDate,
+	labels,
+	variant = "plain",
+}: {
+	targetDate: string;
+	labels: CountdownLabels;
+	variant?: "plain" | "pills";
+}) {
 	const targetMs = new Date(targetDate).getTime();
 	// Starts null so the server-rendered markup and the first client render match; the effect
 	// fills in the real value once mounted, which also keeps the ticking clock off the server render.
@@ -54,14 +62,21 @@ export function Countdown({ targetDate, labels }: { targetDate: string; labels: 
 		[remaining.seconds, labels.seconds],
 	];
 
+	const unitClassName =
+		variant === "pills"
+			? "flex flex-col items-center rounded-full bg-ivory-dark px-4 py-3"
+			: "flex flex-col";
+
 	return (
 		<div className="flex gap-4 text-center sm:gap-8" aria-live="polite">
 			{units.map(([value, label]) => (
-				<div key={label} className="flex flex-col">
+				<div key={label} className={unitClassName}>
 					<span className="font-display text-3xl sm:text-4xl">
 						{String(value).padStart(2, "0")}
 					</span>
-					<span className="text-xs uppercase tracking-wide text-ivory/70">{label}</span>
+					{/* `opacity-70` (not a hardcoded color) so this reads correctly against every
+					    theme's ambient text color, light or dark. */}
+					<span className="text-xs uppercase tracking-wide opacity-70">{label}</span>
 				</div>
 			))}
 		</div>

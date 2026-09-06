@@ -21,7 +21,10 @@ export function RsvpSection({
 	questionsTemplate: string;
 }) {
 	return (
-		<section id="rsvp" className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-24 text-center">
+		<section
+			id="rsvp"
+			className="mx-auto flex max-w-2xl scroll-mt-[var(--wed-nav-height)] flex-col gap-4 px-6 py-24 text-center"
+		>
 			<Reveal className="flex flex-col gap-4">
 				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
 				{note && <p className="text-ink/70">{note}</p>}
