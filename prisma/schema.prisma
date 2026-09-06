@@ -30,6 +30,12 @@ enum EmailKind {
   CONFIRMATION
 }
 
+enum SiteTheme {
+  EDITORIAL
+  MODERN
+  GARDEN
+}
+
 model Settings {
   id           Int      @id @default(1)
   coupleNames  String
@@ -115,6 +121,7 @@ model SiteContent {
   id           Int                      @id @default(1)
   heroImageUrl String?
   galleryUrls  String[]                 @default([])
+  theme        SiteTheme                @default(EDITORIAL)
   updatedAt    DateTime                 @updatedAt
   translations SiteContentTranslation[]
 }
