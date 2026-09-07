@@ -1,4 +1,4 @@
-import { EmailsForm } from "@/app/admin/website/emails/emails-form";
+import { EmailsForm, type EmailsFormProps } from "@/app/admin/website/emails/emails-form";
 import { WebsiteNav } from "@/app/admin/website/website-nav";
 import { EmailKind } from "@/generated/prisma/enums";
 import { getDictionary } from "@/i18n";
@@ -42,17 +42,22 @@ export default async function EmailsPage() {
 						};
 					})
 				)}
-				defaults={Object.fromEntries(
-					KINDS.map((kind) => [
-						kind,
-						Object.fromEntries(
-							localeCodes.map((locale) => {
-								const copy = getDictionary(locale).emails[DICTIONARY_KEY[kind]];
-								return [locale, { subject: copy.subject, heading: copy.heading, body: copy.body }];
-							})
-						),
-					])
-				)}
+				defaults={
+					Object.fromEntries(
+						KINDS.map((kind) => [
+							kind,
+							Object.fromEntries(
+								localeCodes.map((locale) => {
+									const copy = getDictionary(locale).emails[DICTIONARY_KEY[kind]];
+									return [
+										locale,
+										{ subject: copy.subject, heading: copy.heading, body: copy.body },
+									];
+								})
+							),
+						])
+					) as EmailsFormProps["defaults"]
+				}
 				sendingEnabled={Boolean(env.RESEND_API_KEY)}
 			/>
 		</div>

@@ -1,4 +1,4 @@
-import { normalizeRichText } from "@/domain/rich-text";
+import { isRichTextEmpty, normalizeRichText } from "@/domain/rich-text";
 import type { EmailKind } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
 import { t } from "@/i18n";
@@ -34,8 +34,7 @@ export function resolveEmailCopy(
 	const defaults = dictionary.emails[dictionaryKeyByKind[kind]];
 	const subject = override?.subject.trim() || defaults.subject;
 	const heading = override?.heading.trim() || defaults.heading;
-	const body =
-		override?.body && normalizeRichText(override.body) !== "" ? override.body : defaults.body;
+	const body = override && !isRichTextEmpty(override.body) ? override.body : defaults.body;
 	return {
 		subject: t(subject, vars),
 		heading: t(heading, vars),
