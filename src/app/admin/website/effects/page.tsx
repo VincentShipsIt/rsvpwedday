@@ -15,7 +15,7 @@ export default async function EffectsPage() {
 			<WebsiteNav current="/admin/website/effects" />
 			<h1 className="text-2xl font-medium">Effects</h1>
 			<EffectsForm
-				initialOpeningAnimation={siteContent?.openingAnimation ?? OpeningAnimation.SEAL}
+				initialOpeningAnimation={siteContent?.openingAnimation ?? OpeningAnimation.BLOOM}
 				initialParticlesEnabled={siteContent?.particlesEnabled ?? true}
 				initialMusicUrl={siteContent?.musicUrl ?? ""}
 				initialSettings={clampEffectsSettings(siteContent ?? {})}

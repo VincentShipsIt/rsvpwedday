@@ -140,7 +140,7 @@ model SiteContent {
   /// Site-wide effects, edited on `/admin/website/effects`: the first-load cover animation, the
   /// ambient particle layer, and an optional background-music track (an https audio URL, usually
   /// a Blob upload) that guests can toggle from the floating music button.
-  openingAnimation OpeningAnimation @default(SEAL)
+  openingAnimation OpeningAnimation @default(BLOOM)
   particlesEnabled Boolean          @default(true)
   musicUrl         String?
 

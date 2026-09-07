@@ -29,6 +29,12 @@ export const openingChoices: {
 	description: string;
 }[] = [
 	{
+		key: "bloom",
+		opening: OpeningAnimation.BLOOM,
+		label: "Bloom",
+		description: "Botanical branches grow and blossom around your names; petals lift the curtain.",
+	},
+	{
 		key: "seal",
 		opening: OpeningAnimation.SEAL,
 		label: "Wax seal",
@@ -39,12 +45,6 @@ export const openingChoices: {
 		opening: OpeningAnimation.MONOGRAM,
 		label: "Monogram",
 		description: "Your initials are hand-drawn inside a turning ring, then the page irises open.",
-	},
-	{
-		key: "bloom",
-		opening: OpeningAnimation.BLOOM,
-		label: "Bloom",
-		description: "Botanical branches grow and blossom around your names; petals lift the curtain.",
 	},
 	{
 		key: "none",

@@ -106,7 +106,10 @@ export default async function LandingPage({
 	// forces the cover to show again in a session that has already opened one.
 	const openingAnimation = isPreview
 		? OpeningAnimation.NONE
-		: resolveOpeningAnimation(openingParam, siteContent?.openingAnimation ?? OpeningAnimation.SEAL);
+		: resolveOpeningAnimation(
+				openingParam,
+				siteContent?.openingAnimation ?? OpeningAnimation.BLOOM
+			);
 	const hasParticles = !isPreview && (siteContent?.particlesEnabled ?? true);
 	const musicUrl = isPreview ? null : (siteContent?.musicUrl ?? null);
 	const effects = clampEffectsSettings(siteContent ?? {});
