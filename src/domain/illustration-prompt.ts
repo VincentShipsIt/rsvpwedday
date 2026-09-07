@@ -75,7 +75,7 @@ const themeStyles: Record<SiteTheme, string> = {
 	[SiteTheme.EDITORIAL]:
 		"Quiet editorial illustration: fine ink contours over flat washes, generous negative space, warm ivory ground (#faf7f0) with deep pine-green accents (#2f4d3a), soft low side light late in the afternoon.",
 	[SiteTheme.MODERN]:
-		"Spare graphic illustration: bold flat colour shapes with almost no outline, an off-white base tone (#f7f5f1) carried through the scene itself, a single burnt-orange accent (#c8552d), hard clean light and confident geometric composition.",
+		"Spare graphic illustration: bold flat colour shapes with almost no outline, off-white walls, sky and paving (#f7f5f1) that run past the frame on every side, a single burnt-orange accent (#c8552d), hard clean light and confident geometric composition.",
 	[SiteTheme.GARDEN]:
 		"Loose botanical watercolour: wet-in-wet blooms, visible paper grain, dusty-rose ground (#f6e7e1) with terracotta accents (#b5533c), diffuse morning light.",
 	[SiteTheme.MIDNIGHT]:
