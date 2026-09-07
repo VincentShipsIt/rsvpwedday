@@ -1,4 +1,5 @@
 import { RsvpForm } from "@/app/admin/website/rsvp/rsvp-form";
+import { headingDefaults, initialHeadings } from "@/app/admin/website/section-headings";
 import { WebsiteNav } from "@/app/admin/website/website-nav";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
@@ -16,6 +17,8 @@ export default async function RsvpPage() {
 			<WebsiteNav current="/admin/website/rsvp" />
 			<h1 className="text-2xl font-medium">RSVP</h1>
 			<RsvpForm
+				initialHeadings={initialHeadings(siteContent?.translations, "rsvpHeading")}
+				headingDefaults={headingDefaults("rsvpHeading")}
 				initialTranslations={localeCodes.map((code) => ({
 					locale: code,
 					rsvpNote:

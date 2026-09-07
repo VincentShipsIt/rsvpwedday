@@ -6,6 +6,7 @@ import { Card } from "@/components/card";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { StatusBadge } from "@/components/status-badge";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
+import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { Attendance } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -33,10 +34,12 @@ export default async function RsvpPage({
 		notFound();
 	}
 
-	const [settings, events] = await Promise.all([
+	const [settings, allEvents] = await Promise.all([
 		db.settings.findUniqueOrThrow({ where: { id: 1 } }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 	]);
+	// Only the events this household was invited to; the rest never appear on their page.
+	const events = filterToInvited(allEvents, invitedEventIds(invitation.guests));
 
 	const dictionary = getDictionary(invitation.locale);
 	const localeDefinition = locales[invitation.locale];

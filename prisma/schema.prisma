@@ -37,6 +37,7 @@ enum SiteTheme {
   MIDNIGHT
   BOHO
   VINTAGE
+  MEDITERRANEAN
 }
 
 model Settings {
@@ -110,6 +111,18 @@ model EventAttendance {
   @@id([guestId, eventId])
 }
 
+// Per-kind, per-locale overrides for the transactional emails. An empty string keeps the
+// dictionary's default for that field, so a fresh database sends the built-in copy.
+model EmailTemplate {
+  kind    EmailKind
+  locale  Locale
+  subject String    @default("")
+  heading String    @default("")
+  body    String    @default("")
+
+  @@id([kind, locale])
+}
+
 model EmailLog {
   id           String     @id @default(cuid())
   invitationId String
@@ -135,16 +148,21 @@ model SiteContent {
 }
 
 model SiteContentTranslation {
-  siteContentId Int
-  locale        Locale
-  tagline       String      @default("")
-  storyIntro    String      @default("")
-  rsvpNote      String      @default("")
+  siteContentId  Int
+  locale         Locale
+  tagline        String      @default("")
+  storyIntro     String      @default("")
+  rsvpNote       String      @default("")
+  // Section headings; an empty string falls back to the dictionary's default for that locale.
+  storyHeading   String      @default("")
+  eventsHeading  String      @default("")
+  galleryHeading String      @default("")
+  rsvpHeading    String      @default("")
   /// Heading and intro of the `/guide` page, also reused by the home-page teaser and as the
   /// nav label when set (the dictionary's generic "Travel guide" is the fallback).
-  guideTitle    String      @default("")
-  guideIntro    String      @default("")
-  siteContent   SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
+  guideTitle     String      @default("")
+  guideIntro     String      @default("")
+  siteContent    SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
 
   @@id([siteContentId, locale])
 }

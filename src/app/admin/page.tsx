@@ -1,6 +1,7 @@
 import { AdminDashboard, type InvitationRow } from "@/app/admin/admin-dashboard";
 import { computeHeadcount } from "@/domain/headcount";
 import { getInvitationStatus } from "@/domain/invitation";
+import { invitedEventIds } from "@/domain/invitation-events";
 import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -75,6 +76,7 @@ export default async function AdminDashboardPage({
 				email: guest.email,
 				phone: guest.phone,
 			})),
+		eventIds: invitedEventIds(invitation.guests),
 	}));
 
 	const eventRows = events.map((event) => {

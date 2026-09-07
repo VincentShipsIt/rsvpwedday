@@ -1,3 +1,4 @@
+import { richTextToPlainText } from "@/domain/rich-text";
 import { Locale } from "@/generated/prisma/enums";
 import { isLocale } from "@/i18n/locales";
 import { db } from "@/lib/db";
@@ -35,7 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 	const translation =
 		event.translations.find((candidate) => candidate.locale === locale) ?? event.translations[0];
 	const summary = translation?.name ?? event.slug;
-	const description = translation?.description ?? "";
+	const description = richTextToPlainText(translation?.description ?? "");
 
 	const lines = [
 		"BEGIN:VCALENDAR",

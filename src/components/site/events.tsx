@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Card } from "@/components/card";
+import { EventsTimeline } from "@/components/site/events-timeline";
 import { Reveal } from "@/components/site/reveal";
+import { RichText } from "@/components/site/rich-text";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
 import { formatDateTime } from "@/lib/format";
@@ -66,6 +68,9 @@ export function Events({
 			{theme === SiteTheme.VINTAGE && (
 				<VintageEventCards events={events} locale={locale} dictionary={dictionary} />
 			)}
+			{theme === SiteTheme.MEDITERRANEAN && (
+				<EventsTimeline events={events} locale={locale} dictionary={dictionary} />
+			)}
 		</section>
 	);
 }
@@ -79,7 +84,7 @@ function EventDetails({
 		<>
 			<h3 className="text-xl">{event.name}</h3>
 			<p className="text-sm text-ink/70">{formatDateTime(event.startsAt, locale)}</p>
-			{event.description && <p className="text-sm text-ink/70">{event.description}</p>}
+			{event.description && <RichText html={event.description} className="text-sm text-ink/70" />}
 			<p className="text-sm">
 				{dictionary.rsvp.eventVenueLabel}: {event.venue}
 			</p>

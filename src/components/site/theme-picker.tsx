@@ -5,7 +5,7 @@ import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import type { SiteTheme } from "@/generated/prisma/enums";
 import { themeChoices } from "@/lib/site-theme";
 
-// `?pick=1` preview control for comparing all six themes. Deliberately styled the same regardless
+// `?pick=1` preview control for comparing every theme. Deliberately styled the same regardless
 // of the active theme (a fixed dark trigger/listbox) rather than reading `--color-*`, since its
 // whole job is comparing themes and it needs to stay legible over every one of them. A compact
 // dropdown rather than a bar of six buttons: the bar clipped its last option on a phone once a

@@ -74,6 +74,7 @@ export type InvitationRow = {
 		email: string | null;
 		phone: string | null;
 	}[];
+	eventIds: string[];
 };
 
 function toEditTarget(invitation: InvitationRow): InvitationDialogTarget {
@@ -91,6 +92,7 @@ function toEditTarget(invitation: InvitationRow): InvitationDialogTarget {
 			email: guest.email ?? "",
 			phone: guest.phone ?? "",
 		})),
+		eventIds: invitation.eventIds,
 	};
 }
 
@@ -100,10 +102,11 @@ const STATUS_LABELS: Record<InvitationStatus, string> = {
 	declined: "Declined",
 };
 
-const STATUS_BADGE_VARIANT: Record<InvitationStatus, "outline" | "default" | "destructive"> = {
-	pending: "outline",
-	accepted: "default",
-	declined: "destructive",
+// Same palette as the guest-facing `StatusBadge`, so a status reads the same on both sides.
+const STATUS_BADGE_CLASS: Record<InvitationStatus, string> = {
+	pending: "bg-amber-100 text-amber-800",
+	accepted: "bg-emerald-100 text-emerald-800",
+	declined: "bg-red-100 text-red-800",
 };
 
 export function AdminDashboard({
@@ -291,7 +294,11 @@ export function AdminDashboard({
 				</Table>
 			</Card>
 
-			<InvitationDialog target={dialogTarget} onOpenChange={closeDialog} />
+			<InvitationDialog
+				target={dialogTarget}
+				events={eventRows.map((event) => ({ id: event.id, name: event.name }))}
+				onOpenChange={closeDialog}
+			/>
 		</div>
 	);
 }
@@ -332,7 +339,7 @@ function InvitationRowItem({
 		<TableRow>
 			<TableCell>{invitation.email}</TableCell>
 			<TableCell>
-				<Badge variant={STATUS_BADGE_VARIANT[invitation.status]}>
+				<Badge variant="secondary" className={STATUS_BADGE_CLASS[invitation.status]}>
 					{STATUS_LABELS[invitation.status]}
 				</Badge>
 			</TableCell>
@@ -360,7 +367,7 @@ function InvitationRowItem({
 								<EllipsisIcon />
 							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
+						<DropdownMenuContent align="end" className="w-auto min-w-44">
 							<DropdownMenuItem onSelect={copyLink}>
 								<CopyIcon />
 								Copy link

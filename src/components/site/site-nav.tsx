@@ -15,6 +15,19 @@ const navClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.MIDNIGHT]: "border-b",
 	[SiteTheme.BOHO]: "border-b-4",
 	[SiteTheme.VINTAGE]: "border-b",
+	[SiteTheme.MEDITERRANEAN]: "border-b",
+};
+
+// The couple's wordmark is set in `--font-accent` everywhere at the same size; kept as a record
+// so a theme with a lighter script face can step up on its own.
+const wordmarkClassNames: Record<SiteTheme, string> = {
+	[SiteTheme.EDITORIAL]: "text-lg",
+	[SiteTheme.MODERN]: "text-lg",
+	[SiteTheme.GARDEN]: "text-lg",
+	[SiteTheme.MIDNIGHT]: "text-lg",
+	[SiteTheme.BOHO]: "text-lg",
+	[SiteTheme.VINTAGE]: "text-lg",
+	[SiteTheme.MEDITERRANEAN]: "text-lg",
 };
 
 const linkClassNames: Record<SiteTheme, string> = {
@@ -24,6 +37,7 @@ const linkClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.MIDNIGHT]: "",
 	[SiteTheme.BOHO]: "rounded-full px-3 py-1",
 	[SiteTheme.VINTAGE]: "",
+	[SiteTheme.MEDITERRANEAN]: "text-xs uppercase tracking-[0.2em]",
 };
 
 export function SiteNav({
@@ -48,7 +62,7 @@ export function SiteNav({
 			className={`fixed inset-x-0 top-0 z-20 ${navClassNames[theme]}${isOverPhoto ? " nav-over-photo" : ""}`}
 		>
 			<nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-sm">
-				<Link href="/#top" className="font-accent text-lg">
+				<Link href="/#top" className={`font-accent ${wordmarkClassNames[theme]}`}>
 					{coupleNames}
 				</Link>
 				<div className="flex items-center gap-4">

@@ -13,6 +13,7 @@ const wrapperClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.MIDNIGHT]: "grid grid-cols-1 gap-3 sm:grid-cols-2",
 	[SiteTheme.BOHO]: "grid grid-cols-1 gap-4 sm:grid-cols-2",
 	[SiteTheme.VINTAGE]: "columns-1 gap-6 sm:columns-2 lg:columns-3 [&>*]:mb-6",
+	[SiteTheme.MEDITERRANEAN]: "columns-1 gap-6 sm:columns-2 lg:columns-3 [&>*]:mb-6",
 };
 
 const imageWrapperClassNames: Record<SiteTheme, string> = {
@@ -24,10 +25,12 @@ const imageWrapperClassNames: Record<SiteTheme, string> = {
 	// A warm paper mat around each photo: padding plus the ivory ground shows as a border, like a
 	// picture frame's mat board.
 	[SiteTheme.VINTAGE]: "overflow-hidden border border-ink/10 bg-ivory p-2 shadow-sm",
+	// Garden's bare rounded masonry tiles: the photos carry the section, no mat or hairline.
+	[SiteTheme.MEDITERRANEAN]: "overflow-hidden rounded-3xl",
 };
 
 // Matches each theme's actual rendered column count per breakpoint (see `wrapperClassNames`
-// above) rather than one shared guess: editorial/garden/vintage stay 3-up from `lg`, modern goes
+// above) rather than one shared guess: editorial/garden/vintage/mediterranean stay 3-up from `lg`, modern goes
 // 3-up already at `sm`, and midnight/boho never pass 2-up.
 const imageSizes: Record<SiteTheme, string> = {
 	[SiteTheme.EDITORIAL]: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
@@ -36,6 +39,7 @@ const imageSizes: Record<SiteTheme, string> = {
 	[SiteTheme.MIDNIGHT]: "(min-width: 640px) 50vw, 100vw",
 	[SiteTheme.BOHO]: "(min-width: 640px) 50vw, 100vw",
 	[SiteTheme.VINTAGE]: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
+	[SiteTheme.MEDITERRANEAN]: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
 };
 
 export function Gallery({

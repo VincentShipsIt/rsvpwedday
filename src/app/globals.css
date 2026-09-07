@@ -8,9 +8,10 @@
 	--color-green: #2f4d3a;
 	--color-green-dark: #1f3327;
 	--color-ink: #26241f;
-	/* VINTAGE-only accents: a faded rose for small details (seal, secondary nav accent) and a
-	   worn gold for the wax-seal fill. No other theme references these tokens, so the default
-	   value here is simply the real VINTAGE value rather than a neutral placeholder. */
+	/* VINTAGE accents: a faded rose for small details (seal, secondary nav accent) and a worn
+	   gold for the wax-seal fill. MEDITERRANEAN re-points `--color-gold` at its lemon yellow (see
+	   its block below); no other theme references these tokens, so the default value here is
+	   simply the real VINTAGE value rather than a neutral placeholder. */
 	--color-rose: #b97a73;
 	--color-gold: #cd9f3f;
 	--font-display: var(--font-cormorant), Georgia, serif;
@@ -112,8 +113,13 @@ body {
  * heading and link individually.
  */
 main,
-header {
+header,
+footer {
 	color: var(--color-ink);
+	/* `font-family` has the same gap: `body` resolves `--font-body` once against the default
+	   theme, so a theme that swaps its body face (GARDEN, VINTAGE, MEDITERRANEAN all set Lora)
+	   would otherwise still read in Inter everywhere no utility overrides it. */
+	font-family: var(--font-body);
 }
 
 /*
@@ -136,6 +142,66 @@ h1,
 h2,
 h3 {
 	font-family: var(--font-display);
+}
+
+/*
+ * Admin-authored copy (see `src/domain/rich-text.ts` for the allowed subset). One rule set
+ * serves both the public site, where it inherits the theme's fonts and the `text-ink/70`
+ * colour set on the wrapper, and the admin editor, whose ProseMirror surface carries the same
+ * class so the couple sees roughly what guests will.
+ */
+.rich-text > * + * {
+	margin-top: 0.85em;
+}
+.rich-text h3,
+.rich-text h4 {
+	font-family: var(--font-display);
+	line-height: 1.2;
+	color: inherit;
+}
+.rich-text h3 {
+	font-size: 1.5em;
+}
+.rich-text h4 {
+	font-size: 1.2em;
+}
+.rich-text > * + h3,
+.rich-text > * + h4 {
+	margin-top: 1.4em;
+}
+.rich-text strong {
+	font-weight: 600;
+}
+.rich-text ul,
+.rich-text ol {
+	padding-inline-start: 1.4em;
+	text-align: start;
+}
+.rich-text ul {
+	list-style: disc;
+}
+.rich-text ol {
+	list-style: decimal;
+}
+.rich-text li + li {
+	margin-top: 0.25em;
+}
+.rich-text a {
+	text-decoration: underline;
+	text-underline-offset: 0.15em;
+}
+.rich-text blockquote {
+	border-inline-start: 2px solid currentColor;
+	padding-inline-start: 1em;
+	opacity: 0.85;
+}
+/* Tiptap's Placeholder extension puts the text on the empty first paragraph. */
+.rich-text > p.is-editor-empty:first-child::before {
+	content: attr(data-placeholder);
+	color: var(--muted-foreground);
+	pointer-events: none;
+	float: left;
+	height: 0;
 }
 
 /*
@@ -232,6 +298,30 @@ h3 {
 	--wed-secondary: var(--color-rose);
 	--wed-nav-bg: rgb(248 240 215 / 0.9);
 	--wed-nav-border: rgb(74 56 38 / 0.12);
+}
+
+[data-theme="mediterranean"] {
+	/* Lemon-grove palette after the Mediterranean-tile invitations it's modelled on: warm cream
+	   ground, pale-lemon secondary surfaces (countdown pills, photo placeholders), Mediterranean
+	   blue as the accent/link token (`--color-green` is the accent slot, not literally green),
+	   leaf green for the lemon sprigs, deep navy ink. `--color-gold` is the lemon yellow itself,
+	   which `LemonSprig`/`LemonGlyph` read. */
+	--color-ivory: #fdf9ec;
+	--color-ivory-dark: #f8eec2;
+	--color-green: #1d4f91;
+	--color-green-dark: #4f7a3c;
+	--color-ink: #1f2b45;
+	--color-gold: #f2c53d;
+	--font-display: var(--font-playfair), Georgia, serif;
+	/* Pinyon (Garden's script) rather than a hairline face: the wordmark has to stay legible at
+	   nav size. The hero tagline is Playfair italic, not script, for the same reason. */
+	--font-accent: var(--font-pinyon), cursive;
+	--font-body: var(--font-lora), Georgia, serif;
+	/* Same mobile-toggle-button arithmetic as midnight's block above. */
+	--wed-nav-height: 4.75rem;
+	--wed-secondary: var(--color-gold);
+	--wed-nav-bg: rgb(253 249 236 / 0.92);
+	--wed-nav-border: rgb(29 79 145 / 0.2);
 }
 
 /*
@@ -390,6 +480,17 @@ h3 {
 	.hero-photo-img {
 		animation: hero-photo-zoom 6s ease-out forwards;
 	}
+}
+
+/*
+ * Hand-drawn heart texture (MEDITERRANEAN): five lopsided outline hearts at 9-20px, the theme
+ * blue at very low opacity, scattered over a 520px tile repeated across the page ground. Static
+ * on purpose; texture, not particles.
+ */
+main[data-theme="mediterranean"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cg transform='translate(60 80) rotate(-12) scale(0.833)' opacity='0.3'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='1.92' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(330 50) rotate(15) scale(0.458)' opacity='0.22'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='3.49' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(210 260) rotate(-6) scale(0.625)' opacity='0.28'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='2.56' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(450 330) rotate(20) scale(0.375)' opacity='0.2'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='4.27' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(120 420) rotate(8) scale(0.542)' opacity='0.24'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='2.95' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+	background-size: 520px 520px;
+	background-repeat: repeat;
 }
 
 /*
@@ -588,4 +689,17 @@ h3 {
 	.admin-root {
 		@apply bg-background text-foreground;
 	}
+}
+
+/*
+ * The unlayered `main`/`header`/`footer` rules above paint the public site's ivory and ink on
+ * any such element, and being unlayered they beat every Tailwind utility. The admin uses the
+ * same landmarks (its content `main`, the login page's `main`), so re-declare them here at the
+ * same unlayered specificity, scoped to `.admin-root`, or the admin renders cream stripes.
+ */
+.admin-root main,
+.admin-root header,
+.admin-root footer {
+	background-color: var(--background);
+	color: var(--foreground);
 }
