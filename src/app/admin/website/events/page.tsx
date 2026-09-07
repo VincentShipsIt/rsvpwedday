@@ -20,6 +20,10 @@ export default async function EventsPage() {
 		<div className="flex flex-col gap-6">
 			<WebsiteNav current="/admin/website/events" />
 			<h1 className="text-2xl font-medium">Events</h1>
+			<p className="text-sm text-muted-foreground">
+				The first event&apos;s start date is the wedding date: it drives the date on the hero, the
+				countdown, and the calendar files guests download.
+			</p>
 			<EventsForm
 				initialHeadings={initialHeadings(siteContent?.translations, "eventsHeading")}
 				headingDefaults={headingDefaults("eventsHeading")}
