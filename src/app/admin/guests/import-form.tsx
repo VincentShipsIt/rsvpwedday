@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { type ChangeEvent, useMemo, useState, useTransition } from "react";
 import { commitImport } from "@/app/admin/guests/actions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -12,14 +14,22 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { IMPORT_CSV_HEADER, parseImportCsv } from "@/domain/csv";
+import { IMPORT_CSV_HEADER, IMPORT_EVENTS_SEPARATOR, parseImportCsv } from "@/domain/csv";
 
-export function GuestsImportForm() {
+export function GuestsImportForm({ eventSlugs }: { eventSlugs: string[] }) {
 	const [text, setText] = useState(`${IMPORT_CSV_HEADER.join(",")}\n`);
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
 
-	const preview = useMemo(() => parseImportCsv(text), [text]);
+	const preview = useMemo(() => parseImportCsv(text, { eventSlugs }), [text, eventSlugs]);
+
+	async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+		const file = event.target.files?.[0];
+		if (!file) {
+			return;
+		}
+		setText(await file.text());
+	}
 
 	function handleCommit() {
 		setError(null);
@@ -33,6 +43,10 @@ export function GuestsImportForm() {
 
 	return (
 		<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-1.5">
+				<Label htmlFor="guests-csv-file">Upload the filled template</Label>
+				<Input id="guests-csv-file" type="file" accept=".csv,text/csv" onChange={handleFile} />
+			</div>
 			<Textarea
 				className="h-48 font-mono text-xs"
 				value={text}
@@ -54,6 +68,7 @@ export function GuestsImportForm() {
 						<TableHead>Locale</TableHead>
 						<TableHead>Allowance</TableHead>
 						<TableHead>Guests</TableHead>
+						<TableHead>Events</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -66,6 +81,11 @@ export function GuestsImportForm() {
 								{invitation.guests
 									.map((guest) => `${guest.firstName} ${guest.lastName}`)
 									.join(", ")}
+							</TableCell>
+							<TableCell className="text-muted-foreground">
+								{invitation.eventSlugs
+									? invitation.eventSlugs.join(`${IMPORT_EVENTS_SEPARATOR} `)
+									: "All events"}
 							</TableCell>
 						</TableRow>
 					))}

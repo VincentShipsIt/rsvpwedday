@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { InvitationGuestInput } from "@/app/admin/invitations/actions";
 import { createInvitation, updateInvitation } from "@/app/admin/invitations/actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -52,13 +53,18 @@ export type InvitationDialogTarget =
 			locale: Locale;
 			companionAllowance: number;
 			guests: InvitationGuestInput[];
+			eventIds: string[];
 	  };
+
+export type InvitationDialogEvent = { id: string; name: string };
 
 export function InvitationDialog({
 	target,
+	events,
 	onOpenChange,
 }: {
 	target: InvitationDialogTarget | null;
+	events: InvitationDialogEvent[];
 	onOpenChange: (open: boolean) => void;
 }) {
 	const router = useRouter();
@@ -66,6 +72,7 @@ export function InvitationDialog({
 	const [locale, setLocale] = useState<Locale>("en");
 	const [companionAllowance, setCompanionAllowance] = useState(0);
 	const [guests, setGuests] = useState<GuestRow[]>([]);
+	const [eventIds, setEventIds] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
 
@@ -81,13 +88,22 @@ export function InvitationDialog({
 			setLocale(target.locale);
 			setCompanionAllowance(target.companionAllowance);
 			setGuests(target.guests.map((guest) => ({ ...guest, key: createGuestKey() })));
+			setEventIds(target.eventIds);
 		} else {
 			setEmail("");
 			setLocale("en");
 			setCompanionAllowance(0);
 			setGuests([]);
+			// A new household is invited to everything until the couple unticks something.
+			setEventIds(events.map((event) => event.id));
 		}
-	}, [target]);
+	}, [target, events]);
+
+	function toggleEvent(eventId: string, checked: boolean) {
+		setEventIds((current) =>
+			checked ? Array.from(new Set([...current, eventId])) : current.filter((id) => id !== eventId)
+		);
+	}
 
 	function addGuest() {
 		setGuests((current) => [...current, emptyGuestRow()]);
@@ -114,6 +130,7 @@ export function InvitationDialog({
 			locale,
 			companionAllowance,
 			guests: guests.map(({ key, ...guest }) => guest),
+			eventIds,
 		};
 
 		startTransition(async () => {
@@ -191,6 +208,33 @@ export function InvitationDialog({
 						/>
 					</div>
 
+					<fieldset className="flex flex-col gap-2 rounded-lg border p-4">
+						<legend className="px-1 text-sm font-medium">Invited to</legend>
+						{events.length === 0 && (
+							<p className="text-sm text-muted-foreground">
+								No events yet. Add them under Website.
+							</p>
+						)}
+						{events.map((event) => {
+							const checkboxId = `invitation-event-${event.id}`;
+							return (
+								<div key={event.id} className="flex items-center gap-2">
+									<Checkbox
+										id={checkboxId}
+										checked={eventIds.includes(event.id)}
+										onCheckedChange={(checked) => toggleEvent(event.id, checked === true)}
+									/>
+									<Label htmlFor={checkboxId} className="font-normal">
+										{event.name}
+									</Label>
+								</div>
+							);
+						})}
+						{events.length > 0 && eventIds.length === 0 && (
+							<p className="text-sm text-destructive">Pick at least one event.</p>
+						)}
+					</fieldset>
+
 					<fieldset className="flex flex-col gap-4 rounded-lg border p-4">
 						<legend className="px-1 text-sm font-medium">Guests</legend>
 						{guests.map((guest) => (
@@ -254,7 +298,11 @@ export function InvitationDialog({
 				</div>
 
 				<DialogFooter>
-					<Button type="button" disabled={isPending} onClick={handleSubmit}>
+					<Button
+						type="button"
+						disabled={isPending || eventIds.length === 0}
+						onClick={handleSubmit}
+					>
 						{target?.mode === "edit" ? "Save" : "Create invitation"}
 					</Button>
 				</DialogFooter>

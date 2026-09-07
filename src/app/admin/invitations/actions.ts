@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { newToken } from "@/domain/token";
+import type { Prisma } from "@/generated/prisma/client";
 import type { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
@@ -21,7 +22,33 @@ export type InvitationInput = {
 	locale: Locale;
 	companionAllowance: number;
 	guests: InvitationGuestInput[];
+	// Events this household is invited to; every guest gets an attendance row per event.
+	eventIds: string[];
 };
+
+// Brings one guest's attendance rows in line with the household's event list: rows for events
+// no longer on the list go (with whatever answer they held), missing ones are created pending.
+async function syncGuestAttendance(
+	tx: Prisma.TransactionClient,
+	guestId: string,
+	eventIds: string[]
+) {
+	await tx.eventAttendance.deleteMany({ where: { guestId, eventId: { notIn: eventIds } } });
+	for (const eventId of eventIds) {
+		await tx.eventAttendance.upsert({
+			where: { guestId_eventId: { guestId, eventId } },
+			create: { guestId, eventId },
+			update: {},
+		});
+	}
+}
+
+async function validEventIds(eventIds: string[]): Promise<string[] | null> {
+	const events = await db.event.findMany({ select: { id: true } });
+	const known = new Set(events.map((event) => event.id));
+	const selected = eventIds.filter((id) => known.has(id));
+	return selected.length > 0 ? selected : null;
+}
 
 function toGuestData(guest: InvitationGuestInput) {
 	return {
@@ -38,7 +65,10 @@ export async function createInvitation(input: InvitationInput): Promise<FormActi
 		return { ok: false, error: "Email and at least one guest are required" };
 	}
 
-	const events = await db.event.findMany({ select: { id: true } });
+	const eventIds = await validEventIds(input.eventIds);
+	if (!eventIds) {
+		return { ok: false, error: "Pick at least one event" };
+	}
 
 	await db.invitation.create({
 		data: {
@@ -49,7 +79,7 @@ export async function createInvitation(input: InvitationInput): Promise<FormActi
 			guests: {
 				create: input.guests.map((guest) => ({
 					...toGuestData(guest),
-					attendance: { create: events.map((event) => ({ eventId: event.id })) },
+					attendance: { create: eventIds.map((eventId) => ({ eventId })) },
 				})),
 			},
 		},
@@ -67,7 +97,10 @@ export async function updateInvitation(
 		return { ok: false, error: "Email and at least one guest are required" };
 	}
 
-	const events = await db.event.findMany({ select: { id: true } });
+	const eventIds = await validEventIds(input.eventIds);
+	if (!eventIds) {
+		return { ok: false, error: "Pick at least one event" };
+	}
 	const existingGuests = await db.guest.findMany({
 		where: { invitationId, addedByGuest: false },
 	});
@@ -91,10 +124,19 @@ export async function updateInvitation(
 					data: {
 						invitationId,
 						...toGuestData(guest),
-						attendance: { create: events.map((event) => ({ eventId: event.id })) },
+						attendance: { create: eventIds.map((eventId) => ({ eventId })) },
 					},
 				});
 			}
+		}
+
+		// Companions the guest added ride along with the household, so they follow the same list.
+		const householdGuests = await tx.guest.findMany({
+			where: { invitationId },
+			select: { id: true },
+		});
+		for (const guest of householdGuests) {
+			await syncGuestAttendance(tx, guest.id, eventIds);
 		}
 
 		await tx.invitation.update({

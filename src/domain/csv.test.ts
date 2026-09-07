@@ -5,6 +5,7 @@ import {
 	parseImportCsv,
 	serializeCsvRow,
 	serializeExportCsv,
+	serializeImportTemplateCsv,
 } from "@/domain/csv";
 import { GuestKind, Locale } from "@/generated/prisma/enums";
 
@@ -48,9 +49,9 @@ describe("parseImportCsv", () => {
 	it("merges rows sharing an email into one invitation", () => {
 		const text = [
 			IMPORT_CSV_HEADER.join(","),
-			"a@example.com,en,1,Jane,Doe,ADULT,,",
-			"a@example.com,en,1,Jack,Doe,CHILD,,",
-			"b@example.com,de,0,Max,Muster,ADULT,max@example.com,",
+			"a@example.com,en,1,Jane,Doe,ADULT,,,",
+			"a@example.com,en,1,Jack,Doe,CHILD,,,",
+			"b@example.com,de,0,Max,Muster,ADULT,max@example.com,,",
 		].join("\n");
 
 		const result = parseImportCsv(text);
@@ -67,13 +68,42 @@ describe("parseImportCsv", () => {
 		const second = result.invitations.find((invitation) => invitation.email === "b@example.com");
 		expect(second?.guests[0]?.email).toBe("max@example.com");
 		expect(second?.guests[0]?.phone).toBeNull();
+		expect(first?.eventSlugs).toBeNull();
+	});
+
+	it("reads the events column as a union across a household's rows", () => {
+		const text = [
+			IMPORT_CSV_HEADER.join(","),
+			"a@example.com,en,0,Jane,Doe,ADULT,,,ceremony;reception",
+			"a@example.com,en,0,Jack,Doe,CHILD,,,ceremony",
+		].join("\n");
+		const result = parseImportCsv(text, { eventSlugs: ["ceremony", "reception", "brunch"] });
+		expect(result.errors).toEqual([]);
+		expect(result.invitations[0]?.eventSlugs).toEqual(["ceremony", "reception"]);
+	});
+
+	it("rejects an event slug the site does not have", () => {
+		const text = [IMPORT_CSV_HEADER.join(","), "a@example.com,en,0,Jane,Doe,ADULT,,,party"].join(
+			"\n"
+		);
+		const result = parseImportCsv(text, { eventSlugs: ["ceremony"] });
+		expect(result.errors[0]).toContain('unknown event "party"');
+	});
+
+	it("produces a template the importer accepts", () => {
+		const template = serializeImportTemplateCsv(["ceremony", "reception", "brunch"]);
+		const result = parseImportCsv(template, { eventSlugs: ["ceremony", "reception", "brunch"] });
+		expect(result.errors).toEqual([]);
+		expect(result.invitations).toHaveLength(2);
+		expect(result.invitations[0]?.eventSlugs).toEqual(["ceremony", "reception"]);
+		expect(result.invitations[1]?.eventSlugs).toBeNull();
 	});
 
 	it("reports an invalid locale on its own row without dropping other rows", () => {
 		const text = [
 			IMPORT_CSV_HEADER.join(","),
-			"a@example.com,fr,0,Jane,Doe,ADULT,,",
-			"b@example.com,en,0,Max,Muster,ADULT,,",
+			"a@example.com,fr,0,Jane,Doe,ADULT,,,",
+			"b@example.com,en,0,Max,Muster,ADULT,,,",
 		].join("\n");
 
 		const result = parseImportCsv(text);

@@ -70,7 +70,11 @@ export const IMPORT_CSV_HEADER = [
 	"kind",
 	"guestEmail",
 	"guestPhone",
+	"events",
 ] as const;
+
+// Event slugs in the `events` column are separated by this, since a comma would split the cell.
+export const IMPORT_EVENTS_SEPARATOR = ";";
 
 export type ImportGuestRow = {
 	firstName: string;
@@ -85,6 +89,13 @@ export type ImportInvitation = {
 	locale: Locale;
 	companionAllowance: number;
 	guests: ImportGuestRow[];
+	// `null` means the column was left empty: invite this household to every event.
+	eventSlugs: string[] | null;
+};
+
+export type ImportCsvOptions = {
+	// When known, every slug in the `events` column is checked against this list.
+	eventSlugs?: string[];
 };
 
 export type ImportCsvResult = {
@@ -100,7 +111,7 @@ function isGuestKind(value: string): value is GuestKind {
 	return Object.hasOwn(GuestKind, value);
 }
 
-export function parseImportCsv(text: string): ImportCsvResult {
+export function parseImportCsv(text: string, options: ImportCsvOptions = {}): ImportCsvResult {
 	const rows = parseCsvRows(text).filter((row) => row.some((cell) => cell.trim() !== ""));
 	if (rows.length === 0) {
 		return { invitations: [], errors: ["CSV is empty"] };
@@ -126,8 +137,17 @@ export function parseImportCsv(text: string): ImportCsvResult {
 			return;
 		}
 
-		const [email, localeRaw, allowanceRaw, firstName, lastName, kindRaw, guestEmail, guestPhone] =
-			row.map((cell) => cell.trim());
+		const [
+			email,
+			localeRaw,
+			allowanceRaw,
+			firstName,
+			lastName,
+			kindRaw,
+			guestEmail,
+			guestPhone,
+			eventsRaw,
+		] = row.map((cell) => cell.trim());
 
 		if (!email) {
 			errors.push(`Row ${rowNumber}: email is required`);
@@ -151,12 +171,35 @@ export function parseImportCsv(text: string): ImportCsvResult {
 			return;
 		}
 
+		const eventSlugs = eventsRaw
+			? eventsRaw
+					.split(IMPORT_EVENTS_SEPARATOR)
+					.map((slug) => slug.trim())
+					.filter((slug) => slug !== "")
+			: null;
+		if (eventSlugs && options.eventSlugs) {
+			const unknown = eventSlugs.find((slug) => !options.eventSlugs?.includes(slug));
+			if (unknown) {
+				errors.push(
+					`Row ${rowNumber}: unknown event "${unknown}" (use ${options.eventSlugs.join(", ")})`
+				);
+				return;
+			}
+		}
+
 		const invitation = invitationsByEmail.get(email) ?? {
 			email,
 			locale: localeRaw,
 			companionAllowance,
 			guests: [],
+			eventSlugs,
 		};
+		// Rows of one household may list events on any row; the union is what the household gets.
+		if (eventSlugs) {
+			invitation.eventSlugs = Array.from(
+				new Set([...(invitation.eventSlugs ?? []), ...eventSlugs])
+			);
+		}
 		invitation.guests.push({
 			firstName,
 			lastName,
@@ -168,6 +211,33 @@ export function parseImportCsv(text: string): ImportCsvResult {
 	});
 
 	return { invitations: Array.from(invitationsByEmail.values()), errors };
+}
+
+/*
+ * The template the admin downloads before filling in a guest list: the exact header the importer
+ * checks, plus example rows that show a household with two guests limited to some events and a
+ * single guest invited to everything. The examples use a reserved example.com address so a
+ * template imported by mistake is obvious in the dashboard rather than mixed in with real guests.
+ */
+export function serializeImportTemplateCsv(eventSlugs: string[]): string {
+	const someEvents = eventSlugs.slice(0, Math.max(1, eventSlugs.length - 1));
+	const lines = [
+		serializeCsvRow([...IMPORT_CSV_HEADER]),
+		serializeCsvRow([
+			"family@example.com",
+			"en",
+			"0",
+			"Jane",
+			"Doe",
+			"ADULT",
+			"jane@example.com",
+			"+41 79 000 00 00",
+			someEvents.join(IMPORT_EVENTS_SEPARATOR),
+		]),
+		serializeCsvRow(["family@example.com", "en", "0", "Sam", "Doe", "CHILD", "", "", ""]),
+		serializeCsvRow(["friend@example.com", "de", "1", "Max", "Muster", "ADULT", "", "", ""]),
+	];
+	return lines.join("\n");
 }
 
 export type ExportGuestRow = {

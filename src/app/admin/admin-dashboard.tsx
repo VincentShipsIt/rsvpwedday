@@ -74,6 +74,7 @@ export type InvitationRow = {
 		email: string | null;
 		phone: string | null;
 	}[];
+	eventIds: string[];
 };
 
 function toEditTarget(invitation: InvitationRow): InvitationDialogTarget {
@@ -91,6 +92,7 @@ function toEditTarget(invitation: InvitationRow): InvitationDialogTarget {
 			email: guest.email ?? "",
 			phone: guest.phone ?? "",
 		})),
+		eventIds: invitation.eventIds,
 	};
 }
 
@@ -292,7 +294,11 @@ export function AdminDashboard({
 				</Table>
 			</Card>
 
-			<InvitationDialog target={dialogTarget} onOpenChange={closeDialog} />
+			<InvitationDialog
+				target={dialogTarget}
+				events={eventRows.map((event) => ({ id: event.id, name: event.name }))}
+				onOpenChange={closeDialog}
+			/>
 		</div>
 	);
 }
