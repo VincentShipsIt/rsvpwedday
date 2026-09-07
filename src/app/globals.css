@@ -434,6 +434,38 @@ h3 {
 }
 
 /*
+ * Heart particles (MEDITERRANEAN, `HeartParticles`). Each heart starts just below the viewport
+ * and drifts to just above it with a gentle sway; `--heart-opacity` isn't used because the
+ * element's own `opacity` style is the per-heart ceiling and the keyframes only fade in and out
+ * relative to it. No animation at all under reduced motion: the layer is purely decorative, so
+ * the hearts simply stay hidden below the fold.
+ */
+@keyframes heart-drift {
+	0% {
+		transform: translate3d(0, 0, 0) rotate(-8deg);
+	}
+	50% {
+		transform: translate3d(18px, -55vh, 0) rotate(8deg);
+	}
+	100% {
+		transform: translate3d(-6px, -110vh, 0) rotate(-8deg);
+	}
+}
+
+.heart-particle {
+	animation-name: heart-drift;
+	animation-timing-function: linear;
+	animation-iteration-count: infinite;
+	will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.heart-particle {
+		animation: none;
+	}
+}
+
+/*
  * Countdown digit slide (Part: motion pass). Each unit's number sits in an overflow-hidden box;
  * `Countdown` keys the inner span by value so React remounts it on change, and the fresh mount
  * plays this animation from its `from` state (`fill-mode: both` keeps it there during any delay

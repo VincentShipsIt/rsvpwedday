@@ -6,48 +6,64 @@
  */
 export function LemonSprig({ className }: { className?: string }) {
 	return (
-		<svg aria-hidden="true" viewBox="0 0 160 120" className={className}>
-			<g transform="rotate(18 70 92)">
-				<ellipse cx="70" cy="92" rx="24" ry="16" fill="var(--color-gold)" />
-				<ellipse cx="93" cy="92" rx="4.5" ry="3.5" fill="var(--color-gold)" />
-				<ellipse cx="62" cy="86" rx="8" ry="4" fill="#ffffff" opacity="0.28" />
-			</g>
+		<svg aria-hidden="true" viewBox="0 0 200 140" className={className}>
+			{/* One branch, two leaves on it, two lemons hanging off it: drawn back to front so the
+			    leaves overlap the fruit the way a real sprig does. */}
 			<path
-				d="M14 76C26 42 60 32 90 40C78 68 46 86 14 76Z"
+				d="M12 128C60 110 110 70 165 28"
+				fill="none"
+				stroke="var(--color-green-dark)"
+				strokeWidth="3"
+				strokeLinecap="round"
+			/>
+			<path
+				d="M118 58C112 32 140 14 166 22 158 46 138 60 118 58Z"
 				fill="var(--color-green-dark)"
 				stroke="var(--color-ink)"
 				strokeOpacity="0.12"
 			/>
 			<path
-				d="M20 74C40 60 60 50 86 44"
+				d="M120 56C134 42 150 30 164 24"
 				fill="none"
 				stroke="var(--color-ivory)"
 				strokeWidth="1.5"
 				strokeLinecap="round"
 				opacity="0.7"
 			/>
-			<g transform="rotate(-26 112 60)">
+			<g transform="rotate(-20 150 84)">
 				<ellipse
-					cx="112"
-					cy="60"
-					rx="32"
+					cx="150"
+					cy="84"
+					rx="24"
+					ry="17"
+					fill="var(--color-gold)"
+					stroke="var(--color-ink)"
+					strokeOpacity="0.12"
+				/>
+				<ellipse cx="173" cy="84" rx="4.5" ry="3.5" fill="var(--color-gold)" />
+				<ellipse cx="142" cy="77" rx="8" ry="4" fill="#ffffff" opacity="0.3" />
+			</g>
+			<g transform="rotate(-32 96 98)">
+				<ellipse
+					cx="96"
+					cy="98"
+					rx="31"
 					ry="22"
 					fill="var(--color-gold)"
 					stroke="var(--color-ink)"
 					strokeOpacity="0.12"
 				/>
-				<ellipse cx="143" cy="60" rx="5.5" ry="4.5" fill="var(--color-gold)" />
-				<ellipse cx="102" cy="51" rx="11" ry="5.5" fill="#ffffff" opacity="0.3" />
+				<ellipse cx="126" cy="98" rx="5.5" ry="4.5" fill="var(--color-gold)" />
+				<ellipse cx="86" cy="89" rx="11" ry="5.5" fill="#ffffff" opacity="0.3" />
 			</g>
 			<path
-				d="M58 108C58 84 80 70 104 74C98 98 80 112 58 108Z"
+				d="M52 110C40 80 70 62 96 70 88 96 66 112 52 110Z"
 				fill="var(--color-green-dark)"
-				opacity="0.9"
 				stroke="var(--color-ink)"
 				strokeOpacity="0.12"
 			/>
 			<path
-				d="M62 106C72 92 86 82 100 76"
+				d="M54 108C66 90 80 78 94 72"
 				fill="none"
 				stroke="var(--color-ivory)"
 				strokeWidth="1.5"
