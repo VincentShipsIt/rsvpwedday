@@ -20,7 +20,7 @@ import { locales } from "@/i18n/locales";
 import { db } from "@/lib/db";
 import { guideSectionsQuery, localizeGuideSections } from "@/lib/guide-content";
 import { resolveOpeningAnimation } from "@/lib/site-effects";
-import { buildSiteLinks } from "@/lib/site-links";
+import { buildSiteLinks, homeAnchorLinks } from "@/lib/site-links";
 import { resolveSiteLocale } from "@/lib/site-locale";
 import { dataTheme, resolveSiteTheme } from "@/lib/site-theme";
 
@@ -170,7 +170,7 @@ export default async function LandingPage({
 				coupleNames={coupleNames}
 				locale={locale}
 				theme={theme}
-				links={links}
+				links={homeAnchorLinks(links)}
 				languageLabel={dictionary.common.languageLabel}
 				isOverPhoto={isNavOverPhoto}
 			/>
