@@ -46,9 +46,7 @@ export function ImageListField({
 		try {
 			const uploaded: string[] = [];
 			for (const file of prepared) {
-				const formData = new FormData();
-				formData.set("file", file);
-				const result = await uploadImage(formData);
+				const result = await uploadImage(file);
 				if (result.ok) {
 					uploaded.push(result.url);
 				} else {

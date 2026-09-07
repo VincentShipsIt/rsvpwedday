@@ -197,7 +197,30 @@ export type EventInput = {
 };
 export type EventsInput = { events: EventInput[]; headings?: SectionHeadingInput[] };
 
+// A half-filled card autosaves too, so reject incomplete rows here instead of letting Prisma
+// throw on an Invalid Date or a duplicate/empty slug (both surfaced as a bare 500 before).
+function validateEvents(events: EventInput[]): string | null {
+	const seenSlugs = new Set<string>();
+	for (const [index, event] of events.entries()) {
+		const label = `Event ${index + 1}`;
+		const slug = event.slug.trim();
+		if (!slug) return `${label} needs a slug.`;
+		if (seenSlugs.has(slug)) return `${label} reuses the slug "${slug}"; slugs must be unique.`;
+		seenSlugs.add(slug);
+		if (!event.startsAt || Number.isNaN(new Date(event.startsAt).getTime())) {
+			return `${label} needs a start date and time.`;
+		}
+		if (event.endsAt && Number.isNaN(new Date(event.endsAt).getTime())) {
+			return `${label} has an invalid end date.`;
+		}
+	}
+	return null;
+}
+
 export async function updateEvents(input: EventsInput): Promise<FormActionResult> {
+	const validationError = validateEvents(input.events);
+	if (validationError) return { ok: false, error: validationError };
+
 	const existingEvents = await db.event.findMany({ select: { id: true } });
 	const existingEventIds = new Set(existingEvents.map((event) => event.id));
 	const submittedEventIds = new Set(
@@ -216,7 +239,7 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 
 		for (const event of input.events) {
 			const eventData = {
-				slug: event.slug,
+				slug: event.slug.trim(),
 				startsAt: new Date(event.startsAt),
 				endsAt: event.endsAt ? new Date(event.endsAt) : null,
 				venue: event.venue,

@@ -54,7 +54,7 @@ export function AdminSidebar({ logout }: { logout: () => Promise<void> }) {
 	const pathname = usePathname();
 
 	return (
-		<aside className="flex w-56 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground max-md:hidden">
+		<aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r bg-sidebar text-sidebar-foreground max-md:hidden">
 			<div className="px-5 py-5">
 				<Link href="/admin" className="font-display text-lg">
 					Wedding admin
