@@ -43,7 +43,9 @@ export default async function LandingPage({
 	const theme = resolveSiteTheme(themeParam, siteContent?.theme ?? SiteTheme.EDITORIAL);
 	const isNavOverPhoto =
 		Boolean(siteContent?.heroImageUrl) &&
-		(theme === SiteTheme.EDITORIAL || theme === SiteTheme.MIDNIGHT);
+		(theme === SiteTheme.EDITORIAL ||
+			theme === SiteTheme.MIDNIGHT ||
+			theme === SiteTheme.MEDITERRANEAN);
 
 	const coupleNames = settings?.coupleNames ?? "";
 

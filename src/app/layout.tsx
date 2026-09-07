@@ -6,7 +6,9 @@ import {
 	Instrument_Serif,
 	Inter,
 	Lora,
+	Monsieur_La_Doulaise,
 	Pinyon_Script,
+	Playfair_Display,
 } from "next/font/google";
 import type { ReactNode } from "react";
 import "@/app/globals.css";
@@ -60,6 +62,22 @@ const fraunces = Fraunces({
 	variable: "--font-fraunces",
 });
 
+// MEDITERRANEAN theme: Playfair Display for headings (the reference invitations pair a Garamond-
+// style serif with a script), Monsieur La Doulaise for the script accent, Lora (loaded above) for
+// body copy.
+const playfairDisplay = Playfair_Display({
+	subsets: ["latin"],
+	weight: ["400", "500", "600"],
+	style: ["normal", "italic"],
+	variable: "--font-playfair",
+});
+
+const monsieurLaDoulaise = Monsieur_La_Doulaise({
+	subsets: ["latin"],
+	weight: "400",
+	variable: "--font-monsieur",
+});
+
 // `generateMetadata` (not a static `metadata` export) because the title/description/OG copy come
 // from the database at request time; `dynamic = "force-dynamic"` keeps `next build`'s static
 // analysis from ever calling `db` with no `DATABASE_URL` set (see AGENTS.md's CI note).
@@ -92,7 +110,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html
 			lang="en"
-			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable} ${fraunces.variable}`}
+			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable} ${fraunces.variable} ${playfairDisplay.variable} ${monsieurLaDoulaise.variable}`}
 		>
 			<body>{children}</body>
 		</html>

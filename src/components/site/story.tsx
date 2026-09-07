@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { LemonGlyph } from "@/components/site/lemon-sprig";
 import { Parallax } from "@/components/site/parallax";
 import { Reveal } from "@/components/site/reveal";
 import { SiteTheme } from "@/generated/prisma/enums";
@@ -47,6 +48,7 @@ export function Story({
 			{theme === SiteTheme.MIDNIGHT && <MidnightMilestones milestones={milestones} />}
 			{theme === SiteTheme.BOHO && <BohoMilestones milestones={milestones} />}
 			{theme === SiteTheme.VINTAGE && <VintageMilestones milestones={milestones} />}
+			{theme === SiteTheme.MEDITERRANEAN && <MediterraneanMilestones milestones={milestones} />}
 		</section>
 	);
 }
@@ -292,6 +294,41 @@ function VintageMilestones({ milestones }: { milestones: StoryMilestoneView[] })
 					</p>
 					<h3 className="text-center text-lg">{milestone.title}</h3>
 					<p className="text-center text-sm text-ink/70">{milestone.body}</p>
+				</Reveal>
+			))}
+		</div>
+	);
+}
+
+// Whitewashed postcards: a white card with a blue hairline, the photo on top, then a tracked
+// small-caps date, serif title and italic body — the label/title/italic stack of the reference
+// Mediterranean invitations — finished with a small lemon underneath.
+function MediterraneanMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
+	return (
+		<div className="flex flex-wrap justify-center gap-8">
+			{milestones.map((milestone, index) => (
+				<Reveal
+					key={milestone.id}
+					delay={staggerDelay(index)}
+					className="hover-lift flex w-72 flex-col bg-white p-3 pb-5 shadow-md ring-1 ring-green/15"
+				>
+					{milestone.imageUrl && (
+						<Parallax factor={0.12} className="aspect-[4/3] w-full">
+							<Image
+								src={milestone.imageUrl}
+								alt=""
+								fill
+								sizes="18rem"
+								className="reveal-photo-frame object-cover"
+							/>
+						</Parallax>
+					)}
+					<p className="mt-5 text-center text-[0.65rem] uppercase tracking-[0.3em] text-green">
+						{milestone.dateLabel}
+					</p>
+					<h3 className="mt-1 text-center text-xl">{milestone.title}</h3>
+					<p className="mt-2 text-center text-sm text-ink/70 italic">{milestone.body}</p>
+					<LemonGlyph className="mx-auto mt-4 h-5 w-6" />
 				</Reveal>
 			))}
 		</div>

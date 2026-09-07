@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import { Countdown } from "@/components/site/countdown";
 import { HeroEntrance } from "@/components/site/hero-entrance";
+import { LemonGlyph, LemonSprig } from "@/components/site/lemon-sprig";
 import { Parallax } from "@/components/site/parallax";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
@@ -34,10 +35,11 @@ function heroDelayStyle(step: number): CSSProperties {
 	return { "--hero-delay": `${step * 120}ms` } as CSSProperties;
 }
 
-// The six themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
+// The seven themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
 // an arched frame vs. a bottom-anchored dark overlay vs. a two-tone block-and-frame split vs. a
-// pressed-flower arched frame with a botanical rule), so this branches on `theme` rather than
-// trying to fold everything into one shared markup tree.
+// pressed-flower arched frame with a botanical rule vs. a sun-bleached full-bleed photo with lemon
+// sprigs and a tile rail), so this branches on `theme` rather than trying to fold everything into
+// one shared markup tree.
 export function Hero(props: HeroProps) {
 	if (props.theme === SiteTheme.MODERN) {
 		return <ModernHero {...props} />;
@@ -53,6 +55,9 @@ export function Hero(props: HeroProps) {
 	}
 	if (props.theme === SiteTheme.VINTAGE) {
 		return <VintageHero {...props} />;
+	}
+	if (props.theme === SiteTheme.MEDITERRANEAN) {
+		return <MediterraneanHero {...props} />;
 	}
 	return <EditorialHero {...props} />;
 }
@@ -482,6 +487,103 @@ function VintageHero({
 					</div>
 				)}
 			</HeroEntrance>
+		</section>
+	);
+}
+
+function MediterraneanHero({
+	coupleNames,
+	heroImageUrl,
+	tagline,
+	firstEventStartsAt,
+	locale,
+	dictionary,
+}: HeroProps) {
+	return (
+		<section
+			id="top"
+			// With a photo this is the reference's full-bleed seaside opener, type anchored low over
+			// a navy wash. Without one there is nothing to fill a viewport, so it becomes a sunlit
+			// lemon-to-cream gradient at content height with the ink flipped dark, and it pads for
+			// the fixed nav itself since `main` only does that when the nav isn't over a photo.
+			// `justify-end` in both cases keeps the tile rail on the section's bottom edge with the
+			// type just above it; only the height and the ink colour differ. `mb-12` because the
+			// rail ends the hero flush, and the section divider that follows would otherwise sit
+			// right on top of it.
+			className={`relative mb-12 flex scroll-mt-[var(--wed-nav-height)] flex-col justify-end overflow-hidden ${
+				heroImageUrl ? "min-h-dvh text-ivory" : "min-h-[70svh] text-ink"
+			}`}
+		>
+			{heroImageUrl ? (
+				<>
+					<div className="absolute inset-0">
+						<Parallax factor={0.25} className="h-full w-full">
+							<Image
+								src={heroImageUrl}
+								alt=""
+								fill
+								priority
+								sizes="100vw"
+								className="hero-photo-img object-cover"
+							/>
+						</Parallax>
+					</div>
+					{/* Sun-bleached rather than moody: a light haze up top so the nav stays legible,
+					    deepening to navy at the bottom where the type sits. */}
+					<div className="absolute inset-0 bg-gradient-to-b from-ink/35 via-ink/10 to-ink/80" />
+				</>
+			) : (
+				<div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,var(--color-gold),transparent_45%),linear-gradient(to_bottom,var(--color-ivory-dark),var(--color-ivory))]" />
+			)}
+			<LemonSprig className="pointer-events-none absolute -bottom-2 -left-8 z-10 h-32 w-44 -rotate-6 sm:-left-4 sm:h-44 sm:w-60 lg:h-56 lg:w-72" />
+			<LemonSprig className="pointer-events-none absolute -right-10 bottom-2 z-10 h-28 w-40 -scale-x-100 rotate-6 sm:-right-6 sm:h-40 sm:w-52 lg:h-48 lg:w-64" />
+			<HeroEntrance className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center gap-5 px-6 pt-24 pb-24 text-center sm:pb-28">
+				{firstEventStartsAt && (
+					<p
+						className="hero-entrance-item text-xs uppercase tracking-[0.35em] opacity-85"
+						style={heroDelayStyle(0)}
+					>
+						{formatDate(firstEventStartsAt, locale)}
+					</p>
+				)}
+				<h1
+					className="hero-entrance-item text-balance text-[clamp(2rem,7vw,5.5rem)] font-medium uppercase leading-[1.05] tracking-[0.12em]"
+					style={heroDelayStyle(1)}
+				>
+					{coupleNames}
+				</h1>
+				<div
+					className="hero-entrance-item flex items-center gap-3 text-gold"
+					style={heroDelayStyle(2)}
+				>
+					<span className="h-px w-12 bg-current opacity-70" />
+					<LemonGlyph className="h-6 w-8" />
+					<span className="h-px w-12 bg-current opacity-70" />
+				</div>
+				{tagline && (
+					<p
+						className="hero-entrance-item font-accent max-w-2xl text-balance text-[clamp(1.75rem,4vw,2.75rem)] leading-tight"
+						style={heroDelayStyle(3)}
+					>
+						{tagline}
+					</p>
+				)}
+				{firstEventStartsAt && (
+					// `text-ink` because the pills are pale lemon in every case, so their digits
+					// need dark ink even when the surrounding hero type is cream over the photo.
+					<div className="hero-entrance-item text-ink" style={heroDelayStyle(4)}>
+						<Countdown
+							targetDate={firstEventStartsAt.toISOString()}
+							labels={countdownLabels(dictionary)}
+							variant="pills"
+						/>
+					</div>
+				)}
+			</HeroEntrance>
+			<div
+				aria-hidden="true"
+				className="med-tiles relative z-10 h-7 w-full border-t border-green/30"
+			/>
 		</section>
 	);
 }
