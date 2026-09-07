@@ -144,6 +144,15 @@ model SiteContent {
   particlesEnabled Boolean          @default(true)
   musicUrl         String?
 
+  /// Tuning knobs for the same page, clamped by `src/domain/effects-settings.ts`: how long the
+  /// cover holds before offering its button, the reveal speed (percent), how many particles a
+  /// burst has, how many seconds it lasts before fading (0 = never), and their speed (percent).
+  openingHoldSeconds Int @default(2)
+  openingSpeed       Int @default(100)
+  particleCount      Int @default(30)
+  particleSeconds    Int @default(6)
+  particleSpeed      Int @default(100)
+
   /// Which generation of stand-in photography the deploy seed has applied, so it fills a site
   /// once and then leaves every image alone — including a deliberate removal of all photos.
   /// See `prisma/content-seed.ts`.

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { type EffectsSettings, effectsLimits } from "@/domain/effects-settings";
 import { isAllowedImageUrl } from "@/domain/image-url";
 import { isAllowedMediaUrl } from "@/domain/media-url";
 import type { Locale, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
@@ -298,11 +299,23 @@ export async function updateTheme(input: ThemeInput): Promise<FormActionResult> 
 
 // ---- Effects (opening animation, particles, background music) ----
 
-export type EffectsInput = {
+export type EffectsInput = EffectsSettings & {
 	openingAnimation: OpeningAnimation;
 	particlesEnabled: boolean;
 	musicUrl: string;
 };
+
+function settingSchema(key: keyof EffectsSettings) {
+	return z.number().int().min(effectsLimits[key].min).max(effectsLimits[key].max);
+}
+
+const effectsSettingsSchema = z.object({
+	openingHoldSeconds: settingSchema("openingHoldSeconds"),
+	openingSpeed: settingSchema("openingSpeed"),
+	particleCount: settingSchema("particleCount"),
+	particleSeconds: settingSchema("particleSeconds"),
+	particleSpeed: settingSchema("particleSpeed"),
+});
 
 const audioUrlSchema = z.string().refine((value) => value === "" || isAllowedMediaUrl(value), {
 	message: "must be a valid https audio URL",
@@ -313,7 +326,13 @@ export async function updateEffects(input: EffectsInput): Promise<FormActionResu
 		return { ok: false, error: "Enter a valid https audio URL for the background music." };
 	}
 
+	const settings = effectsSettingsSchema.safeParse(input);
+	if (!settings.success) {
+		return { ok: false, error: "Every timing and count needs a whole number inside its range." };
+	}
+
 	const data = {
+		...settings.data,
 		openingAnimation: input.openingAnimation,
 		particlesEnabled: input.particlesEnabled,
 		musicUrl: input.musicUrl || null,

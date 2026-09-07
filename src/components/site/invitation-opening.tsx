@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { BloomArt } from "@/components/site/opening/bloom-art";
 import { getInitials } from "@/components/site/opening/initials";
 import { MonogramArt } from "@/components/site/opening/monogram-art";
@@ -10,27 +10,32 @@ import { dataOpening } from "@/lib/site-effects";
 import { dataTheme } from "@/lib/site-theme";
 
 // Fired on `window` the moment a guest opens the cover, from inside their click, so
-// `MusicToggle` can start the track while the browser still counts it as a user gesture.
+// `MusicToggle` can start the track while the browser still counts it as a user gesture and
+// `Particles` can burst from the cover art. Also fired (without a detail, on the next tick) when
+// the cover is skipped because this session already opened it, so the page still gets its
+// ambient burst.
 export const INVITATION_OPENED_EVENT = "wed:invitation-opened";
+
+/** Viewport centre of the cover art the guest just opened; absent when the cover was skipped. */
+export type InvitationOpenedDetail = { x: number; y: number } | undefined;
 
 const SESSION_KEY = "wed-invitation-opened";
 
 // The cover doubles as the page's loading screen: it waits for the fonts and the hero photo
-// before offering the button, but never for longer than this, so a slow image can't hold a
-// guest at the door.
+// before offering the button, but never for longer than this (plus the admin's hold time), so a
+// slow image can't hold a guest at the door.
 const MAX_LOADING_MS = 4000;
 
 type Phase = "loading" | "ready" | "opening";
 
 type CoverAnimation = Exclude<OpeningAnimation, typeof OpeningAnimation.NONE>;
 
-// `minLoadingMs` lets each animation's own draw complete at least once on a fast connection,
-// so the ring/monogram/branches read as a deliberate intro rather than a flash. `revealMs` is
-// how long the open transition runs before the cover unmounts.
-const timings: Record<CoverAnimation, { minLoadingMs: number; revealMs: number }> = {
-	[OpeningAnimation.SEAL]: { minLoadingMs: 1400, revealMs: 1800 },
-	[OpeningAnimation.MONOGRAM]: { minLoadingMs: 2200, revealMs: 1300 },
-	[OpeningAnimation.BLOOM]: { minLoadingMs: 2400, revealMs: 1400 },
+// How long each open transition runs, at 100% speed, before the cover unmounts. Must cover the
+// longest animation/delay chain in that variant's `[data-phase="opening"]` CSS.
+const revealMs: Record<CoverAnimation, number> = {
+	[OpeningAnimation.SEAL]: 1800,
+	[OpeningAnimation.MONOGRAM]: 1300,
+	[OpeningAnimation.BLOOM]: 1400,
 };
 
 function wait(ms: number): Promise<void> {
@@ -69,12 +74,18 @@ export function InvitationOpening({
 	coupleNames,
 	theme,
 	animation,
+	holdSeconds,
+	speed,
 	forceShow = false,
 	labels,
 }: {
 	coupleNames: string;
 	theme: SiteTheme;
 	animation: CoverAnimation;
+	/** Seconds the cover holds after assets load before the button appears (admin setting). */
+	holdSeconds: number;
+	/** Reveal speed as a percentage (admin setting); scales every open animation and delay. */
+	speed: number;
 	forceShow?: boolean;
 	labels: { open: string; loading: string };
 }) {
@@ -83,6 +94,9 @@ export function InvitationOpening({
 	const [isVisible, setIsVisible] = useState(true);
 	const hasOpenedRef = useRef(false);
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	const artRef = useRef<HTMLDivElement>(null);
+	// 200% speed → every reveal duration and delay is halved, in CSS (`--opening-scale`) and here.
+	const scale = 100 / Math.max(speed, 1);
 
 	const handleOpen = useCallback(() => {
 		if (hasOpenedRef.current) {
@@ -96,9 +110,15 @@ export function InvitationOpening({
 			// Private browsing or storage disabled: opening still proceeds, it just won't be
 			// remembered as "already seen" for the rest of the session.
 		}
-		window.dispatchEvent(new CustomEvent(INVITATION_OPENED_EVENT));
-		window.setTimeout(() => setIsVisible(false), timings[animation].revealMs);
-	}, [animation]);
+		const art = artRef.current?.querySelector("svg")?.getBoundingClientRect();
+		const detail: InvitationOpenedDetail = art
+			? { x: art.left + art.width / 2, y: art.top + art.height / 2 }
+			: undefined;
+		window.dispatchEvent(
+			new CustomEvent<InvitationOpenedDetail>(INVITATION_OPENED_EVENT, { detail })
+		);
+		window.setTimeout(() => setIsVisible(false), revealMs[animation] * scale);
+	}, [animation, scale]);
 
 	useEffect(() => {
 		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -108,6 +128,11 @@ export function InvitationOpening({
 		if (!forceShow) {
 			try {
 				if (sessionStorage.getItem(SESSION_KEY)) {
+					// Next tick, so listeners mounted later in the tree (Particles) are attached.
+					window.setTimeout(
+						() => window.dispatchEvent(new CustomEvent(INVITATION_OPENED_EVENT)),
+						0
+					);
 					return;
 				}
 			} catch {
@@ -122,9 +147,10 @@ export function InvitationOpening({
 			return;
 		}
 		let isCancelled = false;
+		const holdMs = holdSeconds * 1000;
 		Promise.race([
-			Promise.all([waitForHeroAssets(), wait(timings[animation].minLoadingMs)]),
-			wait(MAX_LOADING_MS),
+			Promise.all([waitForHeroAssets(), wait(holdMs)]),
+			wait(MAX_LOADING_MS + holdMs),
 		]).then(() => {
 			if (!isCancelled) {
 				setPhase((current) => (current === "loading" ? "ready" : current));
@@ -133,7 +159,7 @@ export function InvitationOpening({
 		return () => {
 			isCancelled = true;
 		};
-	}, [shouldShow, animation]);
+	}, [shouldShow, holdSeconds]);
 
 	useEffect(() => {
 		if (!shouldShow || phase === "opening") {
@@ -170,6 +196,7 @@ export function InvitationOpening({
 			aria-modal="true"
 			aria-label={coupleNames}
 			aria-busy={phase === "loading"}
+			style={{ "--opening-scale": scale } as CSSProperties}
 			className="opening-cover fixed inset-0 z-50 overflow-hidden text-ink"
 		>
 			{isSeal ? (
@@ -183,7 +210,10 @@ export function InvitationOpening({
 			) : (
 				<div className="absolute inset-0 bg-ivory bg-[radial-gradient(circle_at_50%_40%,transparent_40%,rgb(0_0_0/0.06)_100%)]" />
 			)}
-			<div className="opening-content absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
+			<div
+				ref={artRef}
+				className="opening-content absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center"
+			>
 				{isSeal && <SealArt initials={initials} />}
 				{animation === OpeningAnimation.MONOGRAM && <MonogramArt initials={initials} />}
 				{isBloom ? (

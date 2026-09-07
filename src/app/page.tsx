@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import { Story, type StoryMilestoneView } from "@/components/site/story";
 import { ThemePicker } from "@/components/site/theme-picker";
+import { clampEffectsSettings } from "@/domain/effects-settings";
 import { OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -108,6 +109,7 @@ export default async function LandingPage({
 		: resolveOpeningAnimation(openingParam, siteContent?.openingAnimation ?? OpeningAnimation.SEAL);
 	const hasParticles = !isPreview && (siteContent?.particlesEnabled ?? true);
 	const musicUrl = isPreview ? null : (siteContent?.musicUrl ?? null);
+	const effects = clampEffectsSettings(siteContent ?? {});
 
 	return (
 		<>
@@ -117,6 +119,8 @@ export default async function LandingPage({
 					coupleNames={coupleNames}
 					theme={theme}
 					animation={openingAnimation}
+					holdSeconds={effects.openingHoldSeconds}
+					speed={effects.openingSpeed}
 					forceShow={Boolean(openingParam)}
 					labels={{
 						open: dictionary.site.openInvitationLabel,
@@ -147,7 +151,15 @@ export default async function LandingPage({
 				className={isNavOverPhoto ? undefined : "pt-[var(--wed-nav-height)]"}
 			>
 				{/* Inside `<main>` so the canvas inherits this theme's `--color-*` tokens. */}
-				{hasParticles && <Particles theme={theme} />}
+				{hasParticles && (
+					<Particles
+						theme={theme}
+						count={effects.particleCount}
+						seconds={effects.particleSeconds}
+						speed={effects.particleSpeed}
+						startsOnOpen={openingAnimation !== OpeningAnimation.NONE}
+					/>
+				)}
 				<Hero
 					coupleNames={coupleNames}
 					heroImageUrl={siteContent?.heroImageUrl ?? null}

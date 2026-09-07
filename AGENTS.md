@@ -77,7 +77,11 @@ and never traps a guest: reduced motion skips it, Escape opens it in any phase, 
 stops it repeating within a visit. `?opening=seal|monogram|bloom|none` previews a variant by URL
 (and forces it to show again), the same way `?theme=` previews a theme. `particlesEnabled` toggles
 `src/components/site/particles.tsx`, a fixed canvas inside `<main>` whose particle kind and colours
-come from the active theme's own `--color-*` tokens. `musicUrl` is an https audio URL (uploaded to
+come from the active theme's own `--color-*` tokens; a burst erupts from the cover art's centre
+when the cover opens (or scatters across the page when there is no cover), then fades out. The
+numeric knobs — cover hold time and reveal speed, particle count, seconds, and speed — are the
+`opening*`/`particle*` integer columns, always read through
+`src/domain/effects-settings.ts#clampEffectsSettings`. `musicUrl` is an https audio URL (uploaded to
 Blob via `AudioField`, or pasted); `src/components/site/music-toggle.tsx` renders the floating
 on/off button and only ever starts playback from a real click — the guest's own toggle, or the
 cover's open button via the `wed:invitation-opened` window event. `?preview=1` (the admin theme

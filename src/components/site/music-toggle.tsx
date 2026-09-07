@@ -57,10 +57,12 @@ export function MusicToggle({
 			cancelAnimationFrame(fadeFrameRef.current);
 		}
 		const startedAt = performance.now();
-		audio.volume = 0;
+		// Non-null alias: the hoisted `step` below doesn't inherit the guard's narrowing.
+		const track: HTMLAudioElement = audio;
+		track.volume = 0;
 		function step(now: number) {
 			const progress = Math.min((now - startedAt) / FADE_MS, 1);
-			audio.volume = progress * TARGET_VOLUME;
+			track.volume = progress * TARGET_VOLUME;
 			if (progress < 1) {
 				fadeFrameRef.current = requestAnimationFrame(step);
 			}

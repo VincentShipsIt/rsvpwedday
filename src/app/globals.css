@@ -673,6 +673,9 @@ h3 {
 	}
 }
 
+/* Every reveal duration/delay below is multiplied by `--opening-scale`, set inline on the cover
+   root from the admin's opening speed (2 = half speed, 0.5 = double). */
+
 /* ---- SEAL ---- */
 
 .opening-seal-ring {
@@ -709,7 +712,7 @@ h3 {
 }
 
 .opening-cover[data-phase="opening"] .opening-seal-wax {
-	animation: opening-seal-pop 0.5s ease-in forwards;
+	animation: opening-seal-pop calc(0.5s * var(--opening-scale, 1)) ease-in forwards;
 }
 
 /* The flap folds up around its top edge: a plain vertical flip at the fold line, no 3D. */
@@ -733,7 +736,8 @@ h3 {
 }
 
 .opening-cover[data-phase="opening"] .opening-seal-flap {
-	animation: opening-seal-flap 0.55s ease-in-out 0.25s forwards;
+	animation: opening-seal-flap calc(0.55s * var(--opening-scale, 1)) ease-in-out
+		calc(0.25s * var(--opening-scale, 1)) forwards;
 }
 
 @keyframes opening-seal-card {
@@ -743,11 +747,13 @@ h3 {
 }
 
 .opening-cover[data-phase="opening"] .opening-seal-card {
-	animation: opening-seal-card 0.7s ease-out 0.6s forwards;
+	animation: opening-seal-card calc(0.7s * var(--opening-scale, 1)) ease-out
+		calc(0.6s * var(--opening-scale, 1)) forwards;
 }
 
 .opening-door {
-	transition: transform 0.9s ease-in-out 0.85s;
+	transition: transform calc(0.9s * var(--opening-scale, 1)) ease-in-out
+		calc(0.85s * var(--opening-scale, 1));
 }
 
 .opening-cover[data-phase="opening"] .opening-door-left {
@@ -760,7 +766,7 @@ h3 {
 
 .opening-cover[data-opening="seal"][data-phase="opening"] .opening-content {
 	opacity: 0;
-	transition-delay: 0.9s;
+	transition-delay: calc(0.9s * var(--opening-scale, 1));
 }
 
 /* ---- MONOGRAM ---- */
@@ -839,7 +845,7 @@ h3 {
 .opening-cover[data-phase="opening"] .opening-monogram-initials {
 	stroke-dashoffset: 0;
 	fill-opacity: 1;
-	animation: opening-monogram-lift 0.5s ease-in forwards;
+	animation: opening-monogram-lift calc(0.5s * var(--opening-scale, 1)) ease-in forwards;
 }
 
 .opening-cover[data-phase="opening"] .opening-monogram-orbit {
@@ -856,12 +862,13 @@ h3 {
 }
 
 .opening-cover[data-opening="monogram"][data-phase="opening"] {
-	animation: opening-iris 0.9s ease-in 0.3s forwards;
+	animation: opening-iris calc(0.9s * var(--opening-scale, 1)) ease-in
+		calc(0.3s * var(--opening-scale, 1)) forwards;
 }
 
 .opening-cover[data-opening="monogram"][data-phase="opening"] .opening-content {
 	opacity: 0;
-	transition-delay: 0.5s;
+	transition-delay: calc(0.5s * var(--opening-scale, 1));
 }
 
 /* ---- BLOOM ---- */
@@ -931,7 +938,7 @@ h3 {
 }
 
 .opening-cover[data-phase="opening"] .opening-bloom-blossom {
-	animation: opening-blossom-burst 0.6s ease-in forwards;
+	animation: opening-blossom-burst calc(0.6s * var(--opening-scale, 1)) ease-in forwards;
 }
 
 .opening-bloom-petal {
@@ -951,7 +958,7 @@ h3 {
 }
 
 .opening-cover[data-phase="opening"] .opening-bloom-petal {
-	animation: opening-petal-fly 1.1s ease-out forwards;
+	animation: opening-petal-fly calc(1.1s * var(--opening-scale, 1)) ease-out forwards;
 	animation-delay: var(--fly-delay, 0s);
 }
 
@@ -962,7 +969,8 @@ h3 {
 }
 
 .opening-cover[data-opening="bloom"][data-phase="opening"] {
-	animation: opening-curtain 1s cubic-bezier(0.7, 0, 0.3, 1) 0.35s forwards;
+	animation: opening-curtain calc(1s * var(--opening-scale, 1)) cubic-bezier(0.7, 0, 0.3, 1)
+		calc(0.35s * var(--opening-scale, 1)) forwards;
 }
 
 .opening-cover[data-opening="bloom"][data-phase="opening"] .opening-names {

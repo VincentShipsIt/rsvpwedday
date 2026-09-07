@@ -1,5 +1,6 @@
 import { EffectsForm } from "@/app/admin/website/effects/effects-form";
 import { WebsiteNav } from "@/app/admin/website/website-nav";
+import { clampEffectsSettings } from "@/domain/effects-settings";
 import { OpeningAnimation } from "@/generated/prisma/enums";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
@@ -17,6 +18,7 @@ export default async function EffectsPage() {
 				initialOpeningAnimation={siteContent?.openingAnimation ?? OpeningAnimation.SEAL}
 				initialParticlesEnabled={siteContent?.particlesEnabled ?? true}
 				initialMusicUrl={siteContent?.musicUrl ?? ""}
+				initialSettings={clampEffectsSettings(siteContent ?? {})}
 				blobConfigured={isBlobConfigured()}
 			/>
 		</div>
