@@ -76,6 +76,19 @@ re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparenc
 pass through untouched. It never throws — a decode or canvas failure just returns the original
 file, so a browser without canvas support still uploads, it just skips the shrink.
 
+Both image fields also offer "Generate illustration" when `REPLICATE_API_TOKEN` is set: the hero,
+each story milestone, the gallery, and both guide levels. The browser posts only which block it is
+and that block's own English copy to `src/app/admin/generate-image/route.ts`; the route reads the
+theme, couple names and event venues from the database and builds the prompt with
+`src/domain/illustration-prompt.ts`, so the art direction cannot be steered from the client. That
+module holds one style per `SiteTheme` — palette copied from the `[data-theme]` blocks the same way
+`src/emails/theme.ts` copies it for mail clients — plus a brief and aspect ratio per placement and a
+fixed rules block that keeps lettering and faces out of every image, which is what makes a set of
+them look like a set. `src/lib/replicate.ts` calls the official `google/nano-banana-2-lite` model
+over plain fetch (one POST, `Prefer: wait`, then a short poll). Replicate's output URL expires
+within the hour, so `src/lib/blob.ts#copyImageToBlob` copies the result into the same Blob store as
+an uploaded photo before the admin ever sees it — which is why generation needs both tokens.
+
 `/admin/website/emails` edits the invite, reminder and confirmation emails per locale: subject,
 heading and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default).
 `src/domain/email-copy.ts#resolveEmailCopy` merges override and default and substitutes
@@ -135,9 +148,10 @@ native speaker** — get that review before any real invite/reminder email goes 
 ## Environment
 
 `DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `APP_URL`, `EMAIL_FROM`, and optional
-`RESEND_API_KEY` and `BLOB_READ_WRITE_TOKEN` (a Vercel Blob store token; when unset, the admin's
+`RESEND_API_KEY`, `BLOB_READ_WRITE_TOKEN` (a Vercel Blob store token; when unset, the admin's
 image fields fall back to a plain URL input instead of drag-and-drop upload — see
-`src/lib/blob.ts`). `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
+`src/lib/blob.ts`) and `REPLICATE_API_TOKEN` (when unset, the "Generate illustration" buttons are
+hidden). `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
 prefixed `*_POSTGRES_URL` or `*_DATABASE_URL` that a Vercel storage integration injects, as long
 as it is a direct `postgres://` url; the `prisma+postgres://` Accelerate url is ignored because
 the pg adapter needs a TCP connection (unset in development: emails are logged to the console instead of sent). Parsed
