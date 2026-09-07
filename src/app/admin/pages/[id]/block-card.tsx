@@ -56,8 +56,8 @@ import { cn } from "@/lib/utils";
 // Where a built-in block's own content is edited, since the block itself only carries the
 // heading and the anchor.
 const BUILT_IN_SOURCES: Partial<Record<BlockType, { href: string; label: string }>> = {
-	[BlockType.STORY]: { href: "/admin/website/story", label: "Edit the milestones" },
-	[BlockType.EVENTS]: { href: "/admin/website/events", label: "Edit the events" },
+	[BlockType.STORY]: { href: "/admin/settings/milestones", label: "Edit the milestones" },
+	[BlockType.EVENTS]: { href: "/admin/settings/events", label: "Edit the events" },
 	[BlockType.RSVP]: { href: "/admin/settings", label: "Edit the RSVP deadline" },
 };
 

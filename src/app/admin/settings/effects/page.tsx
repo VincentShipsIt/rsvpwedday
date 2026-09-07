@@ -1,5 +1,5 @@
-import { EffectsForm } from "@/app/admin/website/effects/effects-form";
-import { WebsiteNav } from "@/app/admin/website/website-nav";
+import { EffectsForm } from "@/app/admin/settings/effects/effects-form";
+import { SettingsNav } from "@/app/admin/settings/settings-nav";
 import { clampEffectsSettings } from "@/domain/effects-settings";
 import { OpeningAnimation } from "@/generated/prisma/enums";
 import { isBlobConfigured } from "@/lib/blob";
@@ -12,7 +12,7 @@ export default async function EffectsPage() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<WebsiteNav current="/admin/website/effects" />
+			<SettingsNav current="/admin/settings/effects" />
 			<h1 className="text-2xl font-medium">Effects</h1>
 			<EffectsForm
 				initialOpeningAnimation={siteContent?.openingAnimation ?? OpeningAnimation.BLOOM}

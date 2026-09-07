@@ -20,7 +20,7 @@ function invalidImageUrlResult(label: string): FormActionResult {
 }
 
 function revalidateWebsite(path: string) {
-	revalidatePath("/admin/website");
+	revalidatePath("/admin/settings");
 	revalidatePath(path);
 	// Blocks render this data on whichever pages carry them, so every public page is stale.
 	revalidatePath("/", "layout");
@@ -107,7 +107,7 @@ export async function updateStory(input: StoryInput): Promise<FormActionResult> 
 		}
 	});
 
-	revalidateWebsite("/admin/website/story");
+	revalidateWebsite("/admin/settings/milestones");
 	return { ok: true };
 }
 
@@ -214,7 +214,7 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 	});
 
 	revalidatePath("/admin");
-	revalidateWebsite("/admin/website/events");
+	revalidateWebsite("/admin/settings/events");
 	return { ok: true };
 }
 
@@ -229,7 +229,7 @@ export async function updateTheme(input: ThemeInput): Promise<FormActionResult> 
 		update: { theme: input.theme },
 	});
 
-	revalidateWebsite("/admin/website/theme");
+	revalidateWebsite("/admin/settings/theme");
 	return { ok: true };
 }
 
@@ -281,6 +281,6 @@ export async function updateEffects(input: EffectsInput): Promise<FormActionResu
 		update: data,
 	});
 
-	revalidateWebsite("/admin/website/effects");
+	revalidateWebsite("/admin/settings/effects");
 	return { ok: true };
 }

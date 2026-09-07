@@ -86,9 +86,10 @@ moved the fixed home page and the guide into blocks once, guarded on the page co
 both `scripts/prepare-database.ts` and the dev seed; the `SiteContent*`, `GuideSection` and
 `FaqEntry` tables still exist but nothing reads them.
 
-`/admin/website` keeps only what blocks display but do not own: `events`, `story` (the milestone
-timeline), `theme`, `effects` and `emails`, registered in `src/app/admin/website/sections.ts`.
-Every image field (hero, milestones, cards, gallery) is `src/components/admin/image-field.tsx` or
+`/admin/settings` keeps the couple names, RSVP deadline and reply-to, and indexes the four
+sections that blocks display but do not own: `events`, `milestones`, `theme` and `effects`,
+registered in `src/app/admin/settings/sections.ts`. `/admin/website/*` is a catch-all that
+redirects each old path to whichever page now owns it. Every image field (hero, milestones, cards, gallery) is `src/components/admin/image-field.tsx` or
 `image-list-field.tsx`, and the music track is `audio-field.tsx`; all three start from
 `media-drop-zone.tsx`. Empty, a field is a drop zone uploading via `src/lib/blob-upload.ts` when
 `BLOB_READ_WRITE_TOKEN` is set (a browser-to-Blob client upload authorised by the token route
@@ -102,17 +103,19 @@ re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparenc
 pass through untouched. It never throws — a decode or canvas failure just returns the original
 file, so a browser without canvas support still uploads, it just skips the shrink.
 
-`/admin/website/emails` edits the invite, reminder and confirmation emails per locale: subject,
-heading and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default).
+`/admin/emails` edits the invite, reminder and confirmation emails per locale: subject, heading
+and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default). Tabs pick
+the kind, a second switcher the language, and the fields sit beside a live preview of that exact
+email. The preview renders the copy **in the editor**, not the last save: `renderEmailPreview`
+passes the draft to `renderEmail`'s `copyOverride`, and the result is fed to the iframe as
+sandboxed `srcDoc` about half a second after the last keystroke.
 `src/domain/email-copy.ts#resolveEmailCopy` merges override and default and substitutes
 `{name}`, `{coupleNames}` and `{deadline}`. All three kinds render through one template,
 `src/emails/invitation-email.tsx`, themed by `src/emails/theme.ts` (an email-safe copy of each
 `[data-theme]` palette, since mail clients cannot load the web fonts) and framed with the couple
-names and hero photo. The page previews the result in an iframe served by
-`/admin/website/emails/preview` and can send a test to any address; test sends are not written
-to `EmailLog`.
+names and hero photo. A test can be sent to any address; test sends are not written to `EmailLog`.
 
-Every website-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
+Every settings-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
 differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save
 is queued and run once the current save settles), and flushes immediately on `visibilitychange`
@@ -123,7 +126,7 @@ one-shot actions and do not autosave.
 
 ## Site effects
 
-`/admin/website/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load
+`/admin/settings/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load
 cover (`src/components/site/invitation-opening.tsx` plus one SVG art file per variant under
 `src/components/site/opening/`): `SEAL` (wax-sealed envelope, doors part), `MONOGRAM` (stroke-drawn
 initials, iris reveal), `BLOOM` (growing branches), or `NONE`. Every variant shares one exit: the cover ground is four

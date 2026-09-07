@@ -2,24 +2,24 @@
 
 import {
 	FileTextIcon,
-	GlobeIcon,
 	LayoutDashboardIcon,
 	LogOutIcon,
+	MailIcon,
 	SettingsIcon,
 	UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { WEBSITE_SECTIONS } from "@/app/admin/website/sections";
+import { SETTINGS_SECTIONS } from "@/app/admin/settings/sections";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
 	{ href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon },
 	{ href: "/admin/guests", label: "Guests", icon: UsersIcon },
 	{ href: "/admin/pages", label: "Pages", icon: FileTextIcon },
-	{ href: "/admin/website", label: "Website", icon: GlobeIcon, children: WEBSITE_SECTIONS },
-	{ href: "/admin/settings", label: "Settings", icon: SettingsIcon },
+	{ href: "/admin/emails", label: "Emails", icon: MailIcon },
+	{ href: "/admin/settings", label: "Settings", icon: SettingsIcon, children: SETTINGS_SECTIONS },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -54,8 +54,8 @@ function NavLink({
 	);
 }
 
-// Sidebar navigation for every authenticated `/admin` page. The Website entry expands into its
-// per-section links whenever a website page is open, so the section tabs that used to sit above
+// Sidebar navigation for every authenticated `/admin` page. The Settings entry expands into its
+// per-section links whenever a settings page is open, so the section tabs that used to sit above
 // each form live here instead. `logout` is passed in because a client component cannot import a
 // server action module that also touches the database at import time.
 export function AdminSidebar({ logout }: { logout: () => Promise<void> }) {
@@ -110,7 +110,7 @@ export function AdminSidebar({ logout }: { logout: () => Promise<void> }) {
 // Compact top bar for viewports too narrow for the sidebar: the same links in a scrollable row.
 export function AdminMobileNav() {
 	const pathname = usePathname();
-	const websiteOpen = isActive(pathname, "/admin/website");
+	const settingsOpen = isActive(pathname, "/admin/settings");
 
 	return (
 		<nav className="flex flex-col border-b md:hidden">
@@ -121,9 +121,9 @@ export function AdminMobileNav() {
 					</NavLink>
 				))}
 			</div>
-			{websiteOpen && (
+			{settingsOpen && (
 				<div className="flex gap-1 overflow-x-auto border-t px-3 py-2">
-					{WEBSITE_SECTIONS.map((section) => (
+					{SETTINGS_SECTIONS.map((section) => (
 						<NavLink key={section.href} href={section.href} active={pathname === section.href}>
 							{section.label}
 						</NavLink>

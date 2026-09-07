@@ -5,7 +5,7 @@ import { z } from "zod";
 import { sanitizeRichText } from "@/domain/rich-text";
 import type { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { sendTestEmail } from "@/lib/email";
+import { renderEmail, sendTestEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import type { FormActionResult } from "@/lib/form-action";
 
@@ -34,7 +34,7 @@ export async function updateEmailTemplates(input: EmailTemplatesInput): Promise<
 		}
 	});
 
-	revalidatePath("/admin/website/emails");
+	revalidatePath("/admin/emails");
 	return { ok: true };
 }
 
@@ -60,4 +60,21 @@ export async function sendTestEmailAction(input: {
 		};
 	}
 	return { ok: true };
+}
+
+// Renders one email from the copy currently in the editor, so the preview beside the fields shows
+// what is being typed rather than what was last saved. Returns a full HTML document for `srcDoc`.
+export async function renderEmailPreview(input: {
+	kind: EmailKind;
+	locale: Locale;
+	subject: string;
+	heading: string;
+	body: string;
+}): Promise<{ html: string; subject: string }> {
+	const email = await renderEmail(input.kind, input.locale, "Sam", `${env.APP_URL}/`, null, {
+		subject: input.subject,
+		heading: input.heading,
+		body: sanitizeRichText(input.body),
+	});
+	return { html: email.html, subject: email.subject };
 }
