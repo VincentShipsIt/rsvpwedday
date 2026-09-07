@@ -1,32 +1,20 @@
-import type { Locale } from "@/generated/prisma/enums";
-import type { Dictionary } from "@/i18n";
-
-export type EmailGuest = {
-	firstName: string;
-	lastName: string;
-};
-
-export type EmailInvitation = {
-	locale: Locale;
-	guests: EmailGuest[];
-};
-
-export type EmailSettings = {
-	coupleNames: string;
-	rsvpDeadline: Date;
-	replyTo: string | null;
-};
+import type { EmailCopy } from "@/domain/email-copy";
+import type { EmailKind, Locale, SiteTheme } from "@/generated/prisma/enums";
 
 export type EmailEvent = {
+	id: string;
 	name: string;
 	startsAt: Date;
 	venue: string;
 };
 
 export type EmailTemplateProps = {
-	dictionary: Dictionary;
-	invitation: EmailInvitation;
-	settings: EmailSettings;
+	kind: EmailKind;
+	locale: Locale;
+	theme: SiteTheme;
+	copy: EmailCopy;
+	coupleNames: string;
+	heroImageUrl: string | null;
 	events: EmailEvent[];
 	link: string;
 };

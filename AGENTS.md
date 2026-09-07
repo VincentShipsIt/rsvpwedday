@@ -25,6 +25,16 @@ Bun, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19, Pr
 - `bun run db:seed` — placeholder settings, one `wedding` event, one sample invitation
 - `bun run db:studio` — Prisma Studio
 
+## Per-invitation events
+
+An invitation's event list is derived, not stored: `src/domain/invitation-events.ts#invitedEventIds`
+is the union of its guests' `EventAttendance` rows, and a guest with no row for an event was not
+invited to it. The invitation dialog's "Invited to" checkboxes and the CSV `events` column (event
+slugs separated by `;`, empty = every event; the Guests page serves a filled-in template at
+`/admin/guests/template`) decide which rows are created; `updateInvitation` re-syncs every guest of
+the household, companions included. The RSVP page, the invite/reminder emails and the export all
+read the derived list, so nothing else needs to know.
+
 ## Derived status
 
 `Invitation` has no stored status column. `src/domain/invitation.ts#getInvitationStatus` derives
@@ -44,9 +54,16 @@ unchanged. The invitation create/edit form is a single `InvitationDialog` compon
 (`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
 `/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
 
-`/admin/website` is a section index linking to one page per home-page section — `hero`, `story`,
-`events`, `gallery`, `rsvp`, `theme`, `effects` — each saving through its own server action in
-`src/app/admin/website/actions.ts`. `events` edits the `Event` rows and their translations (moved
+`/admin/website` is a section index linking to one page per site section — `hero`, `story`,
+`events`, `guide`, `gallery`, `faq`, `rsvp`, `theme`, `effects` — registered once in
+`src/app/admin/website/sections.ts` and each saving through its own server action in
+`src/app/admin/website/actions.ts`. `guide` edits the public `/guide` page (the destination guide
+for guests who don't know the area): a per-locale title and intro on `SiteContentTranslation`, then
+`GuideSection` rows (anchor slug, image, title, intro) each holding `GuideItem` cards (optional
+link and image, title, body). `faq` edits `FaqEntry` rows rendered as a native `<details>` list on
+the home page just before RSVP. Both are empty by default and hide themselves completely — nav
+link, footer link, the post-Events teaser, and the `/guide` route (404) — until content exists, so
+the seed never has to know the destination. `events` edits the `Event` rows and their translations (moved
 here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
 (hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
 drag-and-drop upload via `src/lib/blob.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set, always
@@ -56,6 +73,16 @@ fit under the 8 MB upload cap: draws it to a canvas capped at 2400px on the long
 re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparency) and GIF/SVG
 pass through untouched. It never throws — a decode or canvas failure just returns the original
 file, so a browser without canvas support still uploads, it just skips the shrink.
+
+`/admin/website/emails` edits the invite, reminder and confirmation emails per locale: subject,
+heading and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default).
+`src/domain/email-copy.ts#resolveEmailCopy` merges override and default and substitutes
+`{name}`, `{coupleNames}` and `{deadline}`. All three kinds render through one template,
+`src/emails/invitation-email.tsx`, themed by `src/emails/theme.ts` (an email-safe copy of each
+`[data-theme]` palette, since mail clients cannot load the web fonts) and framed with the couple
+names and hero photo. The page previews the result in an iframe served by
+`/admin/website/emails/preview` and can send a test to any address; test sends are not written
+to `EmailLog`.
 
 Every website-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
@@ -88,6 +115,11 @@ cover's open button via the `wed:invitation-opened` window event. `?preview=1` (
 thumbnails) drops all three.
 
 ## Translations
+
+The public site has two routes, `/` and `/guide`, sharing `SiteNav`, `SiteFooter`, and the theme.
+Their link list comes from `src/lib/site-links.ts#buildSiteLinks` (absolute `/#story`-style hrefs
+so they work from either page). `src/proxy.ts` writes the `?lang=` cookie on both paths; add any
+further public page to its `SITE_PATHS` and `matcher` together.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
 and `ku.ts` are typed `: Dictionary`, so a missing key fails `tsc`. The admin UI is English only

@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import { Countdown } from "@/components/site/countdown";
 import { HeroEntrance } from "@/components/site/hero-entrance";
+import { LemonGlyph, LemonSprig } from "@/components/site/lemon-sprig";
 import { Parallax } from "@/components/site/parallax";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
@@ -34,10 +35,10 @@ function heroDelayStyle(step: number): CSSProperties {
 	return { "--hero-delay": `${step * 120}ms` } as CSSProperties;
 }
 
-// The six themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
+// The seven themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
 // an arched frame vs. a bottom-anchored dark overlay vs. a two-tone block-and-frame split vs. a
-// pressed-flower arched frame with a botanical rule), so this branches on `theme` rather than
-// trying to fold everything into one shared markup tree.
+// pressed-flower arched frame with a botanical rule vs. an arch flanked by lemon sprigs), so this branches on `theme` rather than trying to fold everything into
+// one shared markup tree.
 export function Hero(props: HeroProps) {
 	if (props.theme === SiteTheme.MODERN) {
 		return <ModernHero {...props} />;
@@ -53,6 +54,9 @@ export function Hero(props: HeroProps) {
 	}
 	if (props.theme === SiteTheme.VINTAGE) {
 		return <VintageHero {...props} />;
+	}
+	if (props.theme === SiteTheme.MEDITERRANEAN) {
+		return <MediterraneanHero {...props} />;
 	}
 	return <EditorialHero {...props} />;
 }
@@ -474,6 +478,88 @@ function VintageHero({
 				)}
 				{firstEventStartsAt && (
 					<div className="hero-entrance-item" style={heroDelayStyle(2)}>
+						<Countdown
+							targetDate={firstEventStartsAt.toISOString()}
+							labels={countdownLabels(dictionary)}
+							variant="pills"
+						/>
+					</div>
+				)}
+			</HeroEntrance>
+		</section>
+	);
+}
+
+function MediterraneanHero({
+	coupleNames,
+	heroImageUrl,
+	tagline,
+	firstEventStartsAt,
+	locale,
+	dictionary,
+}: HeroProps) {
+	return (
+		<section
+			id="top"
+			// Garden's arched photo frame on the plain cream ground, a lemon sprig either
+			// side of the arch from `sm:` up (they'd crowd the photo on a phone). Generous bottom
+			// padding so the hero and the story beneath it breathe rather than abut.
+			className="relative flex scroll-mt-[var(--wed-nav-height)] flex-col items-center overflow-hidden pb-16 text-center sm:pb-24"
+		>
+			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-5 px-6 pt-20 text-center">
+				{firstEventStartsAt && (
+					<p
+						className="hero-entrance-item text-xs uppercase tracking-[0.35em] text-green"
+						style={heroDelayStyle(0)}
+					>
+						{formatDate(firstEventStartsAt, locale)}
+					</p>
+				)}
+				<h1
+					className="hero-entrance-item text-balance text-[clamp(2rem,7vw,5rem)] font-medium uppercase leading-[1.05] tracking-[0.12em]"
+					style={heroDelayStyle(1)}
+				>
+					{coupleNames}
+				</h1>
+				<div
+					className="hero-entrance-item flex items-center gap-3 text-gold"
+					style={heroDelayStyle(2)}
+				>
+					<span className="h-px w-12 bg-current opacity-70" />
+					<LemonGlyph className="h-6 w-8" />
+					<span className="h-px w-12 bg-current opacity-70" />
+				</div>
+			</HeroEntrance>
+			<div className="relative z-10 mt-10 w-full max-w-3xl px-6">
+				<LemonSprig className="pointer-events-none absolute bottom-4 -left-6 hidden w-44 -rotate-6 sm:block lg:-left-12 lg:w-56" />
+				<LemonSprig className="pointer-events-none absolute -right-6 bottom-4 hidden w-44 -scale-x-100 rotate-6 sm:block lg:-right-12 lg:w-56" />
+				{/* Garden's bare arch on the plain cream ground, with only a blue hairline. */}
+				<div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark ring-1 ring-green/20">
+					{heroImageUrl && (
+						<Parallax factor={0.25} className="h-full w-full rounded-t-[999px] rounded-b-3xl">
+							<Image
+								src={heroImageUrl}
+								alt=""
+								fill
+								priority
+								sizes="(min-width: 768px) 28rem, 100vw"
+								className="hero-photo-img object-cover"
+							/>
+						</Parallax>
+					)}
+				</div>
+			</div>
+			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-6 px-6 pt-10 pb-16 text-center">
+				{tagline && (
+					<p
+						className="hero-entrance-item font-display max-w-2xl text-balance text-[clamp(1.375rem,2.6vw,1.875rem)] leading-snug text-green italic"
+						style={heroDelayStyle(3)}
+					>
+						{tagline}
+					</p>
+				)}
+				{firstEventStartsAt && (
+					<div className="hero-entrance-item" style={heroDelayStyle(4)}>
 						<Countdown
 							targetDate={firstEventStartsAt.toISOString()}
 							labels={countdownLabels(dictionary)}

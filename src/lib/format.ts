@@ -12,6 +12,15 @@ export function formatDateTime(date: Date, locale: Locale): string {
 	}).format(date);
 }
 
+// Weekday plus short date ("Saturday 13 Sept"), the label a timeline node carries above its time.
+export function formatDayLabel(date: Date, locale: Locale): string {
+	return new Intl.DateTimeFormat(locales[locale].intlTag, {
+		weekday: "long",
+		day: "numeric",
+		month: "short",
+	}).format(date);
+}
+
 export function formatTime(date: Date, locale: Locale): string {
 	return new Intl.DateTimeFormat(locales[locale].intlTag, { timeStyle: "short" }).format(date);
 }

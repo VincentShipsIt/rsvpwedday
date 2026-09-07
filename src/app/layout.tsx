@@ -7,6 +7,7 @@ import {
 	Inter,
 	Lora,
 	Pinyon_Script,
+	Playfair_Display,
 } from "next/font/google";
 import type { ReactNode } from "react";
 import "@/app/globals.css";
@@ -60,6 +61,15 @@ const fraunces = Fraunces({
 	variable: "--font-fraunces",
 });
 
+// MEDITERRANEAN theme: Playfair Display for headings; Pinyon Script and Lora (both loaded above)
+// for the script accent and body copy.
+const playfairDisplay = Playfair_Display({
+	subsets: ["latin"],
+	weight: ["400", "500", "600"],
+	style: ["normal", "italic"],
+	variable: "--font-playfair",
+});
+
 // `generateMetadata` (not a static `metadata` export) because the title/description/OG copy come
 // from the database at request time; `dynamic = "force-dynamic"` keeps `next build`'s static
 // analysis from ever calling `db` with no `DATABASE_URL` set (see AGENTS.md's CI note).
@@ -90,9 +100,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
+		// `data-scroll-behavior="smooth"` tells Next 16 that `globals.css` sets `scroll-behavior:
+		// smooth` on `<html>` on purpose, so it can suspend it during route transitions instead of
+		// warning about it (smooth-scrolling to the top on every navigation looks like a glitch).
 		<html
 			lang="en"
-			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable} ${fraunces.variable}`}
+			data-scroll-behavior="smooth"
+			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable} ${fraunces.variable} ${playfairDisplay.variable}`}
 		>
 			<body>{children}</body>
 		</html>

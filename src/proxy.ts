@@ -6,8 +6,11 @@ import { SITE_LOCALE_COOKIE } from "@/lib/site-locale";
 
 const SITE_LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
+// Public pages that carry the language select; keep in step with `config.matcher` below.
+const SITE_PATHS = new Set(["/", "/guide"]);
+
 export function proxy(request: NextRequest) {
-	if (request.nextUrl.pathname === "/") {
+	if (SITE_PATHS.has(request.nextUrl.pathname)) {
 		const lang = request.nextUrl.searchParams.get("lang");
 		const response = NextResponse.next();
 		if (lang && isLocale(lang)) {
@@ -32,5 +35,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/", "/admin/:path*"],
+	matcher: ["/", "/guide", "/admin/:path*"],
 };

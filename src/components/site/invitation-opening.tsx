@@ -243,7 +243,7 @@ export function InvitationOpening({
 						onClick={handleOpen}
 						tabIndex={phase === "ready" ? 0 : -1}
 						aria-hidden={phase !== "ready"}
-						className="opening-button min-h-11 rounded-full border border-ink/20 bg-ivory px-6 text-sm uppercase tracking-widest text-ink transition-colors hover:bg-ivory-dark"
+						className="opening-button min-h-11 rounded-full border border-ink/20 bg-ivory px-6 text-sm uppercase tracking-widest text-ink transition-colors outline-none hover:bg-ivory-dark focus-visible:border-ink/60 focus-visible:ring-2 focus-visible:ring-ink/20"
 					>
 						{labels.open}
 					</button>
