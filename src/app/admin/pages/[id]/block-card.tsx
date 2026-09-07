@@ -50,6 +50,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { BLOCK_DEFINITIONS } from "@/domain/blocks";
+import { blockIllustrationPlacement } from "@/domain/illustration-prompt";
 import { BlockType, type Locale } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export function BlockCard({
 	block,
 	locale,
 	blobConfigured,
+	aiConfigured,
 	pageOptions,
 	onRemoved,
 	onAddBelow,
@@ -72,6 +74,7 @@ export function BlockCard({
 	block: BlockState;
 	locale: Locale;
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 	pageOptions: PageOption[];
 	onRemoved: (id: string) => void;
 	onAddBelow: (afterBlockId: string) => void;
@@ -81,6 +84,14 @@ export function BlockCard({
 	const anchorId = useId();
 	const [state, setState] = useState(block);
 	const [isDeleting, setIsDeleting] = useState(false);
+
+	// What this block's image field illustrates: the block's type, plus whatever has been typed
+	// into it in English — the source-of-truth locale, and the only one guaranteed to be filled in.
+	const placement = blockIllustrationPlacement(block.type);
+	const english = state.translations.find((entry) => entry.locale === "en");
+	const illustrate = placement
+		? { placement, title: english?.title, body: english?.body }
+		: undefined;
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: block.id,
@@ -235,6 +246,8 @@ export function BlockCard({
 						value={state.imageUrl}
 						onChange={(url) => setState((current) => ({ ...current, imageUrl: url }))}
 						blobConfigured={blobConfigured}
+						aiConfigured={aiConfigured}
+						illustrate={illustrate}
 					/>
 				)}
 
@@ -244,6 +257,8 @@ export function BlockCard({
 						values={state.imageUrls}
 						onChange={(urls) => setState((current) => ({ ...current, imageUrls: urls }))}
 						blobConfigured={blobConfigured}
+						aiConfigured={aiConfigured}
+						illustrate={illustrate}
 					/>
 				)}
 
@@ -273,6 +288,7 @@ export function BlockCard({
 						items={state.items}
 						locale={locale}
 						blobConfigured={blobConfigured}
+						aiConfigured={aiConfigured}
 						isFaq={block.type === BlockType.FAQ}
 						onChange={(items) => setState((current) => ({ ...current, items }))}
 						onItemChange={updateItem}
@@ -330,6 +346,7 @@ function ItemList({
 	items,
 	locale,
 	blobConfigured,
+	aiConfigured,
 	isFaq,
 	onChange,
 	onItemChange,
@@ -338,6 +355,7 @@ function ItemList({
 	items: BlockItemState[];
 	locale: Locale;
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 	isFaq: boolean;
 	onChange: (items: BlockItemState[]) => void;
 	onItemChange: (key: string, patch: Partial<Omit<BlockItemState, "translations">>) => void;
@@ -401,6 +419,7 @@ function ItemList({
 								item={item}
 								locale={locale}
 								blobConfigured={blobConfigured}
+								aiConfigured={aiConfigured}
 								isFaq={isFaq}
 								onChange={onItemChange}
 								onTranslationChange={onItemTranslationChange}
@@ -422,6 +441,7 @@ function ItemRow({
 	item,
 	locale,
 	blobConfigured,
+	aiConfigured,
 	isFaq,
 	onChange,
 	onTranslationChange,
@@ -430,6 +450,7 @@ function ItemRow({
 	item: BlockItemState;
 	locale: Locale;
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 	isFaq: boolean;
 	onChange: (key: string, patch: Partial<Omit<BlockItemState, "translations">>) => void;
 	onTranslationChange: (key: string, patch: { title?: string; body?: string }) => void;
@@ -504,6 +525,12 @@ function ItemRow({
 						value={item.imageUrl}
 						onChange={(url) => onChange(item.key, { imageUrl: url })}
 						blobConfigured={blobConfigured}
+						aiConfigured={aiConfigured}
+						illustrate={{
+							placement: "ITEM",
+							title: translation.title,
+							body: translation.body,
+						}}
 					/>
 				</>
 			)}

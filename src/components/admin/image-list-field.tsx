@@ -18,20 +18,26 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "cn";
-import { GripVerticalIcon, LinkIcon, XIcon } from "lucide-react";
+import { GripVerticalIcon, LinkIcon, SparklesIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { MediaDropZone } from "@/components/admin/media-drop-zone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { IllustrationSubject } from "@/domain/illustration-prompt";
 import { uploadImage } from "@/lib/blob-upload";
 import { downscaleImage } from "@/lib/downscale-image";
+import { generateIllustration } from "@/lib/generate-illustration";
 
 export type ImageListFieldProps = {
 	label: string;
 	values: string[];
 	onChange: (urls: string[]) => void;
 	blobConfigured: boolean;
+	/** Server-computed `isImageGenerationConfigured()`; without it the generate button is hidden. */
+	aiConfigured?: boolean;
+	/** Present means the list can append an AI illustration; the prompt is built on the server. */
+	illustrate?: IllustrationSubject;
 	disabled?: boolean;
 };
 
@@ -43,6 +49,8 @@ export function ImageListField({
 	values,
 	onChange,
 	blobConfigured,
+	aiConfigured,
+	illustrate,
 	disabled,
 }: ImageListFieldProps) {
 	const inputId = useId();
@@ -101,6 +109,26 @@ export function ImageListField({
 
 	function removeAt(index: number) {
 		onChange(values.filter((_, i) => i !== index));
+	}
+
+	// Appended rather than replacing anything: the gallery is a list, and the couple's own
+	// photographs are the point of it.
+	async function handleGenerate() {
+		if (!illustrate) {
+			return;
+		}
+		setUploadError(null);
+		setBusyLabel("Generating…");
+		try {
+			const result = await generateIllustration(illustrate);
+			if (result.ok) {
+				onChange([...values, result.url]);
+			} else {
+				setUploadError(result.error);
+			}
+		} finally {
+			setBusyLabel(null);
+		}
 	}
 
 	function addLink() {
@@ -179,17 +207,30 @@ export function ImageListField({
 					</Button>
 				</div>
 			) : (
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="self-start"
-					disabled={disabled}
-					onClick={() => setLinkOpen(true)}
-				>
-					<LinkIcon aria-hidden="true" />
-					Add by link
-				</Button>
+				<div className="flex flex-wrap items-center gap-1">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						disabled={disabled}
+						onClick={() => setLinkOpen(true)}
+					>
+						<LinkIcon aria-hidden="true" />
+						Add by link
+					</Button>
+					{illustrate && aiConfigured && blobConfigured && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={disabled || Boolean(busyLabel)}
+							onClick={handleGenerate}
+						>
+							<SparklesIcon aria-hidden="true" />
+							{busyLabel === "Generating…" ? "Generating…" : "Generate illustration"}
+						</Button>
+					)}
+				</div>
 			)}
 		</div>
 	);

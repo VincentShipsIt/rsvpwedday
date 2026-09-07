@@ -9,6 +9,7 @@ const envSchema = z.object({
 	EMAIL_FROM: z.string().min(1),
 	RESEND_API_KEY: z.string().min(1).optional(),
 	BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+	REPLICATE_API_TOKEN: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -3,6 +3,7 @@ import { SettingsNav } from "@/app/admin/settings/settings-nav";
 import { localeCodes } from "@/i18n/locales";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
+import { isImageGenerationConfigured } from "@/lib/replicate";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function StoryPage() {
 					}),
 				}))}
 				blobConfigured={isBlobConfigured()}
+				aiConfigured={isImageGenerationConfigured()}
 			/>
 		</div>
 	);

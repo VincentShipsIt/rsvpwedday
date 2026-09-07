@@ -33,14 +33,22 @@ function emptyMilestoneTranslations(): MilestoneTranslationState[] {
 	return localeCodes.map((code) => ({ locale: code, title: "", body: "" }));
 }
 
+// Illustration prompts are written from the English copy: it is the source-of-truth locale
+// (`en.ts` types the dictionary) and the only one guaranteed to be filled in.
+function englishMilestoneCopy(milestone: MilestoneState): { title: string; body: string } {
+	const english = milestone.translations.find((translation) => translation.locale === "en");
+	return { title: english?.title ?? "", body: english?.body ?? "" };
+}
+
 export type StoryFormProps = {
 	initialMilestones: Omit<MilestoneState, "key">[];
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 };
 
 // The milestone timeline only. The section's heading and intro belong to the Story block on
 // whichever page carries it, and are edited there.
-export function StoryForm({ initialMilestones, blobConfigured }: StoryFormProps) {
+export function StoryForm({ initialMilestones, blobConfigured, aiConfigured }: StoryFormProps) {
 	const [milestones, setMilestones] = useState<MilestoneState[]>(() =>
 		initialMilestones.map((milestone) => ({ ...milestone, key: milestone.id ?? createKey() }))
 	);
@@ -133,6 +141,12 @@ export function StoryForm({ initialMilestones, blobConfigured }: StoryFormProps)
 										value={milestone.imageUrl}
 										onChange={(url) => updateMilestone(milestone.key, { imageUrl: url })}
 										blobConfigured={blobConfigured}
+										aiConfigured={aiConfigured}
+										illustrate={{
+											placement: "MILESTONE",
+											dateLabel: milestone.dateLabel,
+											...englishMilestoneCopy(milestone),
+										}}
 									/>
 								</div>
 							</div>
