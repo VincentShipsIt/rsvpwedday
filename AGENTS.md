@@ -48,11 +48,14 @@ Nova preset, radix base, neutral colour). shadcn's tokens live on `:root` in `gl
 don't collide with the public site's own `--wed-*`/`--color-*` names) so Radix's portalled content
 (Select, Dialog, AlertDialog, DropdownMenu, the Toaster — all rendered on `document.body`, outside
 `.admin-root`) resolves them too; only the base-layer rules that paint `.admin-root`'s own
-background/text stay scoped to that class. The Guests page (`src/app/admin/guests`) replaces the
-old separate Import/Export pages; `/admin/import` now redirects there and `/admin/export` is
-unchanged. The invitation create/edit form is a single `InvitationDialog` component
+background/text stay scoped to that class. `/admin` is the dashboard — reply counts, per-event headcount, and the two bulk sends — and
+`/admin/guests` is the guest list: every invitation, filtered and searchable, with the per-row
+actions. Import and export are occasional jobs, so they are buttons there that open a dialog
+(`ImportDialog`, `ExportDialog` in `guests-list.tsx`) rather than cards above the list;
+`/admin/import` redirects to the page and `/admin/export` still serves the CSV. The invitation
+create/edit form is a single `InvitationDialog` component
 (`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
-`/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
+`/admin/invitations/[id]` routes redirect to `/admin/guests?invitation=new|<id>`, which opens it.
 
 `/admin/pages` is the site's content manager. Every public page is a `Page` row holding ordered
 `Block` rows, so a page is whatever blocks it carries and a block can be moved, inserted between
