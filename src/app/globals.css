@@ -434,34 +434,6 @@ main[data-theme="mediterranean"] {
 }
 
 /*
- * Heartbeat (MEDITERRANEAN hero photo): a lub-dub — two quick swells, then rest — on a slow
- * loop, small enough to feel alive rather than bounce. Off under reduced motion.
- */
-@media (prefers-reduced-motion: no-preference) {
-	@keyframes heartbeat {
-		0%,
-		30%,
-		100% {
-			transform: scale(1);
-		}
-		8% {
-			transform: scale(1.035);
-		}
-		16% {
-			transform: scale(1);
-		}
-		24% {
-			transform: scale(1.05);
-		}
-	}
-
-	.hero-heartbeat {
-		animation: heartbeat 2.4s ease-in-out infinite;
-		transform-origin: center;
-	}
-}
-
-/*
  * Countdown digit slide (Part: motion pass). Each unit's number sits in an overflow-hidden box;
  * `Countdown` keys the inner span by value so React remounts it on change, and the fresh mount
  * plays this animation from its `from` state (`fill-mode: both` keeps it there during any delay
