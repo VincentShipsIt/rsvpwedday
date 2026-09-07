@@ -38,6 +38,8 @@ export const en = {
 		eventDressCodeLabel: "Dress code",
 		eventMapsLinkLabel: "Open in Maps",
 		eventCalendarLabel: "Add to calendar",
+		eventDetailsShowLabel: "Show details",
+		eventDetailsHideLabel: "Hide details",
 		attendingLabel: "Will you attend {event}?",
 		dietaryLabel: "Dietary requirements",
 		dietaryPlaceholder: "Allergies, vegetarian, vegan...",

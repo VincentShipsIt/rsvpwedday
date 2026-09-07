@@ -68,11 +68,7 @@ export function Events({
 				<VintageEventCards events={events} locale={locale} dictionary={dictionary} />
 			)}
 			{theme === SiteTheme.MEDITERRANEAN && (
-				<>
-					{/* The at-a-glance strip only earns its place once there is a sequence to show. */}
-					{events.length >= 2 && <EventsTimeline events={events} locale={locale} />}
-					<MediterraneanEventCards events={events} locale={locale} dictionary={dictionary} />
-				</>
+				<EventsTimeline events={events} locale={locale} dictionary={dictionary} />
 			)}
 		</section>
 	);
@@ -203,28 +199,6 @@ function VintageEventCards({ events, locale, dictionary }: EventListProps) {
 							{String(index + 1).padStart(2, "0")}
 						</span>
 						<EventDetails event={event} locale={locale} dictionary={dictionary} />
-					</div>
-				</Reveal>
-			))}
-		</div>
-	);
-}
-
-// Each card is capped with one row of the theme's majolica tiles (`.med-tiles`, globals.css) and
-// numbered on a lemon-yellow disc, over a whitewashed body.
-function MediterraneanEventCards({ events, locale, dictionary }: EventListProps) {
-	return (
-		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{events.map((event, index) => (
-				<Reveal key={event.id} delay={staggerDelay(index)}>
-					<div className="hover-lift flex h-full flex-col overflow-hidden rounded-xl bg-white/85 shadow-sm ring-1 ring-green/20">
-						<div aria-hidden="true" className="med-tiles h-7 w-full border-b border-green/20" />
-						<div className="flex h-full flex-col gap-2 p-6">
-							<span className="mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-gold text-xs font-semibold text-ink">
-								{String(index + 1).padStart(2, "0")}
-							</span>
-							<EventDetails event={event} locale={locale} dictionary={dictionary} />
-						</div>
 					</div>
 				</Reveal>
 			))}
