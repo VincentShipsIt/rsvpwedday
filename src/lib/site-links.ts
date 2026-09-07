@@ -32,3 +32,9 @@ export function buildSiteLinks({
 		{ href: "/#rsvp", label: dictionary.site.navRsvp },
 	].filter((link): link is SiteLink => Boolean(link));
 }
+
+// The sticky top bar only steps through the home page's own sections; separate routes such as
+// `/guide` are reached from the footer and the in-page teaser instead.
+export function homeAnchorLinks(links: SiteLink[]): SiteLink[] {
+	return links.filter((link) => link.href.startsWith("/#"));
+}

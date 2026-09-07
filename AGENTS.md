@@ -120,7 +120,8 @@ thumbnails) drops all three.
 
 The public site has two routes, `/` and `/guide`, sharing `SiteNav`, `SiteFooter`, and the theme.
 Their link list comes from `src/lib/site-links.ts#buildSiteLinks` (absolute `/#story`-style hrefs
-so they work from either page). `src/proxy.ts` writes the `?lang=` cookie on both paths; add any
+so they work from either page); the sticky top bar takes only `homeAnchorLinks` of it, so a
+separate route like `/guide` appears in the footer and the home-page teaser but never in the nav. `src/proxy.ts` writes the `?lang=` cookie on both paths; add any
 further public page to its `SITE_PATHS` and `matcher` together.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
