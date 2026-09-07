@@ -54,26 +54,45 @@ unchanged. The invitation create/edit form is a single `InvitationDialog` compon
 (`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
 `/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
 
-`/admin/website` is a section index linking to one page per site section — `hero`, `story`,
-`events`, `guide`, `gallery`, `faq`, `rsvp`, `theme`, `effects` — registered once in
-`src/app/admin/website/sections.ts` and each saving through its own server action in
-`src/app/admin/website/actions.ts`. `guide` edits the public `/guide` page (the destination guide
-for guests who don't know the area): a per-locale title and intro on `SiteContentTranslation`, then
-`GuideSection` rows (anchor slug, image, title, intro) each holding `GuideItem` cards (optional
-link and image, title, body). `faq` edits `FaqEntry` rows rendered as a native `<details>` list on
-the home page just before RSVP. Both are empty by default and hide themselves completely — nav
-link, footer link, the post-Events teaser, and the `/guide` route (404) — until content exists, so
-the seed never has to know the destination. `events` edits the `Event` rows and their translations (moved
-here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
-(hero, milestones, guide, gallery) is `src/components/admin/image-field.tsx` or
+`/admin/pages` is the site's content manager. Every public page is a `Page` row holding ordered
+`Block` rows, so a page is whatever blocks it carries and a block can be moved, inserted between
+two others, or removed on its own. `home` is the root route; any other slug is served by
+`src/app/[slug]/page.tsx`, and both render through one component,
+`src/components/site/site-page.tsx`, so nav, theme, footer and effects can never drift between
+routes. `src/domain/blocks.ts` is the single registry: it declares, per `BlockType`, which fields
+the editor shows and the renderer reads, whether the type is built-in (one per page), its default
+heading key and its default anchor. Adding a type means a `BlockType` value, a definition there, an
+editor case and a case in `src/components/site/page-blocks.tsx` — nothing else.
+
+Six types are built in and display data owned by other tables: `HERO` (photo and tagline on the
+block, couple names and countdown from settings and events), `STORY` (heading and intro on the
+block, milestones from `StoryMilestone`), `EVENTS`, `GALLERY` (photos on the block), `FAQ`
+(questions as `BlockItem` rows) and `RSVP`. Four are free content the couple adds anywhere: `TEXT`,
+`CARDS` (what a travel-guide section was — heading, intro, and cards with optional links and
+photos), `IMAGE` and `PAGE_LINK` (a teaser pointing at another page). Every text field is the
+rich-text editor; `anchor` is the block's `#fragment` and is unique within its page, and an empty
+anchor keeps the block off the top bar without hiding it. A block with nothing in it renders
+nothing and gets no nav link (`src/lib/page-content.ts#blockHasContent`), so an unfilled block
+never leaves a heading over an empty section.
+
+The editor (`src/app/admin/pages/[id]`) has one language switcher at the top driving every block
+below it, blocks reorder by dragging their handle (dnd-kit), and **each block saves itself** —
+`updateBlock` names one block id and ignores every field its type does not declare, so a stale
+client can never blank a neighbour the way the old whole-page forms could. `prisma/page-migration.ts`
+moved the fixed home page and the guide into blocks once, guarded on the page count and run from
+both `scripts/prepare-database.ts` and the dev seed; the `SiteContent*`, `GuideSection` and
+`FaqEntry` tables still exist but nothing reads them.
+
+`/admin/website` keeps only what blocks display but do not own: `events`, `story` (the milestone
+timeline), `theme`, `effects` and `emails`, registered in `src/app/admin/website/sections.ts`.
+Every image field (hero, milestones, cards, gallery) is `src/components/admin/image-field.tsx` or
 `image-list-field.tsx`, and the music track is `audio-field.tsx`; all three start from
 `media-drop-zone.tsx`. Empty, a field is a drop zone uploading via `src/lib/blob-upload.ts` when
 `BLOB_READ_WRITE_TOKEN` is set (a browser-to-Blob client upload authorised by the token route
 `src/app/admin/upload/route.ts`, so files never pass through a Server Action and its 4.5 MB Vercel
 body cap); filled, it shows the picture (or a player and file name) with Replace and Remove. The
 URL is never displayed: "Use a link" / "Add by link" reveals a paste box, which is also the whole
-field when Blob is not configured. The gallery grid reorders by drag and drop (dnd-kit sortable,
-pointer and keyboard). Before either field
+field when Blob is not configured. The gallery grid reorders by drag and drop. Before either field
 calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
 fit under the 8 MB upload cap: draws it to a canvas capped at 2400px on the long edge and
 re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparency) and GIF/SVG
@@ -125,11 +144,12 @@ thumbnails) drops all three.
 
 ## Translations
 
-The public site has two routes, `/` and `/guide`, sharing `SiteNav`, `SiteFooter`, and the theme.
-Their link list comes from `src/lib/site-links.ts#buildSiteLinks` (absolute `/#story`-style hrefs
-so they work from either page); the sticky top bar takes only `homeAnchorLinks` of it, so a
-separate route like `/guide` appears in the footer and the home-page teaser but never in the nav. `src/proxy.ts` writes the `?lang=` cookie on both paths; add any
-further public page to its `SITE_PATHS` and `matcher` together.
+The public site is `/` plus one route per page the couple adds, all sharing `SiteNav`,
+`SiteFooter`, and the theme. `src/lib/site-links.ts#buildSiteLinks` returns two lists from the
+localized pages: `navLinks` (the home page's own block anchors, as absolute `/#story` hrefs so they
+work from any page) and `footerLinks` (those plus a link to every other page that has content and
+`showInNav`). `src/proxy.ts` treats every path that is not `/admin`, `/rsvp`, `/calendar` or `/api`
+as a public page and writes the `?lang=` cookie there, so a new page needs no matcher change.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
 and `ku.ts` are typed `: Dictionary`, so a missing key fails `tsc`. The admin UI is English only
@@ -140,7 +160,7 @@ native speaker** — get that review before any real invite/reminder email goes 
 
 `DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `APP_URL`, `EMAIL_FROM`, and optional
 `RESEND_API_KEY` and `BLOB_READ_WRITE_TOKEN` (a Vercel Blob store token; when unset, the admin's
-image fields fall back to a plain URL input instead of drag-and-drop upload — see
+image fields fall back to a plain link input instead of drag-and-drop upload — see
 `src/lib/blob.ts`). `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
 prefixed `*_POSTGRES_URL` or `*_DATABASE_URL` that a Vercel storage integration injects, as long
 as it is a direct `postgres://` url; the `prisma+postgres://` Accelerate url is ignored because

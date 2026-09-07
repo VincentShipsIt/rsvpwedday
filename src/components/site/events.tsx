@@ -26,12 +26,14 @@ type EventListProps = {
 };
 
 export function Events({
+	anchor,
 	heading,
 	events,
 	locale,
 	dictionary,
 	theme,
 }: {
+	anchor: string;
 	heading: string;
 	events: EventView[];
 	locale: Locale;
@@ -44,7 +46,7 @@ export function Events({
 
 	return (
 		<section
-			id="events"
+			id={anchor || undefined}
 			className="mx-auto flex max-w-6xl scroll-mt-[var(--wed-nav-height)] flex-col gap-12 px-6 py-24"
 		>
 			<Reveal className="text-center">

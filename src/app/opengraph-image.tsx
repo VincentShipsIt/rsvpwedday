@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { getHomeHero } from "@/lib/home-hero";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -45,17 +46,15 @@ async function loadCormorantFont(): Promise<ArrayBuffer | null> {
 }
 
 export default async function OpengraphImage() {
-	const [settings, siteContent, firstEvent, cormorantFont] = await Promise.all([
+	const [settings, hero, firstEvent, cormorantFont] = await Promise.all([
 		db.settings.findUnique({ where: { id: 1 } }),
-		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
+		getHomeHero(Locale.en),
 		db.event.findFirst({ orderBy: { sortOrder: "asc" } }),
 		loadCormorantFont(),
 	]);
 
 	const coupleNames = settings?.coupleNames || DEFAULT_COUPLE_NAMES;
-	const tagline =
-		siteContent?.translations.find((translation) => translation.locale === Locale.en)?.tagline ||
-		DEFAULT_TAGLINE;
+	const tagline = hero.tagline || DEFAULT_TAGLINE;
 	const eventDate = firstEvent
 		? new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(firstEvent.startsAt)
 		: null;

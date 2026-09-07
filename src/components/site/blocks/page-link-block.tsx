@@ -1,17 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Reveal } from "@/components/site/reveal";
+import { RichText } from "@/components/site/rich-text";
 
-// Sits right after the Events block on the home page: a guest has just read where the ceremony
-// is, and "how do I get there, where do I sleep" is the next question. Links to `/guide`.
-export function GuideTeaser({
+// A card that sends a guest to another page — what the travel-guide teaser used to be, now
+// pointing wherever the couple aims it. Typically placed right after Events: a guest has just
+// read where the ceremony is, and "how do I get there" is the next question.
+export function PageLinkBlock({
+	href,
 	title,
-	intro,
+	body,
 	imageUrl,
 	ctaLabel,
 }: {
+	href: string;
 	title: string;
-	intro: string;
+	body: string;
 	imageUrl: string | null;
 	ctaLabel: string;
 }) {
@@ -31,10 +35,10 @@ export function GuideTeaser({
 						</div>
 					)}
 					<div className="flex flex-col items-center gap-4 sm:items-start">
-						<h2 className="text-3xl font-medium">{title}</h2>
-						{intro && <p className="max-w-xl text-ink/70">{intro}</p>}
+						{title && <h2 className="text-3xl font-medium">{title}</h2>}
+						<RichText html={body} className="max-w-xl text-ink/70" />
 						<Link
-							href="/guide"
+							href={href}
 							className="inline-flex rounded-md bg-green px-5 py-2.5 text-sm font-medium text-ivory transition-colors hover:bg-green-dark"
 						>
 							{ctaLabel}

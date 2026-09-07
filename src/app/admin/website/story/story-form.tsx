@@ -5,13 +5,9 @@ import { updateStory } from "@/app/admin/website/actions";
 import { ImageField } from "@/components/admin/image-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
-import {
-	SectionHeadingField,
-	type SectionHeadingState,
-} from "@/components/admin/section-heading-field";
 import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +18,6 @@ function createKey(): string {
 	return crypto.randomUUID();
 }
 
-type StoryIntroTranslationState = { locale: Locale; storyIntro: string };
 type MilestoneTranslationState = { locale: Locale; title: string; body: string };
 
 type MilestoneState = {
@@ -39,53 +34,22 @@ function emptyMilestoneTranslations(): MilestoneTranslationState[] {
 }
 
 export type StoryFormProps = {
-	initialHeadings: SectionHeadingState[];
-	headingDefaults: Record<Locale, string>;
-	initialTranslations: StoryIntroTranslationState[];
 	initialMilestones: Omit<MilestoneState, "key">[];
 	blobConfigured: boolean;
 };
 
-export function StoryForm({
-	initialHeadings,
-	headingDefaults,
-	initialTranslations,
-	initialMilestones,
-	blobConfigured,
-}: StoryFormProps) {
-	const [headings, setHeadings] = useState(initialHeadings);
-	const [translations, setTranslations] = useState(initialTranslations);
+// The milestone timeline only. The section's heading and intro belong to the Story block on
+// whichever page carries it, and are edited there.
+export function StoryForm({ initialMilestones, blobConfigured }: StoryFormProps) {
 	const [milestones, setMilestones] = useState<MilestoneState[]>(() =>
 		initialMilestones.map((milestone) => ({ ...milestone, key: milestone.id ?? createKey() }))
 	);
 
 	const { status, error, retry } = useAutosave({
-		value: { headings, translations, milestones },
-		save: ({
-			headings: nextHeadings,
-			translations: nextTranslations,
-			milestones: nextMilestones,
-		}) =>
-			updateStory({
-				headings: nextHeadings,
-				translations: nextTranslations,
-				milestones: nextMilestones.map(({ key, ...milestone }) => milestone),
-			}),
+		value: { milestones },
+		save: ({ milestones: nextMilestones }) =>
+			updateStory({ milestones: nextMilestones.map(({ key, ...milestone }) => milestone) }),
 	});
-
-	function updateHeading(locale: Locale, heading: string) {
-		setHeadings((current) =>
-			current.map((entry) => (entry.locale === locale ? { ...entry, heading } : entry))
-		);
-	}
-
-	function updateTranslation(locale: Locale, storyIntro: string) {
-		setTranslations((current) =>
-			current.map((translation) =>
-				translation.locale === locale ? { ...translation, storyIntro } : translation
-			)
-		);
-	}
 
 	function addMilestone() {
 		setMilestones((current) => {
@@ -135,37 +99,6 @@ export function StoryForm({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<Card>
-				<CardHeader>
-					<CardTitle>Story intro</CardTitle>
-				</CardHeader>
-				<CardContent className="flex flex-col gap-4">
-					<SectionHeadingField
-						values={headings}
-						defaults={headingDefaults}
-						onChange={updateHeading}
-					/>
-					<Tabs defaultValue={localeCodes[0]}>
-						<TabsList>
-							{localeCodes.map((code) => (
-								<TabsTrigger key={code} value={code}>
-									{locales[code].label}
-								</TabsTrigger>
-							))}
-						</TabsList>
-						{translations.map((translation) => (
-							<TabsContent key={translation.locale} value={translation.locale}>
-								<RichTextEditor
-									placeholder="Story intro"
-									value={translation.storyIntro}
-									onChange={(html) => updateTranslation(translation.locale, html)}
-								/>
-							</TabsContent>
-						))}
-					</Tabs>
-				</CardContent>
-			</Card>
-
 			<div className="flex flex-col gap-4">
 				<h2 className="text-lg font-medium">Milestones</h2>
 				{milestones.map((milestone) => (

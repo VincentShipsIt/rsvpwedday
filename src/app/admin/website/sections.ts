@@ -1,17 +1,9 @@
-// Single list of the home-page sections the admin can edit, shared by the sidebar, the website
-// index cards and the per-section back link.
+// Single list of the site-wide settings pages the admin can edit, shared by the sidebar and the
+// website index cards. Page content itself lives in `/admin/pages`; what stays here is the data
+// blocks display but do not own (events, milestones) and the site-wide look and feel.
 export const WEBSITE_SECTIONS = [
-	{ href: "/admin/website/hero", label: "Hero", description: "Hero photo and tagline" },
-	{ href: "/admin/website/story", label: "Story", description: "Story intro and milestones" },
 	{ href: "/admin/website/events", label: "Events", description: "Event schedule and venues" },
-	{
-		href: "/admin/website/guide",
-		label: "Travel guide",
-		description: "Destination guide page: getting there, where to stay, things to see",
-	},
-	{ href: "/admin/website/gallery", label: "Gallery", description: "Gallery photos" },
-	{ href: "/admin/website/faq", label: "FAQ", description: "Questions and answers before RSVP" },
-	{ href: "/admin/website/rsvp", label: "RSVP", description: "RSVP note shown to guests" },
+	{ href: "/admin/website/story", label: "Milestones", description: "The story timeline" },
 	{ href: "/admin/website/theme", label: "Theme", description: "Site theme and previews" },
 	{
 		href: "/admin/website/effects",

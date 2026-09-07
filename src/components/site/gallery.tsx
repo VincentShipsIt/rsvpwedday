@@ -43,10 +43,12 @@ const imageSizes: Record<SiteTheme, string> = {
 };
 
 export function Gallery({
+	anchor,
 	heading,
 	imageUrls,
 	theme,
 }: {
+	anchor: string;
 	heading: string;
 	imageUrls: string[];
 	theme: SiteTheme;
@@ -59,7 +61,7 @@ export function Gallery({
 
 	return (
 		<section
-			id="gallery"
+			id={anchor || undefined}
 			className="mx-auto flex max-w-6xl scroll-mt-[var(--wed-nav-height)] flex-col gap-12 px-6 py-24"
 		>
 			<Reveal className="text-center">
