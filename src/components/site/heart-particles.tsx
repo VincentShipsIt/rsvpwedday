@@ -38,9 +38,14 @@ export function HeartParticles() {
 						animationDuration: `${heart.duration}s`,
 					}}
 				>
+					{/* Same lopsided hand-drawn outline as the static tile in globals.css. */}
 					<path
-						d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z"
-						fill="#ffffff"
+						d="M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z"
+						fill="none"
+						stroke="#ffffff"
+						strokeWidth="1.8"
+						strokeLinejoin="round"
+						strokeLinecap="round"
 					/>
 				</svg>
 			))}

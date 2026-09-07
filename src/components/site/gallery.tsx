@@ -13,7 +13,7 @@ const wrapperClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.MIDNIGHT]: "grid grid-cols-1 gap-3 sm:grid-cols-2",
 	[SiteTheme.BOHO]: "grid grid-cols-1 gap-4 sm:grid-cols-2",
 	[SiteTheme.VINTAGE]: "columns-1 gap-6 sm:columns-2 lg:columns-3 [&>*]:mb-6",
-	[SiteTheme.MEDITERRANEAN]: "columns-1 gap-5 sm:columns-2 lg:columns-3 [&>*]:mb-5",
+	[SiteTheme.MEDITERRANEAN]: "columns-1 gap-6 sm:columns-2 lg:columns-3 [&>*]:mb-6",
 };
 
 const imageWrapperClassNames: Record<SiteTheme, string> = {
@@ -25,9 +25,8 @@ const imageWrapperClassNames: Record<SiteTheme, string> = {
 	// A warm paper mat around each photo: padding plus the ivory ground shows as a border, like a
 	// picture frame's mat board.
 	[SiteTheme.VINTAGE]: "overflow-hidden border border-ink/10 bg-ivory p-2 shadow-sm",
-	// A white postcard mat with a Mediterranean-blue hairline, like a framed print on a whitewashed wall.
-	[SiteTheme.MEDITERRANEAN]:
-		"overflow-hidden rounded-lg border border-green/25 bg-white p-2 shadow-sm",
+	// Garden's bare rounded masonry tiles: the photos carry the section, no mat or hairline.
+	[SiteTheme.MEDITERRANEAN]: "overflow-hidden rounded-3xl",
 };
 
 // Matches each theme's actual rendered column count per breakpoint (see `wrapperClassNames`
