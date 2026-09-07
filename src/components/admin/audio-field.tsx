@@ -32,9 +32,7 @@ export function AudioField({ label, value, onChange, blobConfigured, disabled }:
 		setUploadError(null);
 		setIsUploading(true);
 		try {
-			const formData = new FormData();
-			formData.set("file", file);
-			const result = await uploadAudio(formData);
+			const result = await uploadAudio(file);
 			if (result.ok) {
 				onChange(result.url);
 			} else {

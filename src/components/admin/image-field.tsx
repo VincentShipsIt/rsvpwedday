@@ -38,9 +38,7 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 		setIsPreparing(false);
 		setIsUploading(true);
 		try {
-			const formData = new FormData();
-			formData.set("file", prepared);
-			const result = await uploadImage(formData);
+			const result = await uploadImage(prepared);
 			if (result.ok) {
 				onChange(result.url);
 			} else {

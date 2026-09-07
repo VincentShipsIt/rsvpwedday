@@ -66,7 +66,9 @@ link, footer link, the post-Events teaser, and the `/guide` route (404) — unti
 the seed never has to know the destination. `events` edits the `Event` rows and their translations (moved
 here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
 (hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
-drag-and-drop upload via `src/lib/blob.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set, always
+drag-and-drop upload via `src/lib/blob-upload.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set
+(a browser-to-Blob client upload authorised by the token route `src/app/admin/upload/route.ts`, so
+files never pass through a Server Action and its 4.5 MB Vercel body cap), always
 with a plain URL input underneath so a pasted link keeps working either way. Before either field
 calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
 fit under the 8 MB upload cap: draws it to a canvas capped at 2400px on the long edge and
