@@ -301,6 +301,7 @@ h3 {
 }
 
 [data-theme="mediterranean"] {
+	--wed-page-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cg transform='translate(60 80) rotate(-12) scale(0.833)' opacity='0.3'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='1.92' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(330 50) rotate(15) scale(0.458)' opacity='0.22'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='3.49' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(210 260) rotate(-6) scale(0.625)' opacity='0.28'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='2.56' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(450 330) rotate(20) scale(0.375)' opacity='0.2'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='4.27' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(120 420) rotate(8) scale(0.542)' opacity='0.24'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='2.95' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
 	/* Lemon-grove palette after the Mediterranean-tile invitations it's modelled on: warm cream
 	   ground, pale-lemon secondary surfaces (countdown pills, photo placeholders), Mediterranean
 	   blue as the accent/link token (`--color-green` is the accent slot, not literally green),
@@ -484,13 +485,22 @@ h3 {
 
 /*
  * Hand-drawn heart texture (MEDITERRANEAN): five lopsided outline hearts at 9-20px, the theme
- * blue at very low opacity, scattered over a 520px tile repeated across the page ground. Static
- * on purpose; texture, not particles.
+ * blue at very low opacity, scattered over a 520px tile repeated across the page ground and the
+ * invitation cover's scrim (`--wed-page-texture`, set on the theme block). Static on purpose;
+ * texture, not particles.
  */
-main[data-theme="mediterranean"] {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cg transform='translate(60 80) rotate(-12) scale(0.833)' opacity='0.3'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='1.92' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(330 50) rotate(15) scale(0.458)' opacity='0.22'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='3.49' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(210 260) rotate(-6) scale(0.625)' opacity='0.28'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='2.56' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(450 330) rotate(20) scale(0.375)' opacity='0.2'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='4.27' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(120 420) rotate(8) scale(0.542)' opacity='0.24'%3E%3Cpath d='M12.2 20.6c-1.8-1.3-7.9-5.4-9.4-9.2C1.4 8 3.6 5.2 6.4 5.4c2 .1 3.6 1.2 5.6 3.3 1.7-2.3 3.5-3.6 5.7-3.4 2.9.3 4.8 3.2 3.4 6.4-1.6 3.7-7.2 7.6-8.9 8.9Z' fill='none' stroke='%231d4f91' stroke-width='2.95' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
-	background-size: 520px 520px;
-	background-repeat: repeat;
+main[data-theme="mediterranean"],
+.opening-scrim {
+	background-image: var(--wed-page-texture, none), var(--wed-page-vignette, none);
+	background-size:
+		520px 520px,
+		auto;
+	background-repeat: repeat, no-repeat;
+}
+
+/* The cover scrim shares the page texture above and adds a soft vignette under it. */
+.opening-scrim {
+	--wed-page-vignette: radial-gradient(circle at 50% 40%, transparent 40%, rgb(0 0 0 / 0.06) 100%);
 }
 
 /*
@@ -855,22 +865,66 @@ main[data-theme="mediterranean"] {
 		calc(0.6s * var(--opening-scale, 1)) forwards;
 }
 
-.opening-door {
-	transition: transform calc(0.9s * var(--opening-scale, 1)) ease-in-out
-		calc(0.85s * var(--opening-scale, 1));
+/* ---- Shared reveal ----
+   Every variant plays its own art animation first, then the same exit: the paper scrim fades so
+   the ghosted hero photo comes into focus behind the art, and the four ground quadrants slide
+   out to their corners along a vertical and a horizontal seam. Each variant only sets when the
+   split starts (`--opening-reveal-delay`) and when its content fades (`--opening-content-delay`)
+   so the exit follows its own art. `InvitationOpening`'s `revealMs` must cover delay + 0.9s. */
+
+.opening-cover[data-opening="seal"] {
+	--opening-reveal-delay: 0.85s;
+	--opening-content-delay: 0.9s;
 }
 
-.opening-cover[data-phase="opening"] .opening-door-left {
-	transform: translateX(-100%);
+.opening-cover[data-opening="monogram"] {
+	--opening-reveal-delay: 0.3s;
+	--opening-content-delay: 0.5s;
 }
 
-.opening-cover[data-phase="opening"] .opening-door-right {
-	transform: translateX(100%);
+.opening-cover[data-opening="bloom"] {
+	--opening-reveal-delay: 0.45s;
+	--opening-content-delay: 0.6s;
 }
 
-.opening-cover[data-opening="seal"][data-phase="opening"] .opening-content {
+.opening-panel {
+	transition: transform calc(0.9s * var(--opening-scale, 1)) cubic-bezier(0.7, 0, 0.3, 1)
+		calc(var(--opening-reveal-delay, 0.4s) * var(--opening-scale, 1));
+}
+
+.opening-cover[data-phase="opening"] .opening-panel {
+	transform: translate(var(--panel-x), var(--panel-y));
+}
+
+/* Ghosted at rest: softened and sitting under the 85% paper scrim, so the art keeps its
+   contrast and the photo reads as a watermark. The blur is on the photo, not the scrim, so the
+   hearts and grain of the scrim stay crisp. `overflow: hidden` on the panel clips the blur's
+   soft edge. */
+.opening-photo {
+	filter: blur(6px) saturate(0.8);
+	transform: scale(1.04);
+	transition:
+		filter calc(0.8s * var(--opening-scale, 1)) ease,
+		transform calc(0.8s * var(--opening-scale, 1)) ease;
+}
+
+.opening-scrim {
+	transition: opacity calc(0.7s * var(--opening-scale, 1)) ease;
+}
+
+/* Only a cover with a photo drops its scrim; without one the scrim is the ground. */
+.opening-cover[data-photo][data-phase="opening"] .opening-photo {
+	filter: none;
+	transform: none;
+}
+
+.opening-cover[data-photo][data-phase="opening"] .opening-scrim {
 	opacity: 0;
-	transition-delay: calc(0.9s * var(--opening-scale, 1));
+}
+
+.opening-cover[data-phase="opening"] .opening-content {
+	opacity: 0;
+	transition-delay: calc(var(--opening-content-delay, 0.5s) * var(--opening-scale, 1));
 }
 
 /* ---- MONOGRAM ---- */
@@ -954,25 +1008,6 @@ main[data-theme="mediterranean"] {
 
 .opening-cover[data-phase="opening"] .opening-monogram-orbit {
 	animation-duration: 2s;
-}
-
-@keyframes opening-iris {
-	from {
-		clip-path: circle(100% at 50% 50%);
-	}
-	to {
-		clip-path: circle(0% at 50% 50%);
-	}
-}
-
-.opening-cover[data-opening="monogram"][data-phase="opening"] {
-	animation: opening-iris calc(0.9s * var(--opening-scale, 1)) ease-in
-		calc(0.3s * var(--opening-scale, 1)) forwards;
-}
-
-.opening-cover[data-opening="monogram"][data-phase="opening"] .opening-content {
-	opacity: 0;
-	transition-delay: calc(0.5s * var(--opening-scale, 1));
 }
 
 /* ---- BLOOM ---- */
@@ -1066,19 +1101,8 @@ main[data-theme="mediterranean"] {
 	animation-delay: var(--fly-delay, 0s);
 }
 
-@keyframes opening-curtain {
-	to {
-		transform: translateY(-100%);
-	}
-}
-
-.opening-cover[data-opening="bloom"][data-phase="opening"] {
-	animation: opening-curtain calc(1s * var(--opening-scale, 1)) cubic-bezier(0.7, 0, 0.3, 1)
-		calc(0.35s * var(--opening-scale, 1)) forwards;
-}
-
 /* The names and the button go first so the wreath, its bursting blossoms, and the flying petals
-   are what ride up with the curtain. */
+   are what linger over the sharpening photo before the split. */
 .opening-cover[data-opening="bloom"][data-phase="opening"] .opening-names,
 .opening-cover[data-opening="bloom"][data-phase="opening"] .opening-button {
 	transition: opacity 0.3s ease;

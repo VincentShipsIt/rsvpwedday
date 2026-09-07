@@ -6,7 +6,6 @@ import type { SiteTheme } from "@/generated/prisma/enums";
 import { dataTheme } from "@/lib/site-theme";
 
 const SESSION_KEY = "wed-music";
-const TARGET_VOLUME = 0.65;
 const FADE_MS = 1500;
 
 /*
@@ -19,12 +18,16 @@ const FADE_MS = 1500;
 export function MusicToggle({
 	src,
 	theme,
+	volume,
 	labels,
 }: {
 	src: string;
 	theme: SiteTheme;
+	/** Target playback volume as a percentage (admin setting); the fade-in ramps up to it. */
+	volume: number;
 	labels: { play: string; pause: string };
 }) {
+	const targetVolume = Math.min(Math.max(volume, 0), 100) / 100;
 	const audioRef = useRef<HTMLAudioElement>(null);
 	const fadeFrameRef = useRef<number | null>(null);
 	const [isPlaying, setIsPlaying] = useState(false);
@@ -62,13 +65,13 @@ export function MusicToggle({
 		track.volume = 0;
 		function step(now: number) {
 			const progress = Math.min((now - startedAt) / FADE_MS, 1);
-			track.volume = progress * TARGET_VOLUME;
+			track.volume = progress * targetVolume;
 			if (progress < 1) {
 				fadeFrameRef.current = requestAnimationFrame(step);
 			}
 		}
 		fadeFrameRef.current = requestAnimationFrame(step);
-	}, []);
+	}, [targetVolume]);
 
 	function pause() {
 		const audio = audioRef.current;

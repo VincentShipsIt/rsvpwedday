@@ -32,19 +32,20 @@ export const openingChoices: {
 		key: "bloom",
 		opening: OpeningAnimation.BLOOM,
 		label: "Bloom",
-		description: "Botanical branches grow and blossom around your names; petals lift the curtain.",
+		description:
+			"Botanical branches grow and blossom around your names; petals fly as the cover splits open.",
 	},
 	{
 		key: "seal",
 		opening: OpeningAnimation.SEAL,
 		label: "Wax seal",
-		description: "A sealed envelope: the seal breaks, the flap lifts, and the doors part.",
+		description: "A sealed envelope: the seal breaks, the flap lifts, and the cover splits open.",
 	},
 	{
 		key: "monogram",
 		opening: OpeningAnimation.MONOGRAM,
 		label: "Monogram",
-		description: "Your initials are hand-drawn inside a turning ring, then the page irises open.",
+		description: "Your initials are hand-drawn inside a turning ring, then the cover splits open.",
 	},
 	{
 		key: "none",

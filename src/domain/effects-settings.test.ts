@@ -17,6 +17,8 @@ describe("clampEffectsSettings", () => {
 		expect(
 			clampEffectsSettings({ particleCount: 9999, openingSpeed: 1, particleSeconds: 2.6 })
 		).toMatchObject({ particleCount: 150, openingSpeed: 25, particleSeconds: 3 });
+		expect(clampEffectsSettings({ musicVolume: 140 })).toMatchObject({ musicVolume: 100 });
+		expect(clampEffectsSettings({ musicVolume: -5 })).toMatchObject({ musicVolume: 0 });
 	});
 
 	it("falls back to the default for anything that is not a finite number", () => {

@@ -9,6 +9,8 @@ export type EffectsSettings = {
 	particleSeconds: number;
 	/** Particle drift speed as a percentage. */
 	particleSpeed: number;
+	/** Background-music playback volume as a percentage of full. */
+	musicVolume: number;
 };
 
 export const defaultEffectsSettings: EffectsSettings = {
@@ -17,6 +19,7 @@ export const defaultEffectsSettings: EffectsSettings = {
 	particleCount: 30,
 	particleSeconds: 6,
 	particleSpeed: 100,
+	musicVolume: 40,
 };
 
 export const effectsLimits: Record<keyof EffectsSettings, { min: number; max: number }> = {
@@ -25,6 +28,7 @@ export const effectsLimits: Record<keyof EffectsSettings, { min: number; max: nu
 	particleCount: { min: 0, max: 150 },
 	particleSeconds: { min: 0, max: 120 },
 	particleSpeed: { min: 25, max: 300 },
+	musicVolume: { min: 0, max: 100 },
 };
 
 const settingKeys = Object.keys(defaultEffectsSettings) as (keyof EffectsSettings)[];
