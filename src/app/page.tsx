@@ -156,6 +156,7 @@ export default async function LandingPage({
 					coupleNames={coupleNames}
 					theme={theme}
 					animation={openingAnimation}
+					heroImageUrl={siteContent?.heroImageUrl ?? null}
 					holdSeconds={effects.openingHoldSeconds}
 					speed={effects.openingSpeed}
 					forceShow={Boolean(openingParam)}
@@ -258,6 +259,7 @@ export default async function LandingPage({
 				<MusicToggle
 					src={musicUrl}
 					theme={theme}
+					volume={effects.musicVolume}
 					labels={{
 						play: dictionary.site.musicPlayLabel,
 						pause: dictionary.site.musicPauseLabel,

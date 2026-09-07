@@ -372,6 +372,7 @@ const effectsSettingsSchema = z.object({
 	particleCount: settingSchema("particleCount"),
 	particleSeconds: settingSchema("particleSeconds"),
 	particleSpeed: settingSchema("particleSpeed"),
+	musicVolume: settingSchema("musicVolume"),
 });
 
 const audioUrlSchema = z.string().refine((value) => value === "" || isAllowedMediaUrl(value), {

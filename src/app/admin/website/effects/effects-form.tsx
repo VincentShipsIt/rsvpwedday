@@ -59,6 +59,15 @@ const particleFields: SettingField[] = [
 	},
 ];
 
+const musicFields: SettingField[] = [
+	{
+		key: "musicVolume",
+		label: "Volume",
+		hint: "How loud the track plays once a guest switches it on; it always loops.",
+		unit: "%",
+	},
+];
+
 function SettingInputs({
 	fields,
 	settings,
@@ -223,6 +232,7 @@ export function EffectsForm({
 						Starts when a guest opens the invitation, with a floating button to pause or resume.
 						Leave empty for no music.
 					</p>
+					<SettingInputs fields={musicFields} settings={settings} onChange={updateSetting} />
 				</CardContent>
 			</Card>
 

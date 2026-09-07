@@ -100,7 +100,10 @@ one-shot actions and do not autosave.
 `/admin/website/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load
 cover (`src/components/site/invitation-opening.tsx` plus one SVG art file per variant under
 `src/components/site/opening/`): `SEAL` (wax-sealed envelope, doors part), `MONOGRAM` (stroke-drawn
-initials, iris reveal), `BLOOM` (growing branches, curtain lift), or `NONE`. The cover doubles as the
+initials, iris reveal), `BLOOM` (growing branches), or `NONE`. Every variant shares one exit: the cover ground is four
+quadrant panels carrying the theme's own page texture and a blurred, scrimmed copy of the hero
+photo; on open the scrim fades so the photo sharpens behind the art, then the quadrants slide out
+to their corners, so the page lands on the same picture. The cover doubles as the
 loading screen — it waits for fonts and the hero photo (capped at 4s) before offering the button —
 and never traps a guest: reduced motion skips it, Escape opens it in any phase, and `sessionStorage`
 stops it repeating within a visit. `?opening=seal|monogram|bloom|none` previews a variant by URL
@@ -109,10 +112,10 @@ stops it repeating within a visit. `?opening=seal|monogram|bloom|none` previews 
 come from the active theme's own `--color-*` tokens; a burst erupts from the cover art's centre
 when the cover opens (or scatters across the page when there is no cover), then fades out. The
 numeric knobs — cover hold time and reveal speed, particle count, seconds, and speed — are the
-`opening*`/`particle*` integer columns, always read through
+`opening*`/`particle*` integer columns plus `musicVolume` (percent), always read through
 `src/domain/effects-settings.ts#clampEffectsSettings`. `musicUrl` is an https audio URL (uploaded to
 Blob via `AudioField`, or pasted); `src/components/site/music-toggle.tsx` renders the floating
-on/off button and only ever starts playback from a real click — the guest's own toggle, or the
+on/off button, loops the track, fades it in to `musicVolume`, and only ever starts playback from a real click — the guest's own toggle, or the
 cover's open button via the `wed:invitation-opened` window event. `?preview=1` (the admin theme
 thumbnails) drops all three.
 

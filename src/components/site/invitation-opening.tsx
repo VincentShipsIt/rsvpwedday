@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { BloomArt } from "@/components/site/opening/bloom-art";
 import { getInitials } from "@/components/site/opening/initials";
@@ -31,32 +32,58 @@ type Phase = "loading" | "ready" | "opening";
 type CoverAnimation = Exclude<OpeningAnimation, typeof OpeningAnimation.NONE>;
 
 // How long each open transition runs, at 100% speed, before the cover unmounts. Must cover the
-// longest animation/delay chain in that variant's `[data-phase="opening"]` CSS.
+// longest chain in that variant's `[data-phase="opening"]` CSS: its own art animation, then the
+// shared split (`--opening-reveal-delay` + 0.9s).
 const revealMs: Record<CoverAnimation, number> = {
 	[OpeningAnimation.SEAL]: 1800,
 	[OpeningAnimation.MONOGRAM]: 1300,
 	[OpeningAnimation.BLOOM]: 1600,
 };
 
+// The cover ground is cut into four quadrants that each slide out to their own corner on open,
+// so the page underneath appears along a vertical and a horizontal seam at once. Each panel
+// clips a viewport-sized copy of the full ground (theme texture + ghosted hero photo) anchored to
+// its corner, so the four pieces line up into one picture at rest; the panels overlap by 1px so
+// subpixel rounding never shows a hairline of the page along the seams.
+const PANELS: { key: string; className: string; x: string; y: string }[] = [
+	{ key: "tl", className: "top-0 left-0 [&>div]:top-0 [&>div]:left-0", x: "-100%", y: "-100%" },
+	{ key: "tr", className: "top-0 right-0 [&>div]:top-0 [&>div]:right-0", x: "100%", y: "-100%" },
+	{
+		key: "bl",
+		className: "bottom-0 left-0 [&>div]:bottom-0 [&>div]:left-0",
+		x: "-100%",
+		y: "100%",
+	},
+	{
+		key: "br",
+		className: "bottom-0 right-0 [&>div]:bottom-0 [&>div]:right-0",
+		x: "100%",
+		y: "100%",
+	},
+];
+
 function wait(ms: number): Promise<void> {
 	return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-// The hero photo is a `priority` next/image already in the DOM by the time this mounts, so the
-// real element is awaited rather than a second fetch of the raw URL (which `next/image` never
-// requests as-is).
+// The hero photo is a `priority` next/image already in the DOM by the time this mounts, and the
+// cover's own ghosted copies (`.opening-photo`) sit beside it, so every real element is awaited rather than
+// a second fetch of the raw URL (which `next/image` never requests as-is).
 function waitForHeroAssets(): Promise<void> {
 	const fonts =
 		"fonts" in document ? document.fonts.ready.then(() => undefined) : Promise.resolve();
-	const heroImage = document.querySelector<HTMLImageElement>("img.hero-photo-img");
-	const image =
-		heroImage && !heroImage.complete
-			? new Promise<void>((resolve) => {
-					heroImage.addEventListener("load", () => resolve(), { once: true });
-					heroImage.addEventListener("error", () => resolve(), { once: true });
+	const images = Array.from(
+		document.querySelectorAll<HTMLImageElement>("img.hero-photo-img, img.opening-photo")
+	)
+		.filter((image) => !image.complete)
+		.map(
+			(image) =>
+				new Promise<void>((resolve) => {
+					image.addEventListener("load", () => resolve(), { once: true });
+					image.addEventListener("error", () => resolve(), { once: true });
 				})
-			: Promise.resolve();
-	return Promise.all([fonts, image]).then(() => undefined);
+		);
+	return Promise.all([fonts, ...images]).then(() => undefined);
 }
 
 /*
@@ -74,6 +101,7 @@ export function InvitationOpening({
 	coupleNames,
 	theme,
 	animation,
+	heroImageUrl,
 	holdSeconds,
 	speed,
 	forceShow = false,
@@ -82,6 +110,8 @@ export function InvitationOpening({
 	coupleNames: string;
 	theme: SiteTheme;
 	animation: CoverAnimation;
+	/** Ghosted behind the cover art and sharpened on open, so the reveal lands on the same photo. */
+	heroImageUrl: string | null;
 	/** Seconds the cover holds after assets load before the button appears (admin setting). */
 	holdSeconds: number;
 	/** Reveal speed as a percentage (admin setting); scales every open animation and delay. */
@@ -192,6 +222,7 @@ export function InvitationOpening({
 			data-theme={dataTheme[theme]}
 			data-opening={dataOpening[animation]}
 			data-phase={phase}
+			data-photo={heroImageUrl ? "" : undefined}
 			role="dialog"
 			aria-modal="true"
 			aria-label={coupleNames}
@@ -199,17 +230,28 @@ export function InvitationOpening({
 			style={{ "--opening-scale": scale } as CSSProperties}
 			className="opening-cover fixed inset-0 z-50 overflow-hidden text-ink"
 		>
-			{isSeal ? (
-				<>
-					{/* Two solid, full-height "doors"; each carries its own faint paper texture on top of
-					    a solid fill so the page behind is fully hidden at rest and genuinely revealed,
-					    not just masked by a shared backdrop, once they slide apart. */}
-					<div className="opening-door opening-door-left absolute inset-y-0 left-0 w-1/2 border-r border-ink/10 bg-ivory bg-[radial-gradient(circle_at_80%_30%,rgb(224_200_140/0.35),transparent_55%)]" />
-					<div className="opening-door opening-door-right absolute inset-y-0 right-0 w-1/2 bg-ivory bg-[radial-gradient(circle_at_20%_70%,rgb(224_200_140/0.35),transparent_55%)]" />
-				</>
-			) : (
-				<div className="absolute inset-0 bg-ivory bg-[radial-gradient(circle_at_50%_40%,transparent_40%,rgb(0_0_0/0.06)_100%)]" />
-			)}
+			{PANELS.map((panel) => (
+				<div
+					key={panel.key}
+					className={`opening-panel absolute h-[calc(50%+1px)] w-[calc(50%+1px)] overflow-hidden ${panel.className}`}
+					style={{ "--panel-x": panel.x, "--panel-y": panel.y } as CSSProperties}
+				>
+					{/* Bottom to top: solid ground, the hero photo (blurred and dimmed at rest, full
+					    on open), then the paper scrim carrying the theme's own page texture. */}
+					<div className="absolute h-dvh w-screen bg-ivory">
+						{heroImageUrl && (
+							<Image
+								src={heroImageUrl}
+								alt=""
+								fill
+								sizes="100vw"
+								className="opening-photo object-cover"
+							/>
+						)}
+						<div className="opening-scrim absolute inset-0 bg-ivory/85" />
+					</div>
+				</div>
+			))}
 			<div
 				ref={artRef}
 				className="opening-content absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center"
