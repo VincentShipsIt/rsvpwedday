@@ -36,6 +36,9 @@ export const de: Dictionary = {
 		rsvpQuestions: "Fragen? Schreib an {email}",
 		footerLine: "{coupleNames} · {year}",
 		openInvitationLabel: "Einladung öffnen",
+		loadingLabel: "Wird geladen",
+		musicPlayLabel: "Musik abspielen",
+		musicPauseLabel: "Musik pausieren",
 	},
 	rsvp: {
 		heading: "Du bist eingeladen, {name}",

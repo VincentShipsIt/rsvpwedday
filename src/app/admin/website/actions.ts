@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { type EffectsSettings, effectsLimits } from "@/domain/effects-settings";
 import { isAllowedImageUrl } from "@/domain/image-url";
+import { isAllowedMediaUrl } from "@/domain/media-url";
 import { sanitizeRichText } from "@/domain/rich-text";
-import type { Locale, SiteTheme } from "@/generated/prisma/enums";
+import type { Locale, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
 
@@ -326,6 +328,57 @@ export async function updateTheme(input: ThemeInput): Promise<FormActionResult> 
 	});
 
 	revalidateWebsite("/admin/website/theme");
+	return { ok: true };
+}
+
+// ---- Effects (opening animation, particles, background music) ----
+
+export type EffectsInput = EffectsSettings & {
+	openingAnimation: OpeningAnimation;
+	particlesEnabled: boolean;
+	musicUrl: string;
+};
+
+function settingSchema(key: keyof EffectsSettings) {
+	return z.number().int().min(effectsLimits[key].min).max(effectsLimits[key].max);
+}
+
+const effectsSettingsSchema = z.object({
+	openingHoldSeconds: settingSchema("openingHoldSeconds"),
+	openingSpeed: settingSchema("openingSpeed"),
+	particleCount: settingSchema("particleCount"),
+	particleSeconds: settingSchema("particleSeconds"),
+	particleSpeed: settingSchema("particleSpeed"),
+});
+
+const audioUrlSchema = z.string().refine((value) => value === "" || isAllowedMediaUrl(value), {
+	message: "must be a valid https audio URL",
+});
+
+export async function updateEffects(input: EffectsInput): Promise<FormActionResult> {
+	if (!audioUrlSchema.safeParse(input.musicUrl).success) {
+		return { ok: false, error: "Enter a valid https audio URL for the background music." };
+	}
+
+	const settings = effectsSettingsSchema.safeParse(input);
+	if (!settings.success) {
+		return { ok: false, error: "Every timing and count needs a whole number inside its range." };
+	}
+
+	const data = {
+		...settings.data,
+		openingAnimation: input.openingAnimation,
+		particlesEnabled: input.particlesEnabled,
+		musicUrl: input.musicUrl || null,
+	};
+
+	await db.siteContent.upsert({
+		where: { id: 1 },
+		create: { id: 1, ...data },
+		update: data,
+	});
+
+	revalidateWebsite("/admin/website/effects");
 	return { ok: true };
 }
 
