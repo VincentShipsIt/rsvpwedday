@@ -49,7 +49,7 @@ export type EventsFormProps = {
 export function EventsForm({ initialHeadings, headingDefaults, initialEvents }: EventsFormProps) {
 	const [headings, setHeadings] = useState(initialHeadings);
 	const [events, setEvents] = useState<EventState[]>(() =>
-		initialEvents.map((event) => ({ ...event, key: createKey() }))
+		initialEvents.map((event) => ({ ...event, key: event.id ?? createKey() }))
 	);
 
 	const { status, error, retry } = useAutosave({

@@ -56,7 +56,7 @@ export function StoryForm({
 	const [headings, setHeadings] = useState(initialHeadings);
 	const [translations, setTranslations] = useState(initialTranslations);
 	const [milestones, setMilestones] = useState<MilestoneState[]>(() =>
-		initialMilestones.map((milestone) => ({ ...milestone, key: createKey() }))
+		initialMilestones.map((milestone) => ({ ...milestone, key: milestone.id ?? createKey() }))
 	);
 
 	const { status, error, retry } = useAutosave({

@@ -58,6 +58,9 @@ export function RichTextEditor({
 		editorProps: {
 			attributes: {
 				id: editorId,
+				role: "textbox",
+				"aria-multiline": "true",
+				...(placeholder ? { "aria-label": placeholder } : {}),
 				class:
 					"rich-text min-h-32 rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 			},
