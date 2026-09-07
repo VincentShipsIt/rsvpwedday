@@ -1,40 +1,39 @@
+import { isHomePage, pagePath } from "@/domain/blocks";
 import type { Dictionary } from "@/i18n";
+import {
+	type PageView,
+	pageAnchorLinks,
+	pageLabel,
+	type SiteData,
+	visibleBlocks,
+} from "@/lib/page-content";
 
 export type SiteLink = { href: string; label: string };
 
-// The public site's link list, shared by the sticky nav, the mobile menu, and the footer on
-// every public page. Hrefs are absolute (`/#story`, not `#story`) so they work from `/guide` too;
-// each entry only appears once its content exists, so an empty section never gets a dead link.
+/*
+ * The public site's link lists, shared by the sticky nav, the mobile menu and the footer on every
+ * page. Hrefs are absolute (`/#story`, not `#story`) so they work from any page; a block or page
+ * with nothing in it never gets a link, so an empty section can't produce a dead anchor.
+ *
+ * The sticky top bar steps through the home page's own sections only — separate pages are reached
+ * from the footer and from whatever page-teaser block the couple placed on the home page.
+ */
 export function buildSiteLinks({
+	pages,
+	site,
 	dictionary,
-	guideTitle,
-	hasStory,
-	hasEvents,
-	hasGuide,
-	hasGallery,
-	hasFaq,
 }: {
+	/** Every page, localized, in sort order. */
+	pages: PageView[];
+	site: SiteData;
 	dictionary: Dictionary;
-	/** The couple's own name for the guide page; falls back to the dictionary's generic label. */
-	guideTitle: string;
-	hasStory: boolean;
-	hasEvents: boolean;
-	hasGuide: boolean;
-	hasGallery: boolean;
-	hasFaq: boolean;
-}): SiteLink[] {
-	return [
-		hasStory && { href: "/#story", label: dictionary.site.navStory },
-		hasEvents && { href: "/#events", label: dictionary.site.navEvents },
-		hasGuide && { href: "/guide", label: guideTitle || dictionary.site.navGuide },
-		hasGallery && { href: "/#gallery", label: dictionary.site.navGallery },
-		hasFaq && { href: "/#faq", label: dictionary.site.navFaq },
-		{ href: "/#rsvp", label: dictionary.site.navRsvp },
-	].filter((link): link is SiteLink => Boolean(link));
-}
+}): { navLinks: SiteLink[]; footerLinks: SiteLink[] } {
+	const home = pages.find(isHomePage);
+	const navLinks = home ? pageAnchorLinks(home, site, dictionary) : [];
 
-// The sticky top bar only steps through the home page's own sections; separate routes such as
-// `/guide` are reached from the footer and the in-page teaser instead.
-export function homeAnchorLinks(links: SiteLink[]): SiteLink[] {
-	return links.filter((link) => link.href.startsWith("/#"));
+	const pageLinks = pages
+		.filter((page) => !isHomePage(page) && page.showInNav && visibleBlocks(page, site).length > 0)
+		.map((page) => ({ href: pagePath(page.slug), label: pageLabel(page, dictionary) }));
+
+	return { navLinks, footerLinks: [...navLinks, ...pageLinks] };
 }

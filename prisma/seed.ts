@@ -4,12 +4,14 @@ import { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { seedContent } from "./content-seed";
+import { migrateToPages } from "./page-migration";
 
 // Development seed: the shared placeholder content plus one sample invitation to click through.
 // Deployments run `seedContent` on its own (see `scripts/prepare-database.ts`) so a real guest
 // list never gets a fake guest.
 async function main() {
 	const events = await seedContent();
+	await migrateToPages();
 
 	const existingInvitation = await db.invitation.findUnique({
 		where: { email: "sample.guest@example.com" },

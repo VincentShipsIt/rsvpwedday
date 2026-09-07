@@ -4,10 +4,6 @@ import { useState } from "react";
 import { updateEvents } from "@/app/admin/website/actions";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
-import {
-	SectionHeadingField,
-	type SectionHeadingState,
-} from "@/components/admin/section-heading-field";
 import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,31 +37,21 @@ type EventState = {
 };
 
 export type EventsFormProps = {
-	initialHeadings: SectionHeadingState[];
-	headingDefaults: Record<Locale, string>;
 	initialEvents: Omit<EventState, "key">[];
 };
 
-export function EventsForm({ initialHeadings, headingDefaults, initialEvents }: EventsFormProps) {
-	const [headings, setHeadings] = useState(initialHeadings);
+export function EventsForm({ initialEvents }: EventsFormProps) {
 	const [events, setEvents] = useState<EventState[]>(() =>
 		initialEvents.map((event) => ({ ...event, key: event.id ?? createKey() }))
 	);
 
 	const { status, error, retry } = useAutosave({
-		value: { headings, events },
-		save: ({ headings: nextHeadings, events: nextEvents }) =>
+		value: { events },
+		save: ({ events: nextEvents }) =>
 			updateEvents({
-				headings: nextHeadings,
 				events: nextEvents.map(({ key, ...event }) => event),
 			}),
 	});
-
-	function updateHeading(locale: Locale, heading: string) {
-		setHeadings((current) =>
-			current.map((entry) => (entry.locale === locale ? { ...entry, heading } : entry))
-		);
-	}
 
 	function addEvent() {
 		setEvents((current) => [
@@ -112,15 +98,6 @@ export function EventsForm({ initialHeadings, headingDefaults, initialEvents }: 
 
 	return (
 		<div className="flex flex-col gap-8">
-			<Card>
-				<CardContent>
-					<SectionHeadingField
-						values={headings}
-						defaults={headingDefaults}
-						onChange={updateHeading}
-					/>
-				</CardContent>
-			</Card>
 			<div className="flex flex-col gap-4">
 				{events.map((event) => (
 					<Card key={event.key}>

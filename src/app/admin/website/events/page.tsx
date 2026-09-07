@@ -1,5 +1,4 @@
 import { EventsForm } from "@/app/admin/website/events/events-form";
-import { headingDefaults, initialHeadings } from "@/app/admin/website/section-headings";
 import { WebsiteNav } from "@/app/admin/website/website-nav";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
@@ -11,10 +10,10 @@ function toDateTimeLocal(date: Date): string {
 }
 
 export default async function EventsPage() {
-	const [events, siteContent] = await Promise.all([
-		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
-		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
-	]);
+	const events = await db.event.findMany({
+		orderBy: { sortOrder: "asc" },
+		include: { translations: true },
+	});
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -25,8 +24,6 @@ export default async function EventsPage() {
 				countdown, and the calendar files guests download.
 			</p>
 			<EventsForm
-				initialHeadings={initialHeadings(siteContent?.translations, "eventsHeading")}
-				headingDefaults={headingDefaults("eventsHeading")}
 				initialEvents={events.map((event) => ({
 					id: event.id,
 					slug: event.slug,
