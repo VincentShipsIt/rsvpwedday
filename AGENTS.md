@@ -25,6 +25,16 @@ Bun, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19, Pr
 - `bun run db:seed` — placeholder settings, one `wedding` event, one sample invitation
 - `bun run db:studio` — Prisma Studio
 
+## Per-invitation events
+
+An invitation's event list is derived, not stored: `src/domain/invitation-events.ts#invitedEventIds`
+is the union of its guests' `EventAttendance` rows, and a guest with no row for an event was not
+invited to it. The invitation dialog's "Invited to" checkboxes and the CSV `events` column (event
+slugs separated by `;`, empty = every event; the Guests page serves a filled-in template at
+`/admin/guests/template`) decide which rows are created; `updateInvitation` re-syncs every guest of
+the household, companions included. The RSVP page, the invite/reminder emails and the export all
+read the derived list, so nothing else needs to know.
+
 ## Derived status
 
 `Invitation` has no stored status column. `src/domain/invitation.ts#getInvitationStatus` derives

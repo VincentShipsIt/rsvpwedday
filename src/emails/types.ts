@@ -2,6 +2,7 @@ import type { EmailCopy } from "@/domain/email-copy";
 import type { EmailKind, Locale, SiteTheme } from "@/generated/prisma/enums";
 
 export type EmailEvent = {
+	id: string;
 	name: string;
 	startsAt: Date;
 	venue: string;

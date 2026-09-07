@@ -2,6 +2,7 @@ import { render } from "@react-email/components";
 import { createElement } from "react";
 import { Resend } from "resend";
 import { resolveEmailCopy } from "@/domain/email-copy";
+import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { InvitationEmail } from "@/emails/invitation-email";
 import type { EmailEvent, EmailTemplateProps } from "@/emails/types";
 import type { EmailKind, Locale } from "@/generated/prisma/enums";
@@ -25,7 +26,12 @@ async function loadEmailContext(kind: EmailKind, locale: Locale) {
 	const emailEvents: EmailEvent[] = events.map((event) => {
 		const translation =
 			event.translations.find((candidate) => candidate.locale === locale) ?? event.translations[0];
-		return { name: translation?.name ?? event.slug, startsAt: event.startsAt, venue: event.venue };
+		return {
+			id: event.id,
+			name: translation?.name ?? event.slug,
+			startsAt: event.startsAt,
+			venue: event.venue,
+		};
 	});
 
 	return { settings, siteContent, events: emailEvents, template };
@@ -35,9 +41,13 @@ export async function renderEmail(
 	kind: EmailKind,
 	locale: Locale,
 	guestFirstName: string,
-	link: string
+	link: string,
+	// The household's invited events; `null` (previews, tests) lists every event.
+	eventIds: string[] | null = null
 ): Promise<RenderedEmail> {
-	const { settings, siteContent, events, template } = await loadEmailContext(kind, locale);
+	const context = await loadEmailContext(kind, locale);
+	const { settings, siteContent, template } = context;
+	const events = eventIds ? filterToInvited(context.events, eventIds) : context.events;
 	const copy = resolveEmailCopy(kind, getDictionary(locale), template, {
 		name: guestFirstName,
 		coupleNames: settings.coupleNames,
@@ -87,7 +97,7 @@ async function deliver(
 export async function sendInvitationEmail(kind: EmailKind, invitationId: string): Promise<void> {
 	const invitation = await db.invitation.findUniqueOrThrow({
 		where: { id: invitationId },
-		include: { guests: { where: { addedByGuest: false } } },
+		include: { guests: { where: { addedByGuest: false }, include: { attendance: true } } },
 	});
 	const settings = await db.settings.findUniqueOrThrow({ where: { id: 1 } });
 	const link = `${env.APP_URL}/rsvp/${invitation.token}`;
@@ -96,7 +106,8 @@ export async function sendInvitationEmail(kind: EmailKind, invitationId: string)
 		kind,
 		invitation.locale,
 		invitation.guests[0]?.firstName ?? "",
-		link
+		link,
+		invitedEventIds(invitation.guests)
 	);
 	const { resendId, error } = await deliver(kind, invitation.email, email, settings.replyTo, link);
 
