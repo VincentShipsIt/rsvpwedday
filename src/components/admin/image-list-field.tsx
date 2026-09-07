@@ -3,17 +3,24 @@
 import { cn } from "cn";
 import { ArrowDownIcon, ArrowUpIcon, ImageIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { type DragEvent, useId, useRef, useState } from "react";
+import { GenerateIllustrationButton } from "@/components/admin/image-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { IllustrationSubject } from "@/domain/illustration-prompt";
 import { uploadImage } from "@/lib/blob-upload";
 import { downscaleImage } from "@/lib/downscale-image";
+import { generateIllustration } from "@/lib/generate-illustration";
 
 export type ImageListFieldProps = {
 	label: string;
 	values: string[];
 	onChange: (urls: string[]) => void;
 	blobConfigured: boolean;
+	/** Server-computed `isImageGenerationConfigured()`; without it the generate button is hidden. */
+	aiConfigured?: boolean;
+	/** Present means the list can append an AI illustration; the prompt is built on the server. */
+	illustrate?: IllustrationSubject;
 	disabled?: boolean;
 };
 
@@ -25,6 +32,8 @@ export function ImageListField({
 	values,
 	onChange,
 	blobConfigured,
+	aiConfigured,
+	illustrate,
 	disabled,
 }: ImageListFieldProps) {
 	const inputId = useId();
@@ -32,6 +41,7 @@ export function ImageListField({
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
 	const [isPreparing, setIsPreparing] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [isGenerating, setIsGenerating] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 
 	async function handleFiles(files: FileList | File[] | null | undefined) {
@@ -59,6 +69,26 @@ export function ImageListField({
 			}
 		} finally {
 			setIsUploading(false);
+		}
+	}
+
+	// A generated illustration is appended rather than replacing anything: the gallery is a list,
+	// and the couple's own photographs are the point of it.
+	async function handleGenerate() {
+		if (!illustrate) {
+			return;
+		}
+		setUploadError(null);
+		setIsGenerating(true);
+		try {
+			const result = await generateIllustration(illustrate);
+			if (result.ok) {
+				onChange([...values, result.url]);
+			} else {
+				setUploadError(result.error);
+			}
+		} finally {
+			setIsGenerating(false);
 		}
 	}
 
@@ -137,6 +167,14 @@ export function ImageListField({
 					event.target.value = "";
 				}}
 			/>
+			{illustrate && aiConfigured && (
+				<GenerateIllustrationButton
+					disabled={disabled || !blobConfigured || isPreparing || isUploading || isGenerating}
+					isGenerating={isGenerating}
+					hint="Adds one illustration in the site's theme to the end of the gallery."
+					onGenerate={handleGenerate}
+				/>
+			)}
 			{!blobConfigured && (
 				<p className="text-xs text-muted-foreground">
 					Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — add image URLs below instead.

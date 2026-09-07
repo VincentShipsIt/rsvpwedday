@@ -34,6 +34,13 @@ type MilestoneState = {
 	translations: MilestoneTranslationState[];
 };
 
+// The prompt is written from the English copy: it is the source-of-truth locale (`en.ts` types
+// the dictionary) and the only one guaranteed to be filled in.
+function englishMilestoneCopy(milestone: MilestoneState): { title: string; body: string } {
+	const english = milestone.translations.find((translation) => translation.locale === "en");
+	return { title: english?.title ?? "", body: english?.body ?? "" };
+}
+
 function emptyMilestoneTranslations(): MilestoneTranslationState[] {
 	return localeCodes.map((code) => ({ locale: code, title: "", body: "" }));
 }
@@ -44,6 +51,7 @@ export type StoryFormProps = {
 	initialTranslations: StoryIntroTranslationState[];
 	initialMilestones: Omit<MilestoneState, "key">[];
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 };
 
 export function StoryForm({
@@ -52,6 +60,7 @@ export function StoryForm({
 	initialTranslations,
 	initialMilestones,
 	blobConfigured,
+	aiConfigured,
 }: StoryFormProps) {
 	const [headings, setHeadings] = useState(initialHeadings);
 	const [translations, setTranslations] = useState(initialTranslations);
@@ -200,6 +209,12 @@ export function StoryForm({
 										value={milestone.imageUrl}
 										onChange={(url) => updateMilestone(milestone.key, { imageUrl: url })}
 										blobConfigured={blobConfigured}
+										aiConfigured={aiConfigured}
+										illustrate={{
+											placement: "story",
+											dateLabel: milestone.dateLabel,
+											...englishMilestoneCopy(milestone),
+										}}
 									/>
 								</div>
 							</div>

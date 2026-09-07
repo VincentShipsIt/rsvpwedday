@@ -18,12 +18,14 @@ export type HeroFormProps = {
 	initialHeroImageUrl: string;
 	initialTranslations: HeroTranslationState[];
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 };
 
 export function HeroForm({
 	initialHeroImageUrl,
 	initialTranslations,
 	blobConfigured,
+	aiConfigured,
 }: HeroFormProps) {
 	const [heroImageUrl, setHeroImageUrl] = useState(initialHeroImageUrl);
 	const [translations, setTranslations] = useState(initialTranslations);
@@ -53,6 +55,11 @@ export function HeroForm({
 						value={heroImageUrl}
 						onChange={setHeroImageUrl}
 						blobConfigured={blobConfigured}
+						aiConfigured={aiConfigured}
+						illustrate={{
+							placement: "hero",
+							title: translations.find((translation) => translation.locale === "en")?.tagline,
+						}}
 					/>
 				</CardContent>
 			</Card>

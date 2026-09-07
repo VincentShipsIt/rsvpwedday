@@ -45,6 +45,16 @@ function nextSortOrder(list: { sortOrder: number }[]): number {
 	return list.length === 0 ? 0 : Math.max(...list.map((entry) => entry.sortOrder)) + 1;
 }
 
+// Illustration prompts are written from the English copy: it is the source-of-truth locale
+// (`en.ts` types the dictionary) and the only one guaranteed to be filled in.
+function englishSection(section: SectionState): SectionTranslationState | undefined {
+	return section.translations.find((translation) => translation.locale === "en");
+}
+
+function englishItem(item: ItemState): ItemTranslationState | undefined {
+	return item.translations.find((translation) => translation.locale === "en");
+}
+
 function emptySectionTranslations(): SectionTranslationState[] {
 	return localeCodes.map((code) => ({ locale: code, title: "", intro: "" }));
 }
@@ -57,12 +67,14 @@ export type GuideFormProps = {
 	initialTranslations: GuideIntroTranslationState[];
 	initialSections: (Omit<SectionState, "key" | "items"> & { items: Omit<ItemState, "key">[] })[];
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 };
 
 export function GuideForm({
 	initialTranslations,
 	initialSections,
 	blobConfigured,
+	aiConfigured,
 }: GuideFormProps) {
 	const [translations, setTranslations] = useState(initialTranslations);
 	const [sections, setSections] = useState<SectionState[]>(() =>
@@ -283,6 +295,12 @@ export function GuideForm({
 										value={section.imageUrl}
 										onChange={(url) => updateSection(section.key, { imageUrl: url })}
 										blobConfigured={blobConfigured}
+										aiConfigured={aiConfigured}
+										illustrate={{
+											placement: "guideSection",
+											title: englishSection(section)?.title,
+											body: englishSection(section)?.intro,
+										}}
 									/>
 								</div>
 							</div>
@@ -360,6 +378,12 @@ export function GuideForm({
 														value={item.imageUrl}
 														onChange={(url) => updateItem(section.key, item.key, { imageUrl: url })}
 														blobConfigured={blobConfigured}
+														aiConfigured={aiConfigured}
+														illustrate={{
+															placement: "guideItem",
+															title: englishItem(item)?.title,
+															body: englishItem(item)?.body,
+														}}
 													/>
 												</div>
 											</div>

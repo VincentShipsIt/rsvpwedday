@@ -18,6 +18,7 @@ export type GalleryFormProps = {
 	headingDefaults: Record<Locale, string>;
 	initialGalleryUrls: string[];
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 };
 
 export function GalleryForm({
@@ -25,6 +26,7 @@ export function GalleryForm({
 	headingDefaults,
 	initialGalleryUrls,
 	blobConfigured,
+	aiConfigured,
 }: GalleryFormProps) {
 	const [headings, setHeadings] = useState(initialHeadings);
 	const [galleryUrls, setGalleryUrls] = useState(initialGalleryUrls);
@@ -58,6 +60,8 @@ export function GalleryForm({
 						values={galleryUrls}
 						onChange={setGalleryUrls}
 						blobConfigured={blobConfigured}
+						aiConfigured={aiConfigured}
+						illustrate={{ placement: "gallery" }}
 					/>
 				</CardContent>
 			</Card>

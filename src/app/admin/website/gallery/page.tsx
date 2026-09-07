@@ -3,6 +3,7 @@ import { headingDefaults, initialHeadings } from "@/app/admin/website/section-he
 import { WebsiteNav } from "@/app/admin/website/website-nav";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
+import { isImageGenerationConfigured } from "@/lib/replicate";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function GalleryPage() {
 				headingDefaults={headingDefaults("galleryHeading")}
 				initialGalleryUrls={siteContent?.galleryUrls ?? []}
 				blobConfigured={isBlobConfigured()}
+				aiConfigured={isImageGenerationConfigured()}
 			/>
 		</div>
 	);
