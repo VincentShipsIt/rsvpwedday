@@ -35,7 +35,7 @@ type CoverAnimation = Exclude<OpeningAnimation, typeof OpeningAnimation.NONE>;
 const revealMs: Record<CoverAnimation, number> = {
 	[OpeningAnimation.SEAL]: 1800,
 	[OpeningAnimation.MONOGRAM]: 1300,
-	[OpeningAnimation.BLOOM]: 1400,
+	[OpeningAnimation.BLOOM]: 1600,
 };
 
 function wait(ms: number): Promise<void> {

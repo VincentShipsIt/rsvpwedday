@@ -600,8 +600,11 @@ h3 {
  * (or fold line), not the SVG canvas origin.
  */
 
-/* Shared: loading label ↔ button swap, and the dots' rolling fade. */
+/* Shared: loading label ↔ button swap, and the dots' rolling fade. The label shares a grid cell
+   with the button and, being a stacking context of its own (opacity), paints above it — so it
+   must never take the pointer, or it swallows the button's clicks and hover once it's invisible. */
 .opening-loading-label {
+	pointer-events: none;
 	transition: opacity 0.3s ease;
 }
 
@@ -973,9 +976,13 @@ h3 {
 		calc(0.35s * var(--opening-scale, 1)) forwards;
 }
 
-.opening-cover[data-opening="bloom"][data-phase="opening"] .opening-names {
-	transition: opacity 0.4s ease;
+/* The names and the button go first so the wreath, its bursting blossoms, and the flying petals
+   are what ride up with the curtain. */
+.opening-cover[data-opening="bloom"][data-phase="opening"] .opening-names,
+.opening-cover[data-opening="bloom"][data-phase="opening"] .opening-button {
+	transition: opacity 0.3s ease;
 	opacity: 0;
+	pointer-events: none;
 }
 
 /*
