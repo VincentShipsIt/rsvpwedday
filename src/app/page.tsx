@@ -131,14 +131,14 @@ export default async function LandingPage({
 				/>
 				<SectionDivider theme={theme} />
 				<Story
-					heading={dictionary.site.storyHeading}
+					heading={siteTranslation?.storyHeading || dictionary.site.storyHeading}
 					intro={siteTranslation?.storyIntro ?? ""}
 					milestones={localizedMilestones}
 					theme={theme}
 				/>
 				<SectionDivider theme={theme} />
 				<Events
-					heading={dictionary.site.eventsHeading}
+					heading={siteTranslation?.eventsHeading || dictionary.site.eventsHeading}
 					events={localizedEvents}
 					locale={locale}
 					dictionary={dictionary}
@@ -146,7 +146,7 @@ export default async function LandingPage({
 				/>
 				<SectionDivider theme={theme} />
 				<Gallery
-					heading={dictionary.site.galleryHeading}
+					heading={siteTranslation?.galleryHeading || dictionary.site.galleryHeading}
 					imageUrls={siteContent?.galleryUrls ?? []}
 					theme={theme}
 				/>
@@ -154,7 +154,7 @@ export default async function LandingPage({
 					<>
 						<SectionDivider theme={theme} />
 						<RsvpSection
-							heading={dictionary.site.rsvpHeading}
+							heading={siteTranslation?.rsvpHeading || dictionary.site.rsvpHeading}
 							note={siteTranslation?.rsvpNote ?? ""}
 							deadline={settings.rsvpDeadline}
 							replyTo={settings.replyTo}

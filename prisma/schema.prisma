@@ -72,16 +72,16 @@ model EventTranslation {
 }
 
 model Invitation {
-  id                 String    @id @default(cuid())
-  token              String    @unique
-  email              String    @unique
-  locale             Locale    @default(en)
-  companionAllowance Int       @default(0)
+  id                 String     @id @default(cuid())
+  token              String     @unique
+  email              String     @unique
+  locale             Locale     @default(en)
+  companionAllowance Int        @default(0)
   respondedAt        DateTime?
   note               String?
   songRequest        String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
   guests             Guest[]
   emails             EmailLog[]
 }
@@ -135,19 +135,24 @@ model SiteContent {
 }
 
 model SiteContentTranslation {
-  siteContentId Int
-  locale        Locale
-  tagline       String      @default("")
-  storyIntro    String      @default("")
-  rsvpNote      String      @default("")
-  siteContent   SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
+  siteContentId  Int
+  locale         Locale
+  tagline        String      @default("")
+  storyIntro     String      @default("")
+  rsvpNote       String      @default("")
+  // Section headings; an empty string falls back to the dictionary's default for that locale.
+  storyHeading   String      @default("")
+  eventsHeading  String      @default("")
+  galleryHeading String      @default("")
+  rsvpHeading    String      @default("")
+  siteContent    SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
 
   @@id([siteContentId, locale])
 }
 
 model StoryMilestone {
-  id           String                        @id @default(cuid())
-  sortOrder    Int                           @default(0)
+  id           String                      @id @default(cuid())
+  sortOrder    Int                         @default(0)
   dateLabel    String
   imageUrl     String?
   translations StoryMilestoneTranslation[]

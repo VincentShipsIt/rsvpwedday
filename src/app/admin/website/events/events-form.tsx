@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { updateEvents } from "@/app/admin/website/actions";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
+import {
+	SectionHeadingField,
+	type SectionHeadingState,
+} from "@/components/admin/section-heading-field";
 import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
@@ -37,18 +41,31 @@ type EventState = {
 };
 
 export type EventsFormProps = {
+	initialHeadings: SectionHeadingState[];
+	headingDefaults: Record<Locale, string>;
 	initialEvents: Omit<EventState, "key">[];
 };
 
-export function EventsForm({ initialEvents }: EventsFormProps) {
+export function EventsForm({ initialHeadings, headingDefaults, initialEvents }: EventsFormProps) {
+	const [headings, setHeadings] = useState(initialHeadings);
 	const [events, setEvents] = useState<EventState[]>(() =>
-		initialEvents.map((event) => ({ ...event, key: createKey() }))
+		initialEvents.map((event) => ({ ...event, key: event.id ?? createKey() }))
 	);
 
 	const { status, error, retry } = useAutosave({
-		value: events,
-		save: (nextEvents) => updateEvents({ events: nextEvents.map(({ key, ...event }) => event) }),
+		value: { headings, events },
+		save: ({ headings: nextHeadings, events: nextEvents }) =>
+			updateEvents({
+				headings: nextHeadings,
+				events: nextEvents.map(({ key, ...event }) => event),
+			}),
 	});
+
+	function updateHeading(locale: Locale, heading: string) {
+		setHeadings((current) =>
+			current.map((entry) => (entry.locale === locale ? { ...entry, heading } : entry))
+		);
+	}
 
 	function addEvent() {
 		setEvents((current) => [
@@ -95,6 +112,15 @@ export function EventsForm({ initialEvents }: EventsFormProps) {
 
 	return (
 		<div className="flex flex-col gap-8">
+			<Card>
+				<CardContent>
+					<SectionHeadingField
+						values={headings}
+						defaults={headingDefaults}
+						onChange={updateHeading}
+					/>
+				</CardContent>
+			</Card>
 			<div className="flex flex-col gap-4">
 				{events.map((event) => (
 					<Card key={event.key}>
@@ -182,12 +208,12 @@ export function EventsForm({ initialEvents }: EventsFormProps) {
 												})
 											}
 										/>
-										<Textarea
+										<RichTextEditor
 											placeholder="Description"
 											value={translation.description}
-											onChange={(changeEvent) =>
+											onChange={(html) =>
 												updateTranslation(event.key, translation.locale, {
-													description: changeEvent.target.value,
+													description: html,
 												})
 											}
 										/>
