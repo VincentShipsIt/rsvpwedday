@@ -20,6 +20,7 @@ function revalidateWebsite(path: string) {
 	revalidatePath("/admin/website");
 	revalidatePath(path);
 	revalidatePath("/");
+	revalidatePath("/guide");
 }
 
 // ---- Hero (heroImageUrl + per-locale tagline) ----
@@ -292,5 +293,292 @@ export async function updateTheme(input: ThemeInput): Promise<FormActionResult> 
 	});
 
 	revalidateWebsite("/admin/website/theme");
+	return { ok: true };
+}
+
+// ---- Guide (per-locale guideTitle/guideIntro + sections with their items) ----
+
+// Optional outbound link on a guide item (a hotel, an airline). Empty is allowed; anything else
+// has to be an absolute http(s) URL so a guest never lands on a broken or `javascript:` href.
+const linkUrlSchema = z.union([z.literal(""), z.url({ protocol: /^https?$/ })]);
+
+export type GuideIntroTranslationInput = { locale: Locale; guideTitle: string; guideIntro: string };
+export type GuideSectionTranslationInput = { locale: Locale; title: string; intro: string };
+export type GuideItemTranslationInput = { locale: Locale; title: string; body: string };
+export type GuideItemInput = {
+	id?: string;
+	sortOrder: number;
+	url: string;
+	imageUrl: string;
+	translations: GuideItemTranslationInput[];
+};
+export type GuideSectionInput = {
+	id?: string;
+	slug: string;
+	sortOrder: number;
+	imageUrl: string;
+	translations: GuideSectionTranslationInput[];
+	items: GuideItemInput[];
+};
+export type GuideInput = {
+	translations: GuideIntroTranslationInput[];
+	sections: GuideSectionInput[];
+};
+
+// The anchor typed in the admin ("Where to stay") becomes the `#where-to-stay` fragment on
+// `/guide`. Falls back to the section's English title, then its position, and de-duplicates so
+// two sections can never fight over one anchor and trip the unique index.
+function normalizeGuideSlugs(sections: GuideSectionInput[]): string[] {
+	const used = new Set<string>();
+	return sections.map((section, index) => {
+		const englishTitle = section.translations.find((t) => t.locale === "en")?.title ?? "";
+		const base =
+			(section.slug || englishTitle)
+				.toLowerCase()
+				.normalize("NFKD")
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/^-+|-+$/g, "") || `section-${index + 1}`;
+		let slug = base;
+		let suffix = 2;
+		while (used.has(slug)) {
+			slug = `${base}-${suffix}`;
+			suffix += 1;
+		}
+		used.add(slug);
+		return slug;
+	});
+}
+
+export async function updateGuide(input: GuideInput): Promise<FormActionResult> {
+	for (const [sectionIndex, section] of input.sections.entries()) {
+		if (!imageUrlSchema.safeParse(section.imageUrl).success) {
+			return invalidImageUrlResult(`guide section #${sectionIndex + 1} image`);
+		}
+		for (const [itemIndex, item] of section.items.entries()) {
+			if (!imageUrlSchema.safeParse(item.imageUrl).success) {
+				return invalidImageUrlResult(
+					`guide section #${sectionIndex + 1}, item #${itemIndex + 1} image`
+				);
+			}
+			if (!linkUrlSchema.safeParse(item.url).success) {
+				return {
+					ok: false,
+					error: `Enter a full http(s) link for guide section #${sectionIndex + 1}, item #${itemIndex + 1}.`,
+				};
+			}
+		}
+	}
+
+	// Same re-derivation as `updateStory`: 0..n-1 from the submitted order, for sections and for
+	// the items inside each one.
+	const normalizedSections = [...input.sections]
+		.sort((a, b) => a.sortOrder - b.sortOrder)
+		.map((section, index) => ({
+			...section,
+			sortOrder: index,
+			items: [...section.items]
+				.sort((a, b) => a.sortOrder - b.sortOrder)
+				.map((item, itemIndex) => ({ ...item, sortOrder: itemIndex })),
+		}));
+	const slugs = normalizeGuideSlugs(normalizedSections);
+
+	const existingSections = await db.guideSection.findMany({
+		select: { id: true, items: { select: { id: true } } },
+	});
+	const existingSectionIds = new Set(existingSections.map((section) => section.id));
+	const existingItemIds = new Set(
+		existingSections.flatMap((section) => section.items.map((item) => item.id))
+	);
+	const submittedSectionIds = new Set(
+		normalizedSections.filter((section) => section.id).map((section) => section.id)
+	);
+	const submittedItemIds = new Set(
+		normalizedSections.flatMap((section) =>
+			section.items.filter((item) => item.id).map((item) => item.id)
+		)
+	);
+
+	await db.$transaction(async (tx) => {
+		await tx.siteContent.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
+
+		for (const translation of input.translations) {
+			await tx.siteContentTranslation.upsert({
+				where: { siteContentId_locale: { siteContentId: 1, locale: translation.locale } },
+				create: {
+					siteContentId: 1,
+					locale: translation.locale,
+					guideTitle: translation.guideTitle,
+					guideIntro: translation.guideIntro,
+				},
+				update: { guideTitle: translation.guideTitle, guideIntro: translation.guideIntro },
+			});
+		}
+
+		for (const sectionId of existingSectionIds) {
+			if (!submittedSectionIds.has(sectionId)) {
+				await tx.guideSection.delete({ where: { id: sectionId } });
+			}
+		}
+		for (const itemId of existingItemIds) {
+			if (!submittedItemIds.has(itemId)) {
+				await tx.guideItem.deleteMany({ where: { id: itemId } });
+			}
+		}
+
+		// Two passes over the slugs: a section keeping its own slug while another section takes
+		// its old one would otherwise collide mid-transaction on the unique index.
+		for (const section of normalizedSections) {
+			if (section.id && existingSectionIds.has(section.id)) {
+				await tx.guideSection.update({
+					where: { id: section.id },
+					data: { slug: `pending-${section.id}` },
+				});
+			}
+		}
+
+		for (const [index, section] of normalizedSections.entries()) {
+			const sectionData = {
+				slug: slugs[index] ?? `section-${index + 1}`,
+				sortOrder: section.sortOrder,
+				imageUrl: section.imageUrl || null,
+			};
+
+			let sectionId: string;
+			if (section.id && existingSectionIds.has(section.id)) {
+				sectionId = section.id;
+				await tx.guideSection.update({ where: { id: sectionId }, data: sectionData });
+				for (const translation of section.translations) {
+					await tx.guideSectionTranslation.upsert({
+						where: { sectionId_locale: { sectionId, locale: translation.locale } },
+						create: {
+							sectionId,
+							locale: translation.locale,
+							title: translation.title,
+							intro: translation.intro,
+						},
+						update: { title: translation.title, intro: translation.intro },
+					});
+				}
+			} else {
+				const created = await tx.guideSection.create({
+					data: {
+						...sectionData,
+						translations: {
+							create: section.translations.map((translation) => ({
+								locale: translation.locale,
+								title: translation.title,
+								intro: translation.intro,
+							})),
+						},
+					},
+				});
+				sectionId = created.id;
+			}
+
+			for (const item of section.items) {
+				const itemData = {
+					sectionId,
+					sortOrder: item.sortOrder,
+					url: item.url || null,
+					imageUrl: item.imageUrl || null,
+				};
+
+				if (item.id && existingItemIds.has(item.id)) {
+					await tx.guideItem.update({ where: { id: item.id }, data: itemData });
+					for (const translation of item.translations) {
+						await tx.guideItemTranslation.upsert({
+							where: { itemId_locale: { itemId: item.id, locale: translation.locale } },
+							create: {
+								itemId: item.id,
+								locale: translation.locale,
+								title: translation.title,
+								body: translation.body,
+							},
+							update: { title: translation.title, body: translation.body },
+						});
+					}
+				} else {
+					await tx.guideItem.create({
+						data: {
+							...itemData,
+							translations: {
+								create: item.translations.map((translation) => ({
+									locale: translation.locale,
+									title: translation.title,
+									body: translation.body,
+								})),
+							},
+						},
+					});
+				}
+			}
+		}
+	});
+
+	revalidateWebsite("/admin/website/guide");
+	return { ok: true };
+}
+
+// ---- FAQ (entries with per-locale question/answer) ----
+
+export type FaqEntryTranslationInput = { locale: Locale; question: string; answer: string };
+export type FaqEntryInput = {
+	id?: string;
+	sortOrder: number;
+	translations: FaqEntryTranslationInput[];
+};
+export type FaqInput = { entries: FaqEntryInput[] };
+
+export async function updateFaq(input: FaqInput): Promise<FormActionResult> {
+	const normalizedEntries = [...input.entries]
+		.sort((a, b) => a.sortOrder - b.sortOrder)
+		.map((entry, index) => ({ ...entry, sortOrder: index }));
+
+	const existingEntries = await db.faqEntry.findMany({ select: { id: true } });
+	const existingEntryIds = new Set(existingEntries.map((entry) => entry.id));
+	const submittedEntryIds = new Set(
+		normalizedEntries.filter((entry) => entry.id).map((entry) => entry.id)
+	);
+
+	await db.$transaction(async (tx) => {
+		for (const entryId of existingEntryIds) {
+			if (!submittedEntryIds.has(entryId)) {
+				await tx.faqEntry.delete({ where: { id: entryId } });
+			}
+		}
+
+		for (const entry of normalizedEntries) {
+			if (entry.id && existingEntryIds.has(entry.id)) {
+				await tx.faqEntry.update({ where: { id: entry.id }, data: { sortOrder: entry.sortOrder } });
+				for (const translation of entry.translations) {
+					await tx.faqEntryTranslation.upsert({
+						where: { entryId_locale: { entryId: entry.id, locale: translation.locale } },
+						create: {
+							entryId: entry.id,
+							locale: translation.locale,
+							question: translation.question,
+							answer: translation.answer,
+						},
+						update: { question: translation.question, answer: translation.answer },
+					});
+				}
+			} else {
+				await tx.faqEntry.create({
+					data: {
+						sortOrder: entry.sortOrder,
+						translations: {
+							create: entry.translations.map((translation) => ({
+								locale: translation.locale,
+								question: translation.question,
+								answer: translation.answer,
+							})),
+						},
+					},
+				});
+			}
+		}
+	});
+
+	revalidateWebsite("/admin/website/faq");
 	return { ok: true };
 }

@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { LanguageSelect } from "@/components/site/language-select";
 import { NavMobileMenu } from "@/components/site/nav-mobile-menu";
 import { StickyHeader } from "@/components/site/sticky-header";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
+import type { SiteLink } from "@/lib/site-links";
 import { dataTheme } from "@/lib/site-theme";
 
 // Background, border colour, and blur live in `globals.css` under `[data-nav]`, so the bar is
@@ -28,53 +30,44 @@ export function SiteNav({
 	coupleNames,
 	locale,
 	theme,
-	labels,
-	hasStory,
-	hasEvents,
-	hasGallery,
+	links,
+	languageLabel,
 	isOverPhoto,
 }: {
 	coupleNames: string;
 	locale: Locale;
 	theme: SiteTheme;
-	labels: { story: string; events: string; gallery: string; rsvp: string; language: string };
-	hasStory: boolean;
-	hasEvents: boolean;
-	hasGallery: boolean;
+	/** From `buildSiteLinks`, so the nav, mobile menu, and footer always agree. */
+	links: SiteLink[];
+	languageLabel: string;
 	isOverPhoto: boolean;
 }) {
-	const navLinks = [
-		hasStory && { href: "#story", label: labels.story },
-		hasEvents && { href: "#events", label: labels.events },
-		hasGallery && { href: "#gallery", label: labels.gallery },
-		{ href: "#rsvp", label: labels.rsvp },
-	].filter((link): link is { href: string; label: string } => Boolean(link));
-
 	return (
 		<StickyHeader
 			dataTheme={dataTheme[theme]}
 			className={`fixed inset-x-0 top-0 z-20 ${navClassNames[theme]}${isOverPhoto ? " nav-over-photo" : ""}`}
 		>
 			<nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-sm">
-				<a href="#top" className="font-accent text-lg">
+				<Link href="/#top" className="font-accent text-lg">
 					{coupleNames}
-				</a>
+				</Link>
 				<div className="flex items-center gap-4">
-					{/* Anchor links: inline from `sm:` up, behind `NavMobileMenu`'s toggle below
-					    it, so this list only ever renders once at a time per breakpoint. */}
-					<div className="hidden flex-wrap items-center gap-6 sm:flex">
-						{navLinks.map((link) => (
-							<a
+					{/* Links: inline from `lg:` up (six of them, longer still in German, plus the language select no
+					    longer fit at `md`), behind `NavMobileMenu`'s toggle below it, so this list only
+					    ever renders once at a time per breakpoint. */}
+					<div className="hidden flex-wrap items-center gap-6 lg:flex">
+						{links.map((link) => (
+							<Link
 								key={link.href}
 								href={link.href}
 								className={`link-underline hover:text-green ${linkClassNames[theme]}`}
 							>
 								{link.label}
-							</a>
+							</Link>
 						))}
 					</div>
-					<LanguageSelect locale={locale} label={labels.language} />
-					<NavMobileMenu links={navLinks} linkClassName={linkClassNames[theme]} />
+					<LanguageSelect locale={locale} label={languageLabel} />
+					<NavMobileMenu links={links} linkClassName={linkClassNames[theme]} />
 				</div>
 			</nav>
 		</StickyHeader>

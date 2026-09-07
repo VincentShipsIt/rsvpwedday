@@ -44,9 +44,16 @@ unchanged. The invitation create/edit form is a single `InvitationDialog` compon
 (`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
 `/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
 
-`/admin/website` is a section index linking to one page per home-page section — `hero`, `story`,
-`events`, `gallery`, `rsvp`, `theme` — each saving through its own server action in
-`src/app/admin/website/actions.ts`. `events` edits the `Event` rows and their translations (moved
+`/admin/website` is a section index linking to one page per site section — `hero`, `story`,
+`events`, `guide`, `gallery`, `faq`, `rsvp`, `theme` — registered once in
+`src/app/admin/website/sections.ts` and each saving through its own server action in
+`src/app/admin/website/actions.ts`. `guide` edits the public `/guide` page (the destination guide
+for guests who don't know the area): a per-locale title and intro on `SiteContentTranslation`, then
+`GuideSection` rows (anchor slug, image, title, intro) each holding `GuideItem` cards (optional
+link and image, title, body). `faq` edits `FaqEntry` rows rendered as a native `<details>` list on
+the home page just before RSVP. Both are empty by default and hide themselves completely — nav
+link, footer link, the post-Events teaser, and the `/guide` route (404) — until content exists, so
+the seed never has to know the destination. `events` edits the `Event` rows and their translations (moved
 here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
 (hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
 drag-and-drop upload via `src/lib/blob.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set, always
@@ -67,6 +74,11 @@ and the retry action on error. The invitation dialog and the Guests CSV import a
 one-shot actions and do not autosave.
 
 ## Translations
+
+The public site has two routes, `/` and `/guide`, sharing `SiteNav`, `SiteFooter`, and the theme.
+Their link list comes from `src/lib/site-links.ts#buildSiteLinks` (absolute `/#story`-style hrefs
+so they work from either page). `src/proxy.ts` writes the `?lang=` cookie on both paths; add any
+further public page to its `SITE_PATHS` and `matcher` together.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
 and `ku.ts` are typed `: Dictionary`, so a missing key fails `tsc`. The admin UI is English only

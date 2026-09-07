@@ -1,19 +1,22 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ChangeEvent } from "react";
 import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
 export function LanguageSelect({ locale, label }: { locale: Locale; label: string }) {
 	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
 
 	function handleChange(changeEvent: ChangeEvent<HTMLSelectElement>) {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("lang", changeEvent.target.value);
 		const hash = typeof window === "undefined" ? "" : window.location.hash;
-		router.push(`/?${params.toString()}${hash}`);
+		// Stays on the current public page (`/` or `/guide`); `src/proxy.ts` turns the `?lang=`
+		// into the cookie on both.
+		router.push(`${pathname}?${params.toString()}${hash}`);
 	}
 
 	return (
