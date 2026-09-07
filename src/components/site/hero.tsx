@@ -37,7 +37,7 @@ function heroDelayStyle(step: number): CSSProperties {
 
 // The seven themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
 // an arched frame vs. a bottom-anchored dark overlay vs. a two-tone block-and-frame split vs. a
-// pressed-flower arched frame with a botanical rule vs. an arch flanked by lemon sprigs), so this branches on `theme` rather than trying to fold everything into
+// pressed-flower arched frame with a botanical rule vs. a beating heart-shaped photo flanked by lemon sprigs), so this branches on `theme` rather than trying to fold everything into
 // one shared markup tree.
 export function Hero(props: HeroProps) {
 	if (props.theme === SiteTheme.MODERN) {
@@ -501,7 +501,7 @@ function MediterraneanHero({
 	return (
 		<section
 			id="top"
-			// Garden's arched photo frame on the plain cream ground, a lemon sprig either
+			// The photo as a beating heart on the plain cream ground, a lemon sprig either
 			// side of the arch from `sm:` up (they'd crowd the photo on a phone). Generous bottom
 			// padding so the hero and the story beneath it breathe rather than abut.
 			className="relative flex scroll-mt-[var(--wed-nav-height)] flex-col items-center overflow-hidden pb-16 text-center sm:pb-24"
@@ -533,10 +533,20 @@ function MediterraneanHero({
 			<div className="relative z-10 mt-10 w-full max-w-3xl px-6">
 				<LemonSprig className="pointer-events-none absolute bottom-4 -left-6 hidden w-44 -rotate-6 sm:block lg:-left-12 lg:w-56" />
 				<LemonSprig className="pointer-events-none absolute -right-6 bottom-4 hidden w-44 -scale-x-100 rotate-6 sm:block lg:-right-12 lg:w-56" />
-				{/* Garden's bare arch on the plain cream ground, with only a blue hairline. */}
-				<div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark ring-1 ring-green/20">
+				{/* The photo clipped to a heart that beats (`.hero-heartbeat`, globals.css). The
+				    clip is an inline SVG path in object-bounding-box units so it scales with the
+				    box; the hidden svg only exists to host it. */}
+				<svg aria-hidden="true" className="absolute h-0 w-0">
+					<clipPath id="med-heart-clip" clipPathUnits="objectBoundingBox">
+						<path d="M0.5 0.94C0.22 0.76 0.02 0.58 0.02 0.34 0.02 0.16 0.14 0.04 0.29 0.04 0.38 0.04 0.45 0.09 0.5 0.17 0.55 0.09 0.62 0.04 0.71 0.04 0.86 0.04 0.98 0.16 0.98 0.34 0.98 0.58 0.78 0.76 0.5 0.94Z" />
+					</clipPath>
+				</svg>
+				<div
+					className="hero-heartbeat relative mx-auto aspect-square w-full max-w-md overflow-hidden bg-ivory-dark"
+					style={{ clipPath: "url(#med-heart-clip)" }}
+				>
 					{heroImageUrl && (
-						<Parallax factor={0.25} className="h-full w-full rounded-t-[999px] rounded-b-3xl">
+						<Parallax factor={0.25} className="h-full w-full">
 							<Image
 								src={heroImageUrl}
 								alt=""

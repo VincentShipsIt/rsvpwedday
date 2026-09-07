@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { LemonGlyph } from "@/components/site/lemon-sprig";
 import { Parallax } from "@/components/site/parallax";
 import { Reveal } from "@/components/site/reveal";
 import { SiteTheme } from "@/generated/prisma/enums";
@@ -48,7 +47,8 @@ export function Story({
 			{theme === SiteTheme.MIDNIGHT && <MidnightMilestones milestones={milestones} />}
 			{theme === SiteTheme.BOHO && <BohoMilestones milestones={milestones} />}
 			{theme === SiteTheme.VINTAGE && <VintageMilestones milestones={milestones} />}
-			{theme === SiteTheme.MEDITERRANEAN && <MediterraneanMilestones milestones={milestones} />}
+			{/* MEDITERRANEAN shares Garden's polaroids; only the tokens (blue date, Playfair title) differ. */}
+			{theme === SiteTheme.MEDITERRANEAN && <GardenMilestones milestones={milestones} />}
 		</section>
 	);
 }
@@ -294,45 +294,6 @@ function VintageMilestones({ milestones }: { milestones: StoryMilestoneView[] })
 					</p>
 					<h3 className="text-center text-lg">{milestone.title}</h3>
 					<p className="text-center text-sm text-ink/70">{milestone.body}</p>
-				</Reveal>
-			))}
-		</div>
-	);
-}
-
-// No card: each milestone is a small arch of photo (echoing the hero) sitting straight on the
-// cream, with a tracked small-caps date, serif title and italic body beneath it and a lemon to
-// close. Three-up from `lg`, two from `sm`, one below, so three sit on one line inside the
-// section's `max-w-4xl`.
-function MediterraneanMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
-	return (
-		<div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-			{milestones.map((milestone, index) => (
-				<Reveal
-					key={milestone.id}
-					delay={staggerDelay(index)}
-					className="flex flex-col items-center"
-				>
-					{milestone.imageUrl && (
-						<Parallax
-							factor={0.12}
-							className="aspect-[4/5] w-full max-w-64 rounded-t-[999px] rounded-b-2xl"
-						>
-							<Image
-								src={milestone.imageUrl}
-								alt=""
-								fill
-								sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
-								className="reveal-photo-frame object-cover"
-							/>
-						</Parallax>
-					)}
-					<p className="mt-5 text-center text-[0.65rem] uppercase tracking-[0.3em] text-green">
-						{milestone.dateLabel}
-					</p>
-					<h3 className="mt-1 text-center text-xl">{milestone.title}</h3>
-					<p className="mt-2 text-center text-sm text-ink/70 italic">{milestone.body}</p>
-					<LemonGlyph className="mx-auto mt-4 h-5 w-6" />
 				</Reveal>
 			))}
 		</div>
