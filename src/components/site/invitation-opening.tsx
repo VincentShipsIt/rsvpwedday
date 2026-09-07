@@ -42,8 +42,9 @@ const revealMs: Record<CoverAnimation, number> = {
 
 // The cover ground is cut into four quadrants that each slide out to their own corner on open,
 // so the page underneath appears along a vertical and a horizontal seam at once. Each panel
-// clips a 200%-sized copy of the full ground (theme texture + ghosted hero photo) anchored to its
-// corner, so the four pieces line up into one seamless picture at rest.
+// clips a viewport-sized copy of the full ground (theme texture + ghosted hero photo) anchored to
+// its corner, so the four pieces line up into one picture at rest; the panels overlap by 1px so
+// subpixel rounding never shows a hairline of the page along the seams.
 const PANELS: { key: string; className: string; x: string; y: string }[] = [
 	{ key: "tl", className: "top-0 left-0 [&>div]:top-0 [&>div]:left-0", x: "-100%", y: "-100%" },
 	{ key: "tr", className: "top-0 right-0 [&>div]:top-0 [&>div]:right-0", x: "100%", y: "-100%" },
@@ -232,12 +233,12 @@ export function InvitationOpening({
 			{PANELS.map((panel) => (
 				<div
 					key={panel.key}
-					className={`opening-panel absolute h-1/2 w-1/2 overflow-hidden ${panel.className}`}
+					className={`opening-panel absolute h-[calc(50%+1px)] w-[calc(50%+1px)] overflow-hidden ${panel.className}`}
 					style={{ "--panel-x": panel.x, "--panel-y": panel.y } as CSSProperties}
 				>
 					{/* Bottom to top: solid ground, the hero photo (blurred and dimmed at rest, full
 					    on open), then the paper scrim carrying the theme's own page texture. */}
-					<div className="absolute h-[200%] w-[200%] bg-ivory">
+					<div className="absolute h-dvh w-screen bg-ivory">
 						{heroImageUrl && (
 							<Image
 								src={heroImageUrl}
