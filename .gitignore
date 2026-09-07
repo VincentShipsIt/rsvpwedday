@@ -14,3 +14,4 @@ src/generated/
 *.log
 *.tsbuildinfo
 next-env.d.ts
+.claude/

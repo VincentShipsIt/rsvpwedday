@@ -1,5 +1,5 @@
 import { richTextToPlainText } from "@/domain/rich-text";
-import { SiteTheme } from "@/generated/prisma/enums";
+import { BlockType, SiteTheme } from "@/generated/prisma/enums";
 
 /*
  * Every generated illustration goes through this one builder, so the whole site comes back in a
@@ -8,14 +8,40 @@ import { SiteTheme } from "@/generated/prisma/enums";
  */
 
 export const ILLUSTRATION_PLACEMENTS = [
-	"hero",
-	"story",
-	"gallery",
-	"guideSection",
-	"guideItem",
+	"HERO",
+	"GALLERY",
+	"CARDS",
+	"IMAGE",
+	"PAGE_LINK",
+	/** One card inside a CARDS block. */
+	"ITEM",
+	/** A story milestone, which lives outside the block tree (`/admin/settings/milestones`). */
+	"MILESTONE",
 ] as const;
 
 export type IllustrationPlacement = (typeof ILLUSTRATION_PLACEMENTS)[number];
+
+/*
+ * Which placement a block's own image field illustrates. `null` is a block type that never shows
+ * one — a built-in reading data from elsewhere, or a text-only block — and the exhaustive Record
+ * is what makes a new `BlockType` a compile error here rather than a silently missing button.
+ */
+const blockPlacements: Record<BlockType, IllustrationPlacement | null> = {
+	[BlockType.HERO]: "HERO",
+	[BlockType.GALLERY]: "GALLERY",
+	[BlockType.CARDS]: "CARDS",
+	[BlockType.IMAGE]: "IMAGE",
+	[BlockType.PAGE_LINK]: "PAGE_LINK",
+	[BlockType.STORY]: null,
+	[BlockType.EVENTS]: null,
+	[BlockType.FAQ]: null,
+	[BlockType.RSVP]: null,
+	[BlockType.TEXT]: null,
+};
+
+export function blockIllustrationPlacement(type: BlockType): IllustrationPlacement | null {
+	return blockPlacements[type];
+}
 
 export type IllustrationSubject = {
 	placement: IllustrationPlacement;
@@ -49,7 +75,7 @@ const themeStyles: Record<SiteTheme, string> = {
 	[SiteTheme.EDITORIAL]:
 		"Quiet editorial illustration: fine ink contours over flat washes, generous negative space, warm ivory ground (#faf7f0) with deep pine-green accents (#2f4d3a), soft low side light late in the afternoon.",
 	[SiteTheme.MODERN]:
-		"Spare graphic illustration: bold flat colour shapes with almost no outline, off-white ground (#f7f5f1), a single burnt-orange accent (#c8552d), hard clean light and confident geometric composition.",
+		"Spare graphic illustration: bold flat colour shapes with almost no outline, an off-white base tone (#f7f5f1) carried through the scene itself, a single burnt-orange accent (#c8552d), hard clean light and confident geometric composition.",
 	[SiteTheme.GARDEN]:
 		"Loose botanical watercolour: wet-in-wet blooms, visible paper grain, dusty-rose ground (#f6e7e1) with terracotta accents (#b5533c), diffuse morning light.",
 	[SiteTheme.MIDNIGHT]:
@@ -67,19 +93,23 @@ const themeStyles: Record<SiteTheme, string> = {
  * object study. The model gets the intent; `illustrationAspectRatio` gets the frame.
  */
 const placementBriefs: Record<IllustrationPlacement, string> = {
-	hero: "A wide establishing scene setting the mood for the whole wedding website.",
-	story: "A small intimate vignette illustrating one moment in the couple's story.",
-	gallery: "A decorative scene that sits alongside the couple's own photographs.",
-	guideSection: "A wide banner for a section of a destination guide.",
-	guideItem: "A single clear subject for a small guide card: one place, dish or object.",
+	HERO: "A wide establishing scene setting the mood for the whole page.",
+	GALLERY: "A decorative scene that sits alongside the couple's own photographs.",
+	CARDS: "A wide banner introducing a group of cards.",
+	IMAGE: "A standalone picture carrying its own section of the page.",
+	PAGE_LINK: "A wide banner teasing another page of the site.",
+	ITEM: "A single clear subject for a small card: one place, dish or object.",
+	MILESTONE: "A small intimate vignette illustrating one moment in the couple's story.",
 };
 
 const placementAspectRatios: Record<IllustrationPlacement, string> = {
-	hero: "16:9",
-	story: "4:3",
-	gallery: "1:1",
-	guideSection: "16:9",
-	guideItem: "3:2",
+	HERO: "16:9",
+	GALLERY: "1:1",
+	CARDS: "16:9",
+	IMAGE: "3:2",
+	PAGE_LINK: "16:9",
+	ITEM: "3:2",
+	MILESTONE: "4:3",
 };
 
 export function illustrationAspectRatio(placement: IllustrationPlacement): string {
@@ -121,7 +151,7 @@ function describeSetting(context: IllustrationContext): string {
  * that the output *is* the picture rather than a photograph of one.
  */
 const RULES = [
-	"No text, letters, numbers, captions, signatures or watermarks anywhere in the image.",
+	"No text, letters, numbers, captions, signatures or watermarks anywhere in the image, and none on signs, crates, labels, awnings or packaging within the scene. The words and dates above describe the picture; they are never written into it.",
 	"No recognisable faces: any people are small, turned away, or suggested in a few strokes.",
 	"The artwork bleeds off all four edges: colour reaches every corner and the composition is cut off by the frame rather than fading or tapering before it. No white margin, no paper border or deckle edge, no mount, frame, keyline, vignette or drop shadow, and no bare unpainted ground. The output is the picture itself, not a photograph of a painting lying on a surface.",
 	"Keep the important subject away from the outer tenth of the frame; the site crops these images.",

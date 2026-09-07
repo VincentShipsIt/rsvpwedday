@@ -1,7 +1,7 @@
 import { render } from "@react-email/components";
 import { createElement } from "react";
 import { Resend } from "resend";
-import { resolveEmailCopy } from "@/domain/email-copy";
+import { type EmailCopyOverride, resolveEmailCopy } from "@/domain/email-copy";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { InvitationEmail } from "@/emails/invitation-email";
 import type { EmailEvent, EmailTemplateProps } from "@/emails/types";
@@ -10,15 +10,17 @@ import { getDictionary } from "@/i18n";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { formatDate } from "@/lib/format";
+import { getHomeHero } from "@/lib/home-hero";
 
 export type RenderedEmail = { subject: string; html: string };
 
 // Everything an email needs besides the guest: settings, site theme, hero photo, events, and the
 // admin's copy override for this kind/locale. Fetched once per send (or preview).
 async function loadEmailContext(kind: EmailKind, locale: Locale) {
-	const [settings, siteContent, events, template] = await Promise.all([
+	const [settings, siteContent, hero, events, template] = await Promise.all([
 		db.settings.findUniqueOrThrow({ where: { id: 1 } }),
 		db.siteContent.findUnique({ where: { id: 1 } }),
+		getHomeHero(locale),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 		db.emailTemplate.findUnique({ where: { kind_locale: { kind, locale } } }),
 	]);
@@ -34,7 +36,7 @@ async function loadEmailContext(kind: EmailKind, locale: Locale) {
 		};
 	});
 
-	return { settings, siteContent, events: emailEvents, template };
+	return { settings, siteContent, hero, events: emailEvents, template };
 }
 
 export async function renderEmail(
@@ -43,12 +45,15 @@ export async function renderEmail(
 	guestFirstName: string,
 	link: string,
 	// The household's invited events; `null` (previews, tests) lists every event.
-	eventIds: string[] | null = null
+	eventIds: string[] | null = null,
+	// Unsaved copy from the admin's editor, so its preview shows what is being typed rather than
+	// what was last saved. Omitted everywhere else, which uses the stored template.
+	copyOverride?: EmailCopyOverride
 ): Promise<RenderedEmail> {
 	const context = await loadEmailContext(kind, locale);
-	const { settings, siteContent, template } = context;
+	const { settings, siteContent, hero, template } = context;
 	const events = eventIds ? filterToInvited(context.events, eventIds) : context.events;
-	const copy = resolveEmailCopy(kind, getDictionary(locale), template, {
+	const copy = resolveEmailCopy(kind, getDictionary(locale), copyOverride ?? template, {
 		name: guestFirstName,
 		coupleNames: settings.coupleNames,
 		deadline: formatDate(settings.rsvpDeadline, locale),
@@ -60,7 +65,7 @@ export async function renderEmail(
 		theme: siteContent?.theme ?? "EDITORIAL",
 		copy,
 		coupleNames: settings.coupleNames,
-		heroImageUrl: siteContent?.heroImageUrl ?? null,
+		heroImageUrl: hero.imageUrl,
 		events,
 		link,
 	};

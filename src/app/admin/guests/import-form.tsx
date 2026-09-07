@@ -16,7 +16,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { IMPORT_CSV_HEADER, IMPORT_EVENTS_SEPARATOR, parseImportCsv } from "@/domain/csv";
 
-export function GuestsImportForm({ eventSlugs }: { eventSlugs: string[] }) {
+export function GuestsImportForm({
+	eventSlugs,
+	onImported,
+}: {
+	eventSlugs: string[];
+	/** Closes the dialog and refreshes the list once the rows have landed. */
+	onImported?: () => void;
+}) {
 	const [text, setText] = useState(`${IMPORT_CSV_HEADER.join(",")}\n`);
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
@@ -37,7 +44,9 @@ export function GuestsImportForm({ eventSlugs }: { eventSlugs: string[] }) {
 			const result = await commitImport(text);
 			if (!result.ok) {
 				setError(result.error);
+				return;
 			}
+			onImported?.();
 		});
 	}
 

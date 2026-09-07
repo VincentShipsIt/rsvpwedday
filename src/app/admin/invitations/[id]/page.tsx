@@ -11,5 +11,5 @@ export default async function EditInvitationPage({ params }: { params: Promise<{
 		notFound();
 	}
 
-	redirect(`/admin?invitation=${invitation.id}`);
+	redirect(`/admin/guests?invitation=${invitation.id}`);
 }

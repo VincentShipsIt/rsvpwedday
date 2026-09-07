@@ -48,58 +48,91 @@ Nova preset, radix base, neutral colour). shadcn's tokens live on `:root` in `gl
 don't collide with the public site's own `--wed-*`/`--color-*` names) so Radix's portalled content
 (Select, Dialog, AlertDialog, DropdownMenu, the Toaster — all rendered on `document.body`, outside
 `.admin-root`) resolves them too; only the base-layer rules that paint `.admin-root`'s own
-background/text stay scoped to that class. The Guests page (`src/app/admin/guests`) replaces the
-old separate Import/Export pages; `/admin/import` now redirects there and `/admin/export` is
-unchanged. The invitation create/edit form is a single `InvitationDialog` component
+background/text stay scoped to that class. `/admin` is the dashboard — reply counts, per-event headcount, and the two bulk sends — and
+`/admin/guests` is the guest list: every invitation, filtered and searchable, with the per-row
+actions. Import and export are occasional jobs, so they are buttons there that open a dialog
+(`ImportDialog`, `ExportDialog` in `guests-list.tsx`) rather than cards above the list;
+`/admin/import` redirects to the page and `/admin/export` still serves the CSV. The invitation
+create/edit form is a single `InvitationDialog` component
 (`src/app/admin/invitations/invitation-dialog.tsx`); the `/admin/invitations/new` and
-`/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
+`/admin/invitations/[id]` routes redirect to `/admin/guests?invitation=new|<id>`, which opens it.
 
-`/admin/website` is a section index linking to one page per site section — `hero`, `story`,
-`events`, `guide`, `gallery`, `faq`, `rsvp`, `theme`, `effects` — registered once in
-`src/app/admin/website/sections.ts` and each saving through its own server action in
-`src/app/admin/website/actions.ts`. `guide` edits the public `/guide` page (the destination guide
-for guests who don't know the area): a per-locale title and intro on `SiteContentTranslation`, then
-`GuideSection` rows (anchor slug, image, title, intro) each holding `GuideItem` cards (optional
-link and image, title, body). `faq` edits `FaqEntry` rows rendered as a native `<details>` list on
-the home page just before RSVP. Both are empty by default and hide themselves completely — nav
-link, footer link, the post-Events teaser, and the `/guide` route (404) — until content exists, so
-the seed never has to know the destination. `events` edits the `Event` rows and their translations (moved
-here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
-(hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
-drag-and-drop upload via `src/lib/blob-upload.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set
-(a browser-to-Blob client upload authorised by the token route `src/app/admin/upload/route.ts`, so
-files never pass through a Server Action and its 4.5 MB Vercel body cap), always
-with a plain URL input underneath so a pasted link keeps working either way. Before either field
+`/admin/pages` is the site's content manager. Every public page is a `Page` row holding ordered
+`Block` rows, so a page is whatever blocks it carries and a block can be moved, inserted between
+two others, or removed on its own. `home` is the root route; any other slug is served by
+`src/app/[slug]/page.tsx`, and both render through one component,
+`src/components/site/site-page.tsx`, so nav, theme, footer and effects can never drift between
+routes. `src/domain/blocks.ts` is the single registry: it declares, per `BlockType`, which fields
+the editor shows and the renderer reads, whether the type is built-in (one per page), its default
+heading key and its default anchor. Adding a type means a `BlockType` value, a definition there, an
+editor case and a case in `src/components/site/page-blocks.tsx` — nothing else.
+
+Six types are built in and display data owned by other tables: `HERO` (photo and tagline on the
+block, couple names and countdown from settings and events), `STORY` (heading and intro on the
+block, milestones from `StoryMilestone`), `EVENTS`, `GALLERY` (photos on the block), `FAQ`
+(questions as `BlockItem` rows) and `RSVP`. Four are free content the couple adds anywhere: `TEXT`,
+`CARDS` (what a travel-guide section was — heading, intro, and cards with optional links and
+photos), `IMAGE` and `PAGE_LINK` (a teaser pointing at another page). Every text field is the
+rich-text editor; `anchor` is the block's `#fragment` and is unique within its page, and an empty
+anchor keeps the block off the top bar without hiding it. A block with nothing in it renders
+nothing and gets no nav link (`src/lib/page-content.ts#blockHasContent`), so an unfilled block
+never leaves a heading over an empty section.
+
+The editor (`src/app/admin/pages/[id]`) has one language switcher at the top driving every block
+below it, blocks reorder by dragging their handle (dnd-kit), and **each block saves itself** —
+`updateBlock` names one block id and ignores every field its type does not declare, so a stale
+client can never blank a neighbour the way the old whole-page forms could. `prisma/page-migration.ts`
+moved the fixed home page and the guide into blocks once, guarded on the page count and run from
+both `scripts/prepare-database.ts` and the dev seed; the `SiteContent*`, `GuideSection` and
+`FaqEntry` tables still exist but nothing reads them.
+
+`/admin/settings` keeps the couple names, RSVP deadline and reply-to, and indexes the four
+sections that blocks display but do not own: `events`, `milestones`, `theme` and `effects`,
+registered in `src/app/admin/settings/sections.ts`. `/admin/website/*` is a catch-all that
+redirects each old path to whichever page now owns it. Every image field (hero, milestones, cards, gallery) is `src/components/admin/image-field.tsx` or
+`image-list-field.tsx`, and the music track is `audio-field.tsx`; all three start from
+`media-drop-zone.tsx`. Empty, a field is a drop zone uploading via `src/lib/blob-upload.ts` when
+`BLOB_READ_WRITE_TOKEN` is set (a browser-to-Blob client upload authorised by the token route
+`src/app/admin/upload/route.ts`, so files never pass through a Server Action and its 4.5 MB Vercel
+body cap); filled, it shows the picture (or a player and file name) with Replace and Remove. The
+URL is never displayed: "Use a link" / "Add by link" reveals a paste box, which is also the whole
+field when Blob is not configured. The gallery grid reorders by drag and drop. Before either field
 calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
 fit under the 8 MB upload cap: draws it to a canvas capped at 2400px on the long edge and
 re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparency) and GIF/SVG
 pass through untouched. It never throws — a decode or canvas failure just returns the original
 file, so a browser without canvas support still uploads, it just skips the shrink.
 
-Both image fields also offer "Generate illustration" when `REPLICATE_API_TOKEN` is set: the hero,
-each story milestone, the gallery, and both guide levels. The browser posts only which block it is
-and that block's own English copy to `src/app/admin/generate-image/route.ts`; the route reads the
-theme, couple names and event venues from the database and builds the prompt with
+Every image field also offers "Generate illustration" when `REPLICATE_API_TOKEN` is set — both
+fields on a block, each card inside one, and each story milestone. The browser posts only the
+block's type and its own English copy to `src/app/admin/generate-image/route.ts`; the route reads
+the theme, couple names and event venues from the database and builds the prompt with
 `src/domain/illustration-prompt.ts`, so the art direction cannot be steered from the client. That
-module holds one style per `SiteTheme` — palette copied from the `[data-theme]` blocks the same way
-`src/emails/theme.ts` copies it for mail clients — plus a brief and aspect ratio per placement and a
-fixed rules block that keeps lettering and faces out of every image, which is what makes a set of
-them look like a set. `src/lib/replicate.ts` calls the official `google/nano-banana-2-lite` model
-over plain fetch (one POST, `Prefer: wait`, then a short poll). Replicate's output URL expires
-within the hour, so `src/lib/blob.ts#copyImageToBlob` copies the result into the same Blob store as
-an uploaded photo before the admin ever sees it — which is why generation needs both tokens.
+module holds one art direction per `SiteTheme` — palette copied from the `[data-theme]` blocks the
+same way `src/emails/theme.ts` copies it for mail clients — plus a brief and aspect ratio per
+`BlockType` and a fixed rules block. The rules are what make a set of images look like a set, and
+they are load-bearing in a non-obvious way: a style line that names a medium as an object
+("screenprint", "paper foxing", "wet edges") makes the model paint the artefact — a sheet with a
+margin, or literal off-register plates — which `object-cover` then crops at random. Describe the
+palette, the marks and the light, never the printing process. `src/lib/replicate.ts` calls the
+official `google/nano-banana-2-lite` model over plain fetch (one POST, `Prefer: wait`, then a short
+poll). Replicate's output URL expires within the hour, so `src/lib/blob.ts#copyImageToBlob` copies
+the result into the same Blob store as an uploaded photo before the admin ever sees it — which is
+why generation needs both tokens.
 
-`/admin/website/emails` edits the invite, reminder and confirmation emails per locale: subject,
-heading and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default).
+`/admin/emails` edits the invite, reminder and confirmation emails per locale: subject, heading
+and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default). Tabs pick
+the kind, a second switcher the language, and the fields sit beside a live preview of that exact
+email. The preview renders the copy **in the editor**, not the last save: `renderEmailPreview`
+passes the draft to `renderEmail`'s `copyOverride`, and the result is fed to the iframe as
+sandboxed `srcDoc` about half a second after the last keystroke.
 `src/domain/email-copy.ts#resolveEmailCopy` merges override and default and substitutes
 `{name}`, `{coupleNames}` and `{deadline}`. All three kinds render through one template,
 `src/emails/invitation-email.tsx`, themed by `src/emails/theme.ts` (an email-safe copy of each
 `[data-theme]` palette, since mail clients cannot load the web fonts) and framed with the couple
-names and hero photo. The page previews the result in an iframe served by
-`/admin/website/emails/preview` and can send a test to any address; test sends are not written
-to `EmailLog`.
+names and hero photo. A test can be sent to any address; test sends are not written to `EmailLog`.
 
-Every website-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
+Every settings-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
 differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save
 is queued and run once the current save settles), and flushes immediately on `visibilitychange`
@@ -110,7 +143,7 @@ one-shot actions and do not autosave.
 
 ## Site effects
 
-`/admin/website/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load
+`/admin/settings/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load
 cover (`src/components/site/invitation-opening.tsx` plus one SVG art file per variant under
 `src/components/site/opening/`): `SEAL` (wax-sealed envelope, doors part), `MONOGRAM` (stroke-drawn
 initials, iris reveal), `BLOOM` (growing branches), or `NONE`. Every variant shares one exit: the cover ground is four
@@ -134,11 +167,12 @@ thumbnails) drops all three.
 
 ## Translations
 
-The public site has two routes, `/` and `/guide`, sharing `SiteNav`, `SiteFooter`, and the theme.
-Their link list comes from `src/lib/site-links.ts#buildSiteLinks` (absolute `/#story`-style hrefs
-so they work from either page); the sticky top bar takes only `homeAnchorLinks` of it, so a
-separate route like `/guide` appears in the footer and the home-page teaser but never in the nav. `src/proxy.ts` writes the `?lang=` cookie on both paths; add any
-further public page to its `SITE_PATHS` and `matcher` together.
+The public site is `/` plus one route per page the couple adds, all sharing `SiteNav`,
+`SiteFooter`, and the theme. `src/lib/site-links.ts#buildSiteLinks` returns two lists from the
+localized pages: `navLinks` (the home page's own block anchors, as absolute `/#story` hrefs so they
+work from any page) and `footerLinks` (those plus a link to every other page that has content and
+`showInNav`). `src/proxy.ts` treats every path that is not `/admin`, `/rsvp`, `/calendar` or `/api`
+as a public page and writes the `?lang=` cookie there, so a new page needs no matcher change.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
 and `ku.ts` are typed `: Dictionary`, so a missing key fails `tsc`. The admin UI is English only
@@ -149,7 +183,7 @@ native speaker** — get that review before any real invite/reminder email goes 
 
 `DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `APP_URL`, `EMAIL_FROM`, and optional
 `RESEND_API_KEY`, `BLOB_READ_WRITE_TOKEN` (a Vercel Blob store token; when unset, the admin's
-image fields fall back to a plain URL input instead of drag-and-drop upload — see
+image fields fall back to a plain link input instead of drag-and-drop upload — see
 `src/lib/blob.ts`) and `REPLICATE_API_TOKEN` (when unset, the "Generate illustration" buttons are
 hidden). `src/lib/database-url.ts#resolveDatabaseUrl` also accepts `POSTGRES_URL` and any
 prefixed `*_POSTGRES_URL` or `*_DATABASE_URL` that a Vercel storage integration injects, as long
