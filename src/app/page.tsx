@@ -1,5 +1,7 @@
 import { Events, type EventView } from "@/components/site/events";
+import { Faq, type FaqEntryView } from "@/components/site/faq";
 import { Gallery } from "@/components/site/gallery";
+import { GuideTeaser } from "@/components/site/guide-teaser";
 import { HashScrollFix } from "@/components/site/hash-scroll";
 import { Hero } from "@/components/site/hero";
 import { InvitationOpening } from "@/components/site/invitation-opening";
@@ -13,6 +15,8 @@ import { SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
 import { db } from "@/lib/db";
+import { guideSectionsQuery, localizeGuideSections } from "@/lib/guide-content";
+import { buildSiteLinks } from "@/lib/site-links";
 import { resolveSiteLocale } from "@/lib/site-locale";
 import { dataTheme, resolveSiteTheme } from "@/lib/site-theme";
 
@@ -33,11 +37,13 @@ export default async function LandingPage({
 	const dictionary = getDictionary(locale);
 	const localeDefinition = locales[locale];
 
-	const [settings, events, siteContent, milestones] = await Promise.all([
+	const [settings, events, siteContent, milestones, guideSections, faqEntries] = await Promise.all([
 		db.settings.findUnique({ where: { id: 1 } }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
 		db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
+		db.guideSection.findMany(guideSectionsQuery),
+		db.faqEntry.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 	]);
 
 	const theme = resolveSiteTheme(themeParam, siteContent?.theme ?? SiteTheme.EDITORIAL);
@@ -80,10 +86,38 @@ export default async function LandingPage({
 		};
 	});
 
+	const localizedGuideSections = localizeGuideSections(guideSections, locale);
+	const localizedFaqEntries: FaqEntryView[] = faqEntries.map((entry) => {
+		const translation =
+			entry.translations.find((candidate) => candidate.locale === locale) ?? entry.translations[0];
+		return {
+			id: entry.id,
+			question: translation?.question ?? "",
+			answer: translation?.answer ?? "",
+		};
+	});
+
 	const firstEvent = localizedEvents[0] ?? null;
 	const hasStory = localizedMilestones.length > 0;
 	const hasEvents = localizedEvents.length > 0;
+	const hasGuide = localizedGuideSections.length > 0;
 	const hasGallery = (siteContent?.galleryUrls ?? []).length > 0;
+	const hasFaq = localizedFaqEntries.length > 0;
+	const guideTitle = siteTranslation?.guideTitle || dictionary.site.guideHeading;
+	// The teaser borrows the first section photo so the guide gets a picture on the home page
+	// without a dedicated upload field.
+	const guideTeaserImageUrl =
+		localizedGuideSections.find((section) => section.imageUrl)?.imageUrl ?? null;
+
+	const links = buildSiteLinks({
+		dictionary,
+		guideTitle,
+		hasStory,
+		hasEvents,
+		hasGuide,
+		hasGallery,
+		hasFaq,
+	});
 
 	const hasInvitationOpening =
 		!isPreview && (theme === SiteTheme.VINTAGE || theme === SiteTheme.GARDEN);
@@ -102,16 +136,8 @@ export default async function LandingPage({
 				coupleNames={coupleNames}
 				locale={locale}
 				theme={theme}
-				labels={{
-					story: dictionary.site.navStory,
-					events: dictionary.site.navEvents,
-					gallery: dictionary.site.navGallery,
-					rsvp: dictionary.site.navRsvp,
-					language: dictionary.common.languageLabel,
-				}}
-				hasStory={hasStory}
-				hasEvents={hasEvents}
-				hasGallery={hasGallery}
+				links={links}
+				languageLabel={dictionary.common.languageLabel}
 				isOverPhoto={isNavOverPhoto}
 			/>
 			<main
@@ -144,12 +170,26 @@ export default async function LandingPage({
 					dictionary={dictionary}
 					theme={theme}
 				/>
+				{hasGuide && (
+					<GuideTeaser
+						title={guideTitle}
+						intro={siteTranslation?.guideIntro ?? ""}
+						imageUrl={guideTeaserImageUrl}
+						ctaLabel={dictionary.site.guideCta}
+					/>
+				)}
 				<SectionDivider theme={theme} />
 				<Gallery
 					heading={siteTranslation?.galleryHeading || dictionary.site.galleryHeading}
 					imageUrls={siteContent?.galleryUrls ?? []}
 					theme={theme}
 				/>
+				{hasFaq && (
+					<>
+						<SectionDivider theme={theme} />
+						<Faq heading={dictionary.site.faqHeading} entries={localizedFaqEntries} />
+					</>
+				)}
 				{settings && (
 					<>
 						<SectionDivider theme={theme} />
@@ -167,6 +207,7 @@ export default async function LandingPage({
 			</main>
 			<SiteFooter
 				line={t(dictionary.site.footerLine, { coupleNames, year: new Date().getFullYear() })}
+				links={links}
 				theme={theme}
 				hasThemePicker={showThemePicker}
 			/>

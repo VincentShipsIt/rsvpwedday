@@ -100,8 +100,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
+		// `data-scroll-behavior="smooth"` tells Next 16 that `globals.css` sets `scroll-behavior:
+		// smooth` on `<html>` on purpose, so it can suspend it during route transitions instead of
+		// warning about it (smooth-scrolling to the top on every navigation looks like a glitch).
 		<html
 			lang="en"
+			data-scroll-behavior="smooth"
 			className={`${cormorant.variable} ${inter.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${lora.variable} ${pinyonScript.variable} ${fraunces.variable} ${playfairDisplay.variable}`}
 		>
 			<body>{children}</body>

@@ -94,4 +94,16 @@ export const emailThemes: Record<SiteTheme, EmailTheme> = {
 		bodyFont: serif,
 		radius: "4px",
 	},
+	[SiteTheme.MEDITERRANEAN]: {
+		background: "#fdf9ec",
+		surface: "#ffffff",
+		ink: "#1f2b45",
+		muted: "#5b6580",
+		accent: "#1d4f91",
+		accentText: "#ffffff",
+		border: "#e9e1c4",
+		headingFont: serif,
+		bodyFont: serif,
+		radius: "12px",
+	},
 };

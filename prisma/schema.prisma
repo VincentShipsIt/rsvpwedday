@@ -158,6 +158,10 @@ model SiteContentTranslation {
   eventsHeading  String      @default("")
   galleryHeading String      @default("")
   rsvpHeading    String      @default("")
+  /// Heading and intro of the `/guide` page, also reused by the home-page teaser and as the
+  /// nav label when set (the dictionary's generic "Travel guide" is the fallback).
+  guideTitle     String      @default("")
+  guideIntro     String      @default("")
   siteContent    SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
 
   @@id([siteContentId, locale])
@@ -179,4 +183,63 @@ model StoryMilestoneTranslation {
   milestone   StoryMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
 
   @@id([milestoneId, locale])
+}
+
+/// One anchored block on the public `/guide` page (getting there, where to stay, ...). Empty
+/// table = no guide: the nav link, the home-page teaser, and the route's content all hide.
+model GuideSection {
+  id           String                    @id @default(cuid())
+  slug         String                    @unique
+  sortOrder    Int                       @default(0)
+  imageUrl     String?
+  translations GuideSectionTranslation[]
+  items        GuideItem[]
+}
+
+model GuideSectionTranslation {
+  sectionId String
+  locale    Locale
+  title     String
+  intro     String       @default("")
+  section   GuideSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([sectionId, locale])
+}
+
+/// A card inside a guide section: a hotel, an airline, a beach, a tip. `url` is optional so a
+/// plain piece of advice renders without a link.
+model GuideItem {
+  id           String                 @id @default(cuid())
+  sectionId    String
+  sortOrder    Int                    @default(0)
+  url          String?
+  imageUrl     String?
+  section      GuideSection           @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  translations GuideItemTranslation[]
+}
+
+model GuideItemTranslation {
+  itemId String
+  locale Locale
+  title  String
+  body   String    @default("")
+  item   GuideItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, locale])
+}
+
+model FaqEntry {
+  id           String                @id @default(cuid())
+  sortOrder    Int                   @default(0)
+  translations FaqEntryTranslation[]
+}
+
+model FaqEntryTranslation {
+  entryId  String
+  locale   Locale
+  question String
+  answer   String
+  entry    FaqEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, locale])
 }
