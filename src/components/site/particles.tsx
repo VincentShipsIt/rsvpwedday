@@ -49,6 +49,7 @@ const themeParticles: Record<SiteTheme, ThemeParticles> = {
 	[SiteTheme.MIDNIGHT]: { kind: "star", tokens: ["--color-green", "--color-ink"] },
 	[SiteTheme.BOHO]: { kind: "dust", tokens: ["--color-green", "--color-green-dark"] },
 	[SiteTheme.VINTAGE]: { kind: "petal", tokens: ["--color-rose", "--color-gold"] },
+	[SiteTheme.MEDITERRANEAN]: { kind: "petal", tokens: ["--color-gold", "--color-green-dark"] },
 };
 
 const FADE_MS = 2500;
