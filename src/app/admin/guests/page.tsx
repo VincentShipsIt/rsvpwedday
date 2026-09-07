@@ -1,74 +1,87 @@
-import { DownloadIcon } from "lucide-react";
-import { GuestsImportForm } from "@/app/admin/guests/import-form";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { IMPORT_EVENTS_SEPARATOR } from "@/domain/csv";
+import {
+	GuestsList,
+	type InvitationRow,
+	isStatusFilter,
+	type StatusFilter,
+} from "@/app/admin/guests/guests-list";
+import { getInvitationStatus } from "@/domain/invitation";
+import { invitedEventIds } from "@/domain/invitation-events";
+import { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
-export default async function GuestsPage() {
-	const events = await db.event.findMany({ orderBy: { sortOrder: "asc" }, select: { slug: true } });
-	const eventSlugs = events.map((event) => event.slug);
+export default async function GuestsPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ status?: string; q?: string }>;
+}) {
+	const { status: statusParam, q } = await searchParams;
+	const statusFilter: StatusFilter =
+		statusParam && isStatusFilter(statusParam) ? statusParam : "all";
+
+	const [invitations, events] = await Promise.all([
+		db.invitation.findMany({
+			include: { guests: { include: { attendance: true } }, emails: true },
+			orderBy: { createdAt: "asc" },
+		}),
+		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
+	]);
+
+	const filteredInvitations = invitations.filter((invitation) => {
+		const status = getInvitationStatus(invitation);
+		if (statusFilter !== "all" && status !== statusFilter) {
+			return false;
+		}
+		if (q) {
+			const query = q.toLowerCase();
+			const matchesEmail = invitation.email.toLowerCase().includes(query);
+			const matchesGuest = invitation.guests.some((guest) =>
+				`${guest.firstName} ${guest.lastName}`.toLowerCase().includes(query)
+			);
+			if (!matchesEmail && !matchesGuest) {
+				return false;
+			}
+		}
+		return true;
+	});
+
+	const invitationRows: InvitationRow[] = filteredInvitations.map((invitation) => ({
+		id: invitation.id,
+		email: invitation.email,
+		link: `${env.APP_URL}/rsvp/${invitation.token}`,
+		locale: invitation.locale,
+		companionAllowance: invitation.companionAllowance,
+		status: getInvitationStatus(invitation),
+		emailKinds: Array.from(new Set(invitation.emails.map((log) => log.kind))),
+		guests: invitation.guests
+			.filter((guest) => !guest.addedByGuest)
+			.map((guest) => ({
+				id: guest.id,
+				firstName: guest.firstName,
+				lastName: guest.lastName,
+				kind: guest.kind,
+				email: guest.email,
+				phone: guest.phone,
+			})),
+		eventIds: invitedEventIds(invitation.guests),
+	}));
+
+	const eventRows = events.map((event) => {
+		const translation =
+			event.translations.find((candidate) => candidate.locale === Locale.en) ??
+			event.translations[0];
+		return { id: event.id, name: translation?.name ?? event.slug };
+	});
 
 	return (
-		<div className="flex flex-col gap-6">
-			<h1 className="text-2xl font-medium">Guests</h1>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Import</CardTitle>
-					<CardDescription>
-						Download the template, fill one row per guest, then upload it or paste it below. Rows
-						sharing an email become one invitation. Re-importing an existing email replaces that
-						invitation&apos;s guests.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="flex flex-col gap-4">
-					<div className="flex flex-wrap items-center gap-3">
-						<Button asChild variant="secondary">
-							<a href="/admin/guests/template">
-								<DownloadIcon />
-								Download template
-							</a>
-						</Button>
-						<p className="text-sm text-muted-foreground">
-							<span className="font-medium text-foreground">events</span> column: the events this
-							household is invited to, separated by &ldquo;{IMPORT_EVENTS_SEPARATOR}&rdquo;. Leave
-							it empty to invite them to everything. Valid values:{" "}
-							{eventSlugs.length > 0 ? (
-								eventSlugs.map((slug) => (
-									<code key={slug} className="mr-1 rounded bg-muted px-1 py-0.5 text-xs">
-										{slug}
-									</code>
-								))
-							) : (
-								<span>none yet, add events under Website first</span>
-							)}
-						</p>
-					</div>
-					<GuestsImportForm eventSlugs={eventSlugs} />
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Export</CardTitle>
-					<CardDescription>
-						Downloads every guest as CSV: invitationEmail, status, firstName, lastName, kind,
-						dietary, and one column per event slug with each guest&apos;s attendance. An empty event
-						cell means the guest was not invited to it.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Button asChild>
-						<a href="/admin/export">
-							<DownloadIcon />
-							Download guests.csv
-						</a>
-					</Button>
-				</CardContent>
-			</Card>
-		</div>
+		<GuestsList
+			invitationRows={invitationRows}
+			eventRows={eventRows}
+			eventSlugs={events.map((event) => event.slug)}
+			statusFilter={statusFilter}
+			search={q ?? ""}
+		/>
 	);
 }
