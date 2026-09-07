@@ -59,11 +59,13 @@ describe("buildIllustrationPrompt", () => {
 		expect(prompt).toContain("unplaceable");
 	});
 
-	it("forbids lettering and faces in every prompt", () => {
+	it("forbids lettering, faces and a painted-paper border in every prompt", () => {
 		for (const placement of ["hero", "gallery", "guideSection"] as const) {
 			const prompt = buildIllustrationPrompt({ placement }, context);
 			expect(prompt).toContain("No text, letters, numbers");
 			expect(prompt).toContain("No recognisable faces");
+			expect(prompt).toContain("bleeds off all four edges");
+			expect(prompt).toContain("not a photograph of a painting");
 		}
 	});
 });

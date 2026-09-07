@@ -39,6 +39,11 @@ export type IllustrationContext = {
  * theme's own tokens copied from the `[data-theme]` blocks in `globals.css` (the same verbatim
  * copy `src/emails/theme.ts` keeps for mail clients), written as prose because that is what an
  * image model can act on.
+ *
+ * Each line names a look, never a printing process. "Screenprint", "risograph print" and
+ * "misregistration" make the model draw the printed artefact instead of the picture — a sheet with
+ * a margin, or literal off-register plates floating apart — which no amount of shouting in `RULES`
+ * undoes. Describe the palette, the marks and the light.
  */
 const themeStyles: Record<SiteTheme, string> = {
 	[SiteTheme.EDITORIAL]:
@@ -46,13 +51,13 @@ const themeStyles: Record<SiteTheme, string> = {
 	[SiteTheme.MODERN]:
 		"Spare graphic illustration: bold flat colour shapes with almost no outline, off-white ground (#f7f5f1), a single burnt-orange accent (#c8552d), hard clean light and confident geometric composition.",
 	[SiteTheme.GARDEN]:
-		"Loose botanical watercolour: wet edges, visible paper grain, dusty-rose ground (#f6e7e1) with terracotta accents (#b5533c), diffuse morning light.",
+		"Loose botanical watercolour: wet-in-wet blooms, visible paper grain, dusty-rose ground (#f6e7e1) with terracotta accents (#b5533c), diffuse morning light.",
 	[SiteTheme.MIDNIGHT]:
 		"Nocturne gouache on a near-black ground (#0f1113): warm candlelight pooling at the centre, antique-gold highlights (#c9a961), deep shadow and restrained detail.",
 	[SiteTheme.BOHO]:
-		"Earthy risograph print: two or three overlapping flat inks with slight misregistration, sand ground (#f3e9d2) with amber accents (#d97b3a), warm dusk light.",
+		"Earthy risograph palette: two or three flat inks that darken where they overlap, sand base (#f3e9d2) with amber accents (#d97b3a), coarse grain throughout, warm dusk light.",
 	[SiteTheme.VINTAGE]:
-		"Faded mid-century travel-poster screenprint: limited matte palette on aged cream (#f8f0d7) with sage accents (#8a9a72), flat paper texture and gentle foxing, even daylight.",
+		"Faded mid-century travel-poster look: flat matte colour in a tightly limited range over a warm aged-cream base (#f8f0d7) with sage accents (#8a9a72), simplified shapes and a soft grain within each colour area, even daylight.",
 	[SiteTheme.MEDITERRANEAN]:
 		"Sunlit Mediterranean gouache: chalky whitewash ground (#fdf9ec), deep sea-blue accents (#1d4f91), lemon and olive greens, high bright midday sun and crisp shadows.",
 };
@@ -108,11 +113,17 @@ function describeSetting(context: IllustrationContext): string {
  * The rules block is the part that keeps a set of images looking like a set: no lettering (image
  * models spell badly and the site supplies its own type), and no faces, which is where an
  * illustration of real guests turns uncanny.
+ *
+ * The bleed rule earns its length. Asked for a watercolour, the model reaches for the medium's
+ * convention and paints a sheet of paper — deckle edge, white margin and all — which the site then
+ * crops unpredictably with `object-cover`. Naming those artefacts removes the hard border but
+ * leaves a vignette in its place, so the rule also has to say where the colour has to reach, and
+ * that the output *is* the picture rather than a photograph of one.
  */
 const RULES = [
 	"No text, letters, numbers, captions, signatures or watermarks anywhere in the image.",
 	"No recognisable faces: any people are small, turned away, or suggested in a few strokes.",
-	"No borders, frames, mockups or drop shadows — the artwork fills the frame edge to edge.",
+	"The artwork bleeds off all four edges: colour reaches every corner and the composition is cut off by the frame rather than fading or tapering before it. No white margin, no paper border or deckle edge, no mount, frame, keyline, vignette or drop shadow, and no bare unpainted ground. The output is the picture itself, not a photograph of a painting lying on a surface.",
 	"Keep the important subject away from the outer tenth of the frame; the site crops these images.",
 	"An illustration, never a photograph, a 3D render or a photo-realistic composite.",
 ].join("\n- ");
