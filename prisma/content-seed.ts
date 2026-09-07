@@ -267,25 +267,26 @@ export async function seedContent() {
  * page of empty frames. These are couples and wedding details rather than scenery, because a
  * wedding page illustrated with landscapes reads as a template nobody finished.
  *
- * The source is Flickr's Creative Commons pool via loremflickr, addressed by tag and lock so a
- * given URL keeps returning the same photograph. Treat them as temporary: they are strangers'
- * photographs, and the point is to be replaced by the couple's own in `/admin/website`.
+ * The source is picsum.photos, addressed by seed so a given URL keeps returning the same
+ * photograph (loremflickr, the previous source, started answering every request with a 500).
+ * Treat them as temporary: they are strangers' photographs, and the point is to be replaced by
+ * the couple's own in `/admin/website`.
  */
-const PLACEHOLDER_HERO = "https://loremflickr.com/1800/1200/wedding,couple?lock=14";
+const PLACEHOLDER_HERO = "https://picsum.photos/seed/wedding-hero/1800/1200";
 
 const PLACEHOLDER_GALLERY = [
-	"https://loremflickr.com/900/1200/wedding,couple?lock=15",
-	"https://loremflickr.com/1200/900/wedding,couple?lock=11",
-	"https://loremflickr.com/900/900/wedding,ceremony?lock=31",
-	"https://loremflickr.com/900/1200/wedding,ceremony?lock=32",
-	"https://loremflickr.com/1200/900/wedding,ceremony?lock=33",
-	"https://loremflickr.com/900/1100/wedding,couple?lock=16",
+	"https://picsum.photos/seed/wedding-15/900/1200",
+	"https://picsum.photos/seed/wedding-11/1200/900",
+	"https://picsum.photos/seed/wedding-31/900/900",
+	"https://picsum.photos/seed/wedding-32/900/1200",
+	"https://picsum.photos/seed/wedding-33/1200/900",
+	"https://picsum.photos/seed/wedding-16/900/1100",
 ];
 
 const PLACEHOLDER_MILESTONES = [
-	"https://loremflickr.com/1000/800/wedding,couple?lock=13",
-	"https://loremflickr.com/1000/800/wedding,couple?lock=16",
-	"https://loremflickr.com/1000/800/wedding,couple?lock=12",
+	"https://picsum.photos/seed/wedding-13/1000/800",
+	"https://picsum.photos/seed/wedding-16/1000/800",
+	"https://picsum.photos/seed/wedding-12/1000/800",
 ];
 
 /*
@@ -301,7 +302,11 @@ const PLACEHOLDER_GENERATION = 3;
 
 // Anything the deploy seed has ever written. A photo from outside this list is the couple's own.
 function isSeededPlaceholder(url: string): boolean {
-	return url.includes("loremflickr.com/") || url.includes("picsum.photos/seed/wed-");
+	return (
+		url.includes("loremflickr.com/") ||
+		url.includes("picsum.photos/seed/wed-") ||
+		url.includes("picsum.photos/seed/wedding-")
+	);
 }
 
 async function seedPlaceholderPhotos() {

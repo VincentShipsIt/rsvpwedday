@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { Parallax } from "@/components/site/parallax";
 import { Reveal } from "@/components/site/reveal";
+import { RichText } from "@/components/site/rich-text";
+import { isRichTextEmpty } from "@/domain/rich-text";
 import { SiteTheme } from "@/generated/prisma/enums";
 
 // Shared across every theme's milestone list: incremental stagger delay, capped so a long story
@@ -28,7 +30,7 @@ export function Story({
 	milestones: StoryMilestoneView[];
 	theme: SiteTheme;
 }) {
-	if (milestones.length === 0 && !intro) {
+	if (milestones.length === 0 && isRichTextEmpty(intro)) {
 		return null;
 	}
 
@@ -39,7 +41,7 @@ export function Story({
 		>
 			<Reveal className="flex flex-col gap-4 text-center">
 				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
-				{intro && <p className="mx-auto max-w-2xl text-ink/70">{intro}</p>}
+				<RichText html={intro} className="mx-auto max-w-2xl text-ink/70" />
 			</Reveal>
 			{theme === SiteTheme.MODERN && <ModernMilestones milestones={milestones} />}
 			{theme === SiteTheme.GARDEN && <GardenMilestones milestones={milestones} />}
@@ -80,7 +82,7 @@ function EditorialMilestones({ milestones }: { milestones: StoryMilestoneView[] 
 							{milestone.dateLabel}
 						</span>
 						<h3 className="text-2xl">{milestone.title}</h3>
-						<p className="text-ink/70">{milestone.body}</p>
+						<RichText html={milestone.body} className="text-ink/70" />
 					</div>
 				</Reveal>
 			))}
@@ -116,7 +118,7 @@ function ModernMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 							{milestone.dateLabel}
 						</span>
 						<h3 className="text-xl">{milestone.title}</h3>
-						<p className="text-ink/70">{milestone.body}</p>
+						<RichText html={milestone.body} className="text-ink/70" />
 					</div>
 				</Reveal>
 			))}
@@ -150,7 +152,7 @@ function GardenMilestones({ milestones }: { milestones: StoryMilestoneView[] }) 
 						{milestone.dateLabel}
 					</p>
 					<h3 className="text-center text-lg">{milestone.title}</h3>
-					<p className="text-center text-sm text-ink/70 italic">{milestone.body}</p>
+					<RichText html={milestone.body} className="text-center text-sm text-ink/70 italic" />
 				</Reveal>
 			))}
 		</div>
@@ -184,7 +186,7 @@ function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }
 								{milestone.dateLabel}
 							</span>
 							<h3 className="text-2xl">{milestone.title}</h3>
-							<p className="text-ivory/80">{milestone.body}</p>
+							<RichText html={milestone.body} className="text-ivory/80" />
 						</div>
 					</Reveal>
 				) : (
@@ -199,7 +201,7 @@ function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }
 							{milestone.dateLabel}
 						</span>
 						<h3 className="text-2xl">{milestone.title}</h3>
-						<p className="text-ink/70">{milestone.body}</p>
+						<RichText html={milestone.body} className="text-ink/70" />
 					</Reveal>
 				)
 			)}
@@ -239,7 +241,7 @@ function BohoMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 							{milestone.dateLabel}
 						</span>
 						<h3 className="text-xl">{milestone.title}</h3>
-						<p className="text-ink/70">{milestone.body}</p>
+						<RichText html={milestone.body} className="text-ink/70" />
 					</div>
 				</Reveal>
 			))}
@@ -291,7 +293,7 @@ function VintageMilestones({ milestones }: { milestones: StoryMilestoneView[] })
 						{milestone.dateLabel}
 					</p>
 					<h3 className="text-center text-lg">{milestone.title}</h3>
-					<p className="text-center text-sm text-ink/70">{milestone.body}</p>
+					<RichText html={milestone.body} className="text-center text-sm text-ink/70" />
 				</Reveal>
 			))}
 		</div>

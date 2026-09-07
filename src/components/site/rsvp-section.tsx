@@ -1,4 +1,5 @@
 import { Reveal } from "@/components/site/reveal";
+import { RichText } from "@/components/site/rich-text";
 import type { Locale } from "@/generated/prisma/enums";
 import { t } from "@/i18n";
 import { formatDate } from "@/lib/format";
@@ -27,7 +28,7 @@ export function RsvpSection({
 		>
 			<Reveal className="flex flex-col gap-4">
 				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
-				{note && <p className="text-ink/70">{note}</p>}
+				<RichText html={note} className="text-ink/70" />
 				<p className="text-sm text-ink/60">
 					{t(deadlineTemplate, { date: formatDate(deadline, locale) })}
 				</p>

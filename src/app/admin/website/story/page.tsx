@@ -1,3 +1,4 @@
+import { headingDefaults, initialHeadings } from "@/app/admin/website/section-headings";
 import { StoryForm } from "@/app/admin/website/story/story-form";
 import { WebsiteNav } from "@/app/admin/website/website-nav";
 import { localeCodes } from "@/i18n/locales";
@@ -17,6 +18,8 @@ export default async function StoryPage() {
 			<WebsiteNav current="/admin/website/story" />
 			<h1 className="text-2xl font-medium">Story</h1>
 			<StoryForm
+				initialHeadings={initialHeadings(siteContent?.translations, "storyHeading")}
+				headingDefaults={headingDefaults("storyHeading")}
 				initialTranslations={localeCodes.map((code) => ({
 					locale: code,
 					storyIntro:

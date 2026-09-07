@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { updateStory } from "@/app/admin/website/actions";
 import { ImageField } from "@/components/admin/image-field";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
+import {
+	SectionHeadingField,
+	type SectionHeadingState,
+} from "@/components/admin/section-heading-field";
 import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
@@ -35,29 +39,45 @@ function emptyMilestoneTranslations(): MilestoneTranslationState[] {
 }
 
 export type StoryFormProps = {
+	initialHeadings: SectionHeadingState[];
+	headingDefaults: Record<Locale, string>;
 	initialTranslations: StoryIntroTranslationState[];
 	initialMilestones: Omit<MilestoneState, "key">[];
 	blobConfigured: boolean;
 };
 
 export function StoryForm({
+	initialHeadings,
+	headingDefaults,
 	initialTranslations,
 	initialMilestones,
 	blobConfigured,
 }: StoryFormProps) {
+	const [headings, setHeadings] = useState(initialHeadings);
 	const [translations, setTranslations] = useState(initialTranslations);
 	const [milestones, setMilestones] = useState<MilestoneState[]>(() =>
 		initialMilestones.map((milestone) => ({ ...milestone, key: createKey() }))
 	);
 
 	const { status, error, retry } = useAutosave({
-		value: { translations, milestones },
-		save: ({ translations: nextTranslations, milestones: nextMilestones }) =>
+		value: { headings, translations, milestones },
+		save: ({
+			headings: nextHeadings,
+			translations: nextTranslations,
+			milestones: nextMilestones,
+		}) =>
 			updateStory({
+				headings: nextHeadings,
 				translations: nextTranslations,
 				milestones: nextMilestones.map(({ key, ...milestone }) => milestone),
 			}),
 	});
+
+	function updateHeading(locale: Locale, heading: string) {
+		setHeadings((current) =>
+			current.map((entry) => (entry.locale === locale ? { ...entry, heading } : entry))
+		);
+	}
 
 	function updateTranslation(locale: Locale, storyIntro: string) {
 		setTranslations((current) =>
@@ -119,7 +139,12 @@ export function StoryForm({
 				<CardHeader>
 					<CardTitle>Story intro</CardTitle>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="flex flex-col gap-4">
+					<SectionHeadingField
+						values={headings}
+						defaults={headingDefaults}
+						onChange={updateHeading}
+					/>
 					<Tabs defaultValue={localeCodes[0]}>
 						<TabsList>
 							{localeCodes.map((code) => (
@@ -130,10 +155,10 @@ export function StoryForm({
 						</TabsList>
 						{translations.map((translation) => (
 							<TabsContent key={translation.locale} value={translation.locale}>
-								<Textarea
+								<RichTextEditor
 									placeholder="Story intro"
 									value={translation.storyIntro}
-									onChange={(event) => updateTranslation(translation.locale, event.target.value)}
+									onChange={(html) => updateTranslation(translation.locale, html)}
 								/>
 							</TabsContent>
 						))}
@@ -202,12 +227,12 @@ export function StoryForm({
 												})
 											}
 										/>
-										<Textarea
+										<RichTextEditor
 											placeholder="Body"
 											value={translation.body}
-											onChange={(event) =>
+											onChange={(html) =>
 												updateMilestoneTranslation(milestone.key, translation.locale, {
-													body: event.target.value,
+													body: html,
 												})
 											}
 										/>
