@@ -1,8 +1,26 @@
 "use client";
 
+import {
+	closestCenter,
+	DndContext,
+	type DragEndEvent,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import {
+	arrayMove,
+	rectSortingStrategy,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "cn";
-import { ArrowDownIcon, ArrowUpIcon, ImageIcon, Trash2Icon, UploadIcon } from "lucide-react";
-import { type DragEvent, useId, useRef, useState } from "react";
+import { GripVerticalIcon, LinkIcon, XIcon } from "lucide-react";
+import { useId, useState } from "react";
+import { MediaDropZone } from "@/components/admin/media-drop-zone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +35,9 @@ export type ImageListFieldProps = {
 	disabled?: boolean;
 };
 
-// Gallery editor: a multi-file drop zone above a grid of thumbnails, each with a URL input
-// (pasting a link still works) and reorder/remove controls. No drag-sorting library — move
-// up/down buttons cover reordering.
+// Gallery editor: a multi-file drop zone above a grid of thumbnails that reorder by drag and
+// drop (pointer or keyboard). A tile shows the picture and a remove button, never its URL;
+// "Add by link" covers the no-Blob fallback and external pictures.
 export function ImageListField({
 	label,
 	values,
@@ -28,21 +46,29 @@ export function ImageListField({
 	disabled,
 }: ImageListFieldProps) {
 	const inputId = useId();
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [isDraggingOver, setIsDraggingOver] = useState(false);
-	const [isPreparing, setIsPreparing] = useState(false);
-	const [isUploading, setIsUploading] = useState(false);
+	// dnd-kit's accessibility ids default to a counter that differs between server and client
+	// render; a React id keeps them identical and stops the hydration warning.
+	const dndId = useId();
+	const [busyLabel, setBusyLabel] = useState<string | null>(null);
 	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [linkOpen, setLinkOpen] = useState(false);
+	const [draftUrl, setDraftUrl] = useState("");
 
-	async function handleFiles(files: FileList | File[] | null | undefined) {
-		if (!files || files.length === 0) {
-			return;
-		}
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+	);
+
+	// The same URL may legitimately appear twice, so tiles are keyed by position plus URL. The
+	// key is recomputed after every change, which is fine: dnd-kit only needs it stable for the
+	// duration of one drag.
+	const tiles = values.map((url, index) => ({ id: `${index}:${url}`, url }));
+
+	async function handleFiles(files: File[]) {
 		setUploadError(null);
-		setIsPreparing(true);
-		const prepared = await Promise.all(Array.from(files).map(downscaleImage));
-		setIsPreparing(false);
-		setIsUploading(true);
+		setBusyLabel("Preparing…");
+		const prepared = await Promise.all(files.map(downscaleImage));
+		setBusyLabel("Uploading…");
 		try {
 			const uploaded: string[] = [];
 			for (const file of prepared) {
@@ -58,152 +84,166 @@ export function ImageListField({
 				onChange([...values, ...uploaded]);
 			}
 		} finally {
-			setIsUploading(false);
+			setBusyLabel(null);
 		}
 	}
 
-	function handleDrop(event: DragEvent<HTMLButtonElement>) {
-		event.preventDefault();
-		setIsDraggingOver(false);
-		if (disabled || !blobConfigured || isPreparing || isUploading) {
+	function handleDragEnd({ active, over }: DragEndEvent) {
+		if (!over || active.id === over.id) {
 			return;
 		}
-		handleFiles(event.dataTransfer.files);
-	}
-
-	function updateAt(index: number, url: string) {
-		onChange(values.map((value, i) => (i === index ? url : value)));
+		const from = tiles.findIndex((tile) => tile.id === active.id);
+		const to = tiles.findIndex((tile) => tile.id === over.id);
+		if (from !== -1 && to !== -1) {
+			onChange(arrayMove(values, from, to));
+		}
 	}
 
 	function removeAt(index: number) {
 		onChange(values.filter((_, i) => i !== index));
 	}
 
-	function moveBy(index: number, delta: number) {
-		const target = index + delta;
-		if (target < 0 || target >= values.length) {
-			return;
+	function addLink() {
+		const url = draftUrl.trim();
+		if (url) {
+			onChange([...values, url]);
 		}
-		const next = [...values];
-		[next[index], next[target]] = [next[target], next[index]];
-		onChange(next);
+		setDraftUrl("");
+		setLinkOpen(false);
 	}
-
-	function addBlank() {
-		onChange([...values, ""]);
-	}
-
-	const dropZoneDisabled = disabled || !blobConfigured;
-	const dropZoneLabel = isPreparing
-		? "Preparing…"
-		: isUploading
-			? "Uploading…"
-			: "Drag photos here, or click to browse (multiple allowed)";
 
 	return (
 		<div className="flex flex-col gap-2">
 			<Label htmlFor={inputId}>{label}</Label>
-			<button
-				type="button"
-				disabled={dropZoneDisabled}
-				onClick={() => fileInputRef.current?.click()}
-				onDragOver={(event) => {
-					event.preventDefault();
-					if (!dropZoneDisabled) {
-						setIsDraggingOver(true);
-					}
-				}}
-				onDragLeave={() => setIsDraggingOver(false)}
-				onDrop={handleDrop}
-				className={cn(
-					"flex h-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground transition-colors",
-					isDraggingOver && "border-ring bg-accent text-accent-foreground",
-					dropZoneDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent"
-				)}
-			>
-				<UploadIcon className="size-4" aria-hidden="true" />
-				{dropZoneLabel}
-			</button>
-			<input
-				id={inputId}
-				ref={fileInputRef}
-				type="file"
-				accept="image/*"
-				multiple
-				className="sr-only"
-				disabled={dropZoneDisabled}
-				onChange={(event) => {
-					handleFiles(event.target.files);
-					event.target.value = "";
-				}}
-			/>
-			{!blobConfigured && (
+			{blobConfigured ? (
+				<MediaDropZone
+					inputId={inputId}
+					accept="image/*"
+					multiple
+					disabled={disabled}
+					busyLabel={busyLabel}
+					onFiles={handleFiles}
+					label="Drag photos here, or click to browse (multiple allowed)"
+				/>
+			) : (
 				<p className="text-xs text-muted-foreground">
-					Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — add image URLs below instead.
+					Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — add image links instead.
 				</p>
 			)}
 			{uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
 
-			<div className="grid gap-3 sm:grid-cols-2">
-				{values.map((value, index) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: entries carry no stable id (plain URL strings); order is the only signal that changes, and it drives these rows.
-					<div key={index} className="flex flex-col gap-2 rounded-lg border p-3">
-						<div className="flex gap-2">
-							<div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
-								{value ? (
-									// biome-ignore lint/performance/noImgElement: admin-only thumbnail preview of an arbitrary, unconfigured external URL.
-									<img src={value} alt="" className="size-full object-cover" />
-								) : (
-									<ImageIcon className="size-5 text-muted-foreground" aria-hidden="true" />
-								)}
-							</div>
-							<Input
-								placeholder="https://"
-								value={value}
-								disabled={disabled}
-								onChange={(event) => updateAt(index, event.target.value)}
-							/>
-						</div>
-						<div className="flex items-center gap-1">
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								disabled={disabled || index === 0}
-								aria-label="Move earlier"
-								onClick={() => moveBy(index, -1)}
-							>
-								<ArrowUpIcon />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								disabled={disabled || index === values.length - 1}
-								aria-label="Move later"
-								onClick={() => moveBy(index, 1)}
-							>
-								<ArrowDownIcon />
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								className="ml-auto"
-								disabled={disabled}
-								aria-label="Remove photo"
-								onClick={() => removeAt(index)}
-							>
-								<Trash2Icon />
-							</Button>
-						</div>
-					</div>
-				))}
-			</div>
+			{tiles.length > 0 && (
+				<DndContext
+					id={dndId}
+					sensors={sensors}
+					collisionDetection={closestCenter}
+					onDragEnd={handleDragEnd}
+				>
+					<SortableContext items={tiles.map((tile) => tile.id)} strategy={rectSortingStrategy}>
+						<ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+							{tiles.map((tile, index) => (
+								<GalleryTile
+									key={tile.id}
+									id={tile.id}
+									url={tile.url}
+									position={index + 1}
+									disabled={disabled}
+									onRemove={() => removeAt(index)}
+								/>
+							))}
+						</ul>
+					</SortableContext>
+				</DndContext>
+			)}
 
-			<Button type="button" variant="secondary" size="sm" className="self-start" onClick={addBlank}>
-				Add image URL
-			</Button>
+			{linkOpen ? (
+				<div className="flex gap-2">
+					<Input
+						placeholder="https://"
+						value={draftUrl}
+						disabled={disabled}
+						autoFocus
+						onChange={(event) => setDraftUrl(event.target.value)}
+						onKeyDown={(event) => {
+							if (event.key === "Enter") {
+								event.preventDefault();
+								addLink();
+							}
+						}}
+					/>
+					<Button type="button" variant="secondary" disabled={disabled} onClick={addLink}>
+						Add
+					</Button>
+					<Button type="button" variant="ghost" onClick={() => setLinkOpen(false)}>
+						Cancel
+					</Button>
+				</div>
+			) : (
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="self-start"
+					disabled={disabled}
+					onClick={() => setLinkOpen(true)}
+				>
+					<LinkIcon aria-hidden="true" />
+					Add by link
+				</Button>
+			)}
 		</div>
+	);
+}
+
+type GalleryTileProps = {
+	id: string;
+	url: string;
+	position: number;
+	disabled?: boolean;
+	onRemove: () => void;
+};
+
+function GalleryTile({ id, url, position, disabled, onRemove }: GalleryTileProps) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id,
+		disabled,
+	});
+
+	return (
+		<li
+			ref={setNodeRef}
+			style={{ transform: CSS.Transform.toString(transform), transition }}
+			className={cn(
+				"group relative aspect-square overflow-hidden rounded-lg border bg-muted",
+				isDragging && "z-10 shadow-lg ring-2 ring-ring"
+			)}
+		>
+			{/* biome-ignore lint/performance/noImgElement: admin-only thumbnail of an arbitrary, unconfigured external URL. */}
+			<img src={url} alt="" className="size-full object-cover" draggable={false} />
+			<Button
+				type="button"
+				variant="ghost"
+				aria-label={`Photo ${position}, drag to reorder`}
+				disabled={disabled}
+				className="absolute inset-0 h-auto w-full cursor-grab touch-none rounded-none hover:bg-transparent active:cursor-grabbing"
+				{...attributes}
+				{...listeners}
+			>
+				<span className="absolute left-1.5 top-1.5 rounded-md bg-background/80 p-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+					<GripVerticalIcon className="size-3.5" aria-hidden="true" />
+				</span>
+			</Button>
+			<Button
+				type="button"
+				variant="secondary"
+				size="icon-xs"
+				aria-label={`Remove photo ${position}`}
+				disabled={disabled}
+				className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+				onClick={onRemove}
+			>
+				<XIcon className="size-3.5" />
+			</Button>
+		</li>
 	);
 }

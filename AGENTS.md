@@ -65,11 +65,15 @@ the home page just before RSVP. Both are empty by default and hide themselves co
 link, footer link, the post-Events teaser, and the `/guide` route (404) — until content exists, so
 the seed never has to know the destination. `events` edits the `Event` rows and their translations (moved
 here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
-(hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
-drag-and-drop upload via `src/lib/blob-upload.ts#uploadImage` when `BLOB_READ_WRITE_TOKEN` is set
-(a browser-to-Blob client upload authorised by the token route `src/app/admin/upload/route.ts`, so
-files never pass through a Server Action and its 4.5 MB Vercel body cap), always
-with a plain URL input underneath so a pasted link keeps working either way. Before either field
+(hero, milestones, guide, gallery) is `src/components/admin/image-field.tsx` or
+`image-list-field.tsx`, and the music track is `audio-field.tsx`; all three start from
+`media-drop-zone.tsx`. Empty, a field is a drop zone uploading via `src/lib/blob-upload.ts` when
+`BLOB_READ_WRITE_TOKEN` is set (a browser-to-Blob client upload authorised by the token route
+`src/app/admin/upload/route.ts`, so files never pass through a Server Action and its 4.5 MB Vercel
+body cap); filled, it shows the picture (or a player and file name) with Replace and Remove. The
+URL is never displayed: "Use a link" / "Add by link" reveals a paste box, which is also the whole
+field when Blob is not configured. The gallery grid reorders by drag and drop (dnd-kit sortable,
+pointer and keyboard). Before either field
 calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
 fit under the 8 MB upload cap: draws it to a canvas capped at 2400px on the long edge and
 re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparency) and GIF/SVG
