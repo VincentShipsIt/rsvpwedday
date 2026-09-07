@@ -531,12 +531,12 @@ function MediterraneanHero({
 				</div>
 			</HeroEntrance>
 			<div className="relative z-10 mt-10 w-full max-w-3xl px-6">
-				{/* The sprigs hang off the arch's lower corners, half over the photo, so they read
-				    as tucked into the frame rather than floating beside it. They sit in the arch's
+				{/* The sprigs hang off the arch's lower corners, stems tucked over the photo and the
+				    lemons pointing outward, so they read as tucked into the frame rather than floating beside it. They sit in the arch's
 				    own `max-w-md` box (not the wider column) so they stay put at every width. */}
 				<div className="relative mx-auto w-full max-w-md">
-					<LemonSprig className="pointer-events-none absolute bottom-6 -left-10 z-10 hidden w-36 -rotate-12 drop-shadow-sm sm:block lg:-left-14 lg:w-44" />
-					<LemonSprig className="pointer-events-none absolute -right-10 bottom-6 z-10 hidden w-36 -scale-x-100 rotate-12 drop-shadow-sm sm:block lg:-right-14 lg:w-44" />
+					<LemonSprig className="pointer-events-none absolute bottom-6 -left-10 z-10 hidden w-36 -scale-x-100 rotate-12 drop-shadow-sm sm:block lg:-left-14 lg:w-44" />
+					<LemonSprig className="pointer-events-none absolute -right-10 bottom-6 z-10 hidden w-36 -rotate-12 drop-shadow-sm sm:block lg:-right-14 lg:w-44" />
 					{/* Garden's bare arch on the plain cream ground, with only a blue hairline. */}
 					<div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark ring-1 ring-green/20">
 						{heroImageUrl && (
