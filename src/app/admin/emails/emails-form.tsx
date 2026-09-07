@@ -41,15 +41,25 @@ const KIND_META: Record<EmailKind, { title: string; description: string }> = {
 		title: "Confirmation",
 		description: "Sent automatically after a guest submits their RSVP.",
 	},
+	[EmailKind.PHOTOS]: {
+		title: "Photo day",
+		description:
+			"Sent on the day from the dashboard, linking guests to the memories book instead of the RSVP form.",
+	},
 };
 
-const KINDS = [EmailKind.INVITE, EmailKind.REMINDER, EmailKind.CONFIRMATION] as const;
+const KINDS = [
+	EmailKind.INVITE,
+	EmailKind.REMINDER,
+	EmailKind.CONFIRMATION,
+	EmailKind.PHOTOS,
+] as const;
 
 // How long the preview waits after the last keystroke before re-rendering. Long enough not to
 // render every character, short enough that it feels like the same document you are editing.
 const PREVIEW_DEBOUNCE_MS = 500;
 
-// One email at a time: tabs pick which of the three a guest gets, the language switcher picks the
+// One email at a time: tabs pick which of the four a guest gets, the language switcher picks the
 // version, and the fields sit beside a preview of that exact email. The preview renders the copy
 // in the editor — not the last save — so it always shows what is being typed.
 export function EmailsForm({ initialTemplates, defaults, sendingEnabled }: EmailsFormProps) {

@@ -28,6 +28,8 @@ enum EmailKind {
   INVITE
   REMINDER
   CONFIRMATION
+  /// Sent on the day, pointing guests at their photo book instead of the RSVP form.
+  PHOTOS
 }
 
 enum SiteTheme {
@@ -55,6 +57,13 @@ model Settings {
   rsvpDeadline DateTime
   replyTo      String?
   updatedAt    DateTime @updatedAt
+
+  /// The ceremony itself: what the countdown counts to, and what "the day" means everywhere else.
+  /// Events keep their own absolute `startsAt` and are not derived from this — a henna night the
+  /// evening before and a brunch the morning after are ordinary events, not exceptions. Optional
+  /// so an existing database keeps working: until it is set, `src/domain/wedding-date.ts` falls
+  /// back to the earliest event by date.
+  weddingDate  DateTime?
 }
 
 model Event {
@@ -94,6 +103,7 @@ model Invitation {
   updatedAt          DateTime   @updatedAt
   guests             Guest[]
   emails             EmailLog[]
+  photos             Photo[]
 }
 
 model Guest {
@@ -142,6 +152,25 @@ model EmailLog {
   invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
 }
 
+/// One guest-uploaded photo in the shared memories book. Attribution is the name the uploader
+/// picked from their own household when adding it, denormalised so a photo keeps its caption line
+/// even if that guest row is later edited or removed; `invitationId` is the household that added
+/// it, which is what the admin moderates by. `hiddenAt` takes a photo out of the book without
+/// destroying it — deleting is a separate, deliberate action.
+model Photo {
+  id           String     @id @default(cuid())
+  invitationId String
+  url          String
+  uploaderName String     @default("")
+  caption      String     @default("")
+  hiddenAt     DateTime?
+  createdAt    DateTime   @default(now())
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([invitationId])
+}
+
 model SiteContent {
   id           Int                      @id @default(1)
   heroImageUrl String?
@@ -150,7 +179,7 @@ model SiteContent {
   updatedAt    DateTime                 @updatedAt
   translations SiteContentTranslation[]
 
-  /// Site-wide effects, edited on `/admin/website/effects`: the first-load cover animation, the
+  /// Site-wide effects, edited on `/admin/settings/effects`: the first-load cover animation, the
   /// ambient particle layer, and an optional background-music track (an https audio URL, usually
   /// a Blob upload) that guests can toggle from the floating music button.
   openingAnimation OpeningAnimation @default(BLOOM)
@@ -167,6 +196,15 @@ model SiteContent {
   particleSeconds    Int @default(6)
   particleSpeed      Int @default(100)
   musicVolume        Int @default(40)
+
+  /// The guest photo book at `/rsvp/<token>/memories`, edited on `/admin/memories`.
+  /// `photosEnabled` is the master switch: off, the book 404s and nothing links to it. With it on,
+  /// uploads open once `photosOpenAt` has passed (null = no gate), so the couple can set the
+  /// wedding day and forget it. `photosTestMode` opens the book right now regardless, which is how
+  /// they try it out beforehand without disturbing the real date.
+  photosEnabled  Boolean   @default(false)
+  photosOpenAt   DateTime?
+  photosTestMode Boolean   @default(false)
 
   /// Which generation of stand-in photography the deploy seed has applied, so it fills a site
   /// once and then leaves every image alone — including a deliberate removal of all photos.
@@ -189,6 +227,9 @@ model SiteContentTranslation {
   /// nav label when set (the dictionary's generic "Travel guide" is the fallback).
   guideTitle     String      @default("")
   guideIntro     String      @default("")
+  /// Cover title and opening note of the photo book; empty falls back to the dictionary.
+  photosTitle    String      @default("")
+  photosIntro    String      @default("")
   siteContent    SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
 
   @@id([siteContentId, locale])

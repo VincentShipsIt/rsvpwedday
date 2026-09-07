@@ -39,6 +39,24 @@ export async function sendInvitesToUnsent(): Promise<void> {
 	redirect("/admin");
 }
 
+// The photo-day nudge, pressed on the morning of the wedding. Only households with at least one
+// accepted guest get it: someone who declined has no use for a link to the party's photo book.
+export async function sendPhotoInviteToAttending(): Promise<void> {
+	const invitations = await db.invitation.findMany({
+		include: { guests: { include: { attendance: true } } },
+	});
+	const attending = invitations.filter(
+		(invitation) => getInvitationStatus(invitation) === "accepted"
+	);
+
+	for (const invitation of attending) {
+		await sendInvitationEmail(EmailKind.PHOTOS, invitation.id);
+	}
+
+	revalidatePath("/admin");
+	redirect("/admin");
+}
+
 export async function remindAllPending(): Promise<void> {
 	const invitations = await db.invitation.findMany({
 		include: { guests: { include: { attendance: true } } },

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateEvents } from "@/app/admin/settings/site-actions";
+import { DateTimeField } from "@/components/admin/date-time-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
 import { useAutosave } from "@/components/admin/use-autosave";
@@ -9,11 +10,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { dayOffset, describeDayOffset } from "@/domain/wedding-date";
 import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
+import { parseWireDate } from "@/lib/wire-date";
 
 function createKey(): string {
 	return crypto.randomUUID();
+}
+
+/*
+ * Where this event sits against the wedding day, written under its start date. A raw timestamp
+ * hides a mistyped month or year; "364 days before" does not.
+ */
+function relativeToWedding(startsAt: string, weddingDate: string): string | undefined {
+	const start = parseWireDate(startsAt);
+	const wedding = parseWireDate(weddingDate);
+	if (!start || !wedding) {
+		return undefined;
+	}
+	return describeDayOffset(dayOffset(start, wedding));
 }
 
 function emptyTranslations(): TranslationState[] {
@@ -37,10 +53,12 @@ type EventState = {
 };
 
 export type EventsFormProps = {
+	/** The wedding day, so each event can say where it falls relative to it. */
+	weddingDate: string;
 	initialEvents: Omit<EventState, "key">[];
 };
 
-export function EventsForm({ initialEvents }: EventsFormProps) {
+export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 	const [events, setEvents] = useState<EventState[]>(() =>
 		initialEvents.map((event) => ({ ...event, key: event.id ?? createKey() }))
 	);
@@ -118,19 +136,17 @@ export function EventsForm({ initialEvents }: EventsFormProps) {
 										updateEvent(event.key, { sortOrder: Number(changeEvent.target.value) })
 									}
 								/>
-								<Input
-									type="datetime-local"
+								<DateTimeField
+									label="Starts"
 									value={event.startsAt}
-									onChange={(changeEvent) =>
-										updateEvent(event.key, { startsAt: changeEvent.target.value })
-									}
+									onChange={(value) => updateEvent(event.key, { startsAt: value })}
+									description={relativeToWedding(event.startsAt, weddingDate)}
 								/>
-								<Input
-									type="datetime-local"
+								<DateTimeField
+									label="Ends"
 									value={event.endsAt}
-									onChange={(changeEvent) =>
-										updateEvent(event.key, { endsAt: changeEvent.target.value })
-									}
+									onChange={(value) => updateEvent(event.key, { endsAt: value })}
+									clearable
 								/>
 								<Input
 									placeholder="Venue"

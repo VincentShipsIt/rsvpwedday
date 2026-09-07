@@ -141,6 +141,65 @@ saving/saved/error state next to a secondary "Save now" button, which stays as a
 and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,
 one-shot actions and do not autosave.
 
+## The wedding date
+
+`Settings.weddingDate` is the ceremony itself: what the countdown counts to, and what "the day"
+means everywhere else. Events are **not** derived from it — each `Event` keeps its own absolute
+`startsAt`, because a henna night the evening before and a brunch the morning after are ordinary
+events, not exceptions.
+
+It is optional, so a database that predates it keeps working: `src/domain/wedding-date.ts`'s
+`resolveWeddingDate` falls back to the earliest event **by date**, never by `sortOrder`, which is a
+display preference and can disagree with the calendar. That fallback is what the site did for every
+event before this column existed, and it is why the countdown could point at a welcome dinner. The
+settings page says out loud which date is in use and where it came from, and the events page labels
+every event against it (`dayOffset` / `describeDayOffset`), so a mistyped year reads as "364 days
+before" instead of hiding inside a timestamp.
+
+Every admin date field is `src/components/admin/date-time-field.tsx`: a calendar popover plus a
+time input, exchanging the same `yyyy-MM-ddTHH:mm` string a native `datetime-local` used, so no
+server action had to change. Build that string with `src/lib/wire-date.ts` and never with
+`toISOString()` — that is UTC, and an evening in Berlin comes back an hour early, or near midnight
+on the wrong day.
+
+## Memories book
+
+Guests photograph the wedding from their own invitation link and everything they add appears in
+one shared, page-turning book at `/rsvp/<token>/memories`. The token gates both reading and
+writing, so a private family album never sits on a public URL, and the RSVP page only mentions the
+book once it is open.
+
+`src/domain/photo-book.ts` holds the three decisions: `resolvePhotoBookAccess` turns the
+`SiteContent` columns `photosEnabled` / `photosOpenAt` / `photosTestMode` into `disabled` (the
+route 404s), `closed` (guests see the date) or `open`; `buildBookPages` orders cover, optional
+intro, photos oldest-first, and a closing page; `buildLeaves` groups those pages into physical
+sheets — two per sheet for a desktop spread, one per sheet on a phone. Both the page and the
+upload route re-derive access from those columns, so neither trusts the other.
+
+`src/components/site/photo-book.tsx` turns pages with CSS 3D transforms and no library
+(`react-pageflip` is five years old and predates React 19). Two things about it are load-bearing
+and easy to undo by accident: leaf stacking comes from `translateZ` applied *after* the rotation,
+never `z-index`, because a perspective context paints 3D-transformed siblings by depth and ignores
+`z-index`; and which face of a sheet you see is an opacity swap delayed by half the turn, not
+`backface-visibility`, which Chrome culls even when a leaf's rotation and its back face's own
+rotation compose to identity.
+
+Uploads reuse the admin's Blob path: `downscaleImage` shrinks the photo in the browser (and
+transcodes an iPhone's HEIC to JPEG — `isWebDisplayable` reports the case where a browser could
+not, so the guest gets an explanation instead of a photo nobody can open), then it goes straight
+to Blob through `src/app/rsvp/[token]/memories/upload/route.ts`, which mints a client token only
+for a real invitation on an open book. Only the resulting URLs pass through the `addPhotos` action.
+Photos cascade with their invitation, so deleting a household deletes the photos it added.
+
+`/admin/website/memories` sets when the book opens (with a test switch that ignores the date
+without changing it), holds the per-locale cover title and opening note, and moderates every
+photo: hiding is reversible, deleting removes the Blob file too. The photo-day email is a fourth
+`EmailKind`, `PHOTOS`, whose link points at the book instead of the RSVP form; the dashboard sends
+it to attending households on the day.
+
+`src/app/icon.tsx` crops the hero photo into the browser-tab favicon, falling back to a plain ring
+when no hero is set.
+
 ## Site effects
 
 `/admin/settings/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load

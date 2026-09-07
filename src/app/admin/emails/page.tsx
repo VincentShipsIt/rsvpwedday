@@ -7,11 +7,17 @@ import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
-const KINDS = [EmailKind.INVITE, EmailKind.REMINDER, EmailKind.CONFIRMATION] as const;
+const KINDS = [
+	EmailKind.INVITE,
+	EmailKind.REMINDER,
+	EmailKind.CONFIRMATION,
+	EmailKind.PHOTOS,
+] as const;
 const DICTIONARY_KEY = {
 	INVITE: "invite",
 	REMINDER: "reminder",
 	CONFIRMATION: "confirmation",
+	PHOTOS: "photos",
 } as const;
 
 export default async function EmailsPage() {
