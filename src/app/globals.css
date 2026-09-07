@@ -144,6 +144,12 @@ h3 {
 	font-family: var(--font-display);
 }
 
+/* Guest-facing headings are always Title Case, whatever the couple typed into the admin; the
+   admin keeps its own sentence-case labels. */
+:is(h1, h2, h3):not(.admin-root *) {
+	text-transform: capitalize;
+}
+
 /*
  * Admin-authored copy (see `src/domain/rich-text.ts` for the allowed subset). One rule set
  * serves both the public site, where it inherits the theme's fonts and the `text-ink/70`
