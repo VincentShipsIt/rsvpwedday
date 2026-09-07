@@ -11,7 +11,8 @@
 			"!**/node_modules",
 			"!**/.next",
 			"!**/dist",
-			"!**/src/generated"
+			"!**/src/generated",
+			"!.worktrees"
 		]
 	},
 	"formatter": {

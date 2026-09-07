@@ -57,6 +57,16 @@ re-encodes at ~0.85 quality JPEG, except PNG stays PNG (it may carry transparenc
 pass through untouched. It never throws — a decode or canvas failure just returns the original
 file, so a browser without canvas support still uploads, it just skips the shrink.
 
+`/admin/website/emails` edits the invite, reminder and confirmation emails per locale: subject,
+heading and a rich-text message, stored in `EmailTemplate` (empty keeps the dictionary default).
+`src/domain/email-copy.ts#resolveEmailCopy` merges override and default and substitutes
+`{name}`, `{coupleNames}` and `{deadline}`. All three kinds render through one template,
+`src/emails/invitation-email.tsx`, themed by `src/emails/theme.ts` (an email-safe copy of each
+`[data-theme]` palette, since mail clients cannot load the web fonts) and framed with the couple
+names and hero photo. The page previews the result in an iframe served by
+`/admin/website/emails/preview` and can send a test to any address; test sends are not written
+to `EmailLog`.
+
 Every website-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
 differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save

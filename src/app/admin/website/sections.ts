@@ -7,6 +7,11 @@ export const WEBSITE_SECTIONS = [
 	{ href: "/admin/website/gallery", label: "Gallery", description: "Gallery photos" },
 	{ href: "/admin/website/rsvp", label: "RSVP", description: "RSVP note shown to guests" },
 	{ href: "/admin/website/theme", label: "Theme", description: "Site theme and previews" },
+	{
+		href: "/admin/website/emails",
+		label: "Emails",
+		description: "Invite, reminder and confirmation copy",
+	},
 ] as const;
 
 export type WebsiteSectionHref = (typeof WEBSITE_SECTIONS)[number]["href"];
