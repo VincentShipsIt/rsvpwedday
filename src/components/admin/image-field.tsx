@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "cn";
-import { ImageIcon, UploadIcon } from "lucide-react";
-import { type DragEvent, useId, useRef, useState } from "react";
+import { LinkIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
+import { useId, useState } from "react";
+import { MediaDropZone } from "@/components/admin/media-drop-zone";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadImage } from "@/lib/blob-upload";
@@ -17,115 +18,150 @@ export type ImageFieldProps = {
 	disabled?: boolean;
 };
 
-// Shared by the hero image, each story milestone, and (via `ImageListField`) the gallery: a drop
-// zone backed by `uploadImage` when Blob is configured, plus the URL input underneath so a
-// pasted link always keeps working, upload or no upload.
+// Shared by the hero image, each story milestone, and the guide sections and cards. Empty, it is
+// a drop zone; filled, it shows the picture itself with Replace and Remove. The URL never shows —
+// "Use a link" reveals a paste box for the no-Blob fallback or an external picture.
 export function ImageField({ label, value, onChange, blobConfigured, disabled }: ImageFieldProps) {
 	const inputId = useId();
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [isDraggingOver, setIsDraggingOver] = useState(false);
-	const [isPreparing, setIsPreparing] = useState(false);
-	const [isUploading, setIsUploading] = useState(false);
+	const [busyLabel, setBusyLabel] = useState<string | null>(null);
 	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [linkOpen, setLinkOpen] = useState(false);
+	const [draftUrl, setDraftUrl] = useState("");
 
-	async function handleFile(file: File | undefined) {
+	async function handleFiles([file]: File[]) {
 		if (!file) {
 			return;
 		}
 		setUploadError(null);
-		setIsPreparing(true);
+		setBusyLabel("Preparing…");
 		const prepared = await downscaleImage(file);
-		setIsPreparing(false);
-		setIsUploading(true);
+		setBusyLabel("Uploading…");
 		try {
 			const result = await uploadImage(prepared);
 			if (result.ok) {
 				onChange(result.url);
+				setLinkOpen(false);
 			} else {
 				setUploadError(result.error);
 			}
 		} finally {
-			setIsUploading(false);
+			setBusyLabel(null);
 		}
 	}
 
-	function handleDrop(event: DragEvent<HTMLButtonElement>) {
-		event.preventDefault();
-		setIsDraggingOver(false);
-		if (disabled || !blobConfigured || isPreparing || isUploading) {
-			return;
+	function applyLink() {
+		const url = draftUrl.trim();
+		if (url) {
+			onChange(url);
 		}
-		handleFile(event.dataTransfer.files[0]);
+		setDraftUrl("");
+		setLinkOpen(false);
 	}
 
-	const dropZoneDisabled = disabled || !blobConfigured;
-	const dropZoneLabel = isPreparing
-		? "Preparing…"
-		: isUploading
-			? "Uploading…"
-			: "Drag a photo here, or click to browse";
+	const showLinkBox = linkOpen || (!blobConfigured && !value);
+	const busy = Boolean(busyLabel);
 
 	return (
 		<div className="flex flex-col gap-1.5">
 			<Label htmlFor={inputId}>{label}</Label>
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-				<div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
-					{value ? (
-						// biome-ignore lint/performance/noImgElement: admin-only thumbnail preview of an arbitrary, unconfigured external URL, not a next/image candidate.
-						<img src={value} alt="" className="size-full object-cover" />
-					) : (
-						<ImageIcon className="size-6 text-muted-foreground" aria-hidden="true" />
-					)}
-				</div>
-				<div className="flex flex-1 flex-col gap-2">
-					<button
-						type="button"
-						disabled={dropZoneDisabled}
-						onClick={() => fileInputRef.current?.click()}
-						onDragOver={(event) => {
-							event.preventDefault();
-							if (!dropZoneDisabled) {
-								setIsDraggingOver(true);
-							}
-						}}
-						onDragLeave={() => setIsDraggingOver(false)}
-						onDrop={handleDrop}
-						className={cn(
-							"flex h-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground transition-colors",
-							isDraggingOver && "border-ring bg-accent text-accent-foreground",
-							dropZoneDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent"
+			{value ? (
+				<div className="overflow-hidden rounded-lg border bg-muted">
+					{/* biome-ignore lint/performance/noImgElement: admin-only preview of an arbitrary, unconfigured external URL, not a next/image candidate. */}
+					<img src={value} alt="" className="max-h-64 w-full object-cover" />
+					<div className="flex flex-wrap items-center gap-1 border-t bg-background p-1.5">
+						{blobConfigured && (
+							<MediaDropZone
+								accept="image/*"
+								disabled={disabled}
+								busyLabel={busyLabel}
+								onFiles={handleFiles}
+								label={
+									<span className="inline-flex items-center gap-1.5">
+										<RefreshCwIcon className="size-3.5" aria-hidden="true" />
+										Replace
+									</span>
+								}
+								className="min-h-8 flex-row border-0 px-2 py-1 text-xs [&>svg:first-child]:hidden"
+							/>
 						)}
-					>
-						<UploadIcon className="size-4" aria-hidden="true" />
-						{dropZoneLabel}
-					</button>
-					<input
-						ref={fileInputRef}
-						type="file"
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={disabled || busy}
+							onClick={() => {
+								setDraftUrl(value);
+								setLinkOpen((open) => !open);
+							}}
+						>
+							<LinkIcon aria-hidden="true" />
+							Use a link
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="ml-auto text-destructive hover:text-destructive"
+							disabled={disabled || busy}
+							onClick={() => onChange("")}
+						>
+							<Trash2Icon aria-hidden="true" />
+							Remove
+						</Button>
+					</div>
+				</div>
+			) : (
+				blobConfigured && (
+					<MediaDropZone
 						accept="image/*"
-						className="sr-only"
-						disabled={dropZoneDisabled}
-						onChange={(event) => {
-							handleFile(event.target.files?.[0]);
-							event.target.value = "";
-						}}
+						disabled={disabled}
+						busyLabel={busyLabel}
+						onFiles={handleFiles}
+						label="Drag a photo here, or click to browse"
+						className="min-h-32"
 					/>
+				)
+			)}
+			{uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+			{showLinkBox && (
+				<div className="flex flex-col gap-1.5">
 					{!blobConfigured && (
 						<p className="text-xs text-muted-foreground">
-							Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — paste an image URL below
-							instead.
+							Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — paste an image link instead.
 						</p>
 					)}
-					{uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
-					<Input
-						id={inputId}
-						placeholder="https://"
-						value={value}
-						disabled={disabled}
-						onChange={(event) => onChange(event.target.value)}
-					/>
+					<div className="flex gap-2">
+						<Input
+							id={inputId}
+							placeholder="https://"
+							value={draftUrl}
+							disabled={disabled}
+							onChange={(event) => setDraftUrl(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									event.preventDefault();
+									applyLink();
+								}
+							}}
+						/>
+						<Button type="button" variant="secondary" disabled={disabled} onClick={applyLink}>
+							Use
+						</Button>
+					</div>
 				</div>
-			</div>
+			)}
+			{!showLinkBox && !value && (
+				<Button
+					type="button"
+					variant="link"
+					size="sm"
+					className="h-auto self-start px-0 text-xs"
+					disabled={disabled}
+					onClick={() => setLinkOpen(true)}
+				>
+					or paste an image link
+				</Button>
+			)}
 		</div>
 	);
 }

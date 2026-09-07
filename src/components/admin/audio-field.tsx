@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "cn";
-import { Music2Icon, UploadIcon } from "lucide-react";
-import { type DragEvent, useId, useRef, useState } from "react";
+import { LinkIcon, Music2Icon, RefreshCwIcon, Trash2Icon } from "lucide-react";
+import { useId, useState } from "react";
+import { MediaDropZone, mediaFileName } from "@/components/admin/media-drop-zone";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadAudio } from "@/lib/blob-upload";
@@ -16,106 +17,155 @@ export type AudioFieldProps = {
 	disabled?: boolean;
 };
 
-// The background-music track: `ImageField`'s drop zone and URL input, minus the image downscale,
-// plus a native player underneath so the couple can hear what they just uploaded.
+// The background-music track: `ImageField`'s shape minus the downscale, with a native player in
+// place of the picture so the couple can hear what they just uploaded. The file name stands in
+// for the URL, which never shows.
 export function AudioField({ label, value, onChange, blobConfigured, disabled }: AudioFieldProps) {
 	const inputId = useId();
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [isDraggingOver, setIsDraggingOver] = useState(false);
-	const [isUploading, setIsUploading] = useState(false);
+	const [busyLabel, setBusyLabel] = useState<string | null>(null);
 	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [linkOpen, setLinkOpen] = useState(false);
+	const [draftUrl, setDraftUrl] = useState("");
 
-	async function handleFile(file: File | undefined) {
+	async function handleFiles([file]: File[]) {
 		if (!file) {
 			return;
 		}
 		setUploadError(null);
-		setIsUploading(true);
+		setBusyLabel("Uploading…");
 		try {
 			const result = await uploadAudio(file);
 			if (result.ok) {
 				onChange(result.url);
+				setLinkOpen(false);
 			} else {
 				setUploadError(result.error);
 			}
 		} finally {
-			setIsUploading(false);
+			setBusyLabel(null);
 		}
 	}
 
-	function handleDrop(event: DragEvent<HTMLButtonElement>) {
-		event.preventDefault();
-		setIsDraggingOver(false);
-		if (disabled || !blobConfigured || isUploading) {
-			return;
+	function applyLink() {
+		const url = draftUrl.trim();
+		if (url) {
+			onChange(url);
 		}
-		handleFile(event.dataTransfer.files[0]);
+		setDraftUrl("");
+		setLinkOpen(false);
 	}
 
-	const dropZoneDisabled = disabled || !blobConfigured;
+	const showLinkBox = linkOpen || (!blobConfigured && !value);
+	const busy = Boolean(busyLabel);
 
 	return (
 		<div className="flex flex-col gap-1.5">
 			<Label htmlFor={inputId}>{label}</Label>
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-				<div className="flex size-20 shrink-0 items-center justify-center rounded-lg border bg-muted">
-					<Music2Icon className="size-6 text-muted-foreground" aria-hidden="true" />
-				</div>
-				<div className="flex flex-1 flex-col gap-2">
-					<button
-						type="button"
-						disabled={dropZoneDisabled}
-						onClick={() => fileInputRef.current?.click()}
-						onDragOver={(event) => {
-							event.preventDefault();
-							if (!dropZoneDisabled) {
-								setIsDraggingOver(true);
-							}
-						}}
-						onDragLeave={() => setIsDraggingOver(false)}
-						onDrop={handleDrop}
-						className={cn(
-							"flex h-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground transition-colors",
-							isDraggingOver && "border-ring bg-accent text-accent-foreground",
-							dropZoneDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent"
+			{value ? (
+				<div className="flex flex-col gap-3 rounded-lg border p-3">
+					<div className="flex items-center gap-3">
+						<div className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-muted">
+							<Music2Icon className="size-5 text-muted-foreground" aria-hidden="true" />
+						</div>
+						<p className="min-w-0 truncate text-sm font-medium">{mediaFileName(value)}</p>
+					</div>
+					{/* biome-ignore lint/a11y/useMediaCaption: admin preview of an instrumental track. */}
+					<audio controls preload="none" src={value} className="w-full">
+						Your browser can't play this file.
+					</audio>
+					<div className="flex flex-wrap items-center gap-1">
+						{blobConfigured && (
+							<MediaDropZone
+								accept="audio/*"
+								disabled={disabled}
+								busyLabel={busyLabel}
+								onFiles={handleFiles}
+								label={
+									<span className="inline-flex items-center gap-1.5">
+										<RefreshCwIcon className="size-3.5" aria-hidden="true" />
+										Replace
+									</span>
+								}
+								className="min-h-8 flex-row border-0 px-2 py-1 text-xs [&>svg:first-child]:hidden"
+							/>
 						)}
-					>
-						<UploadIcon className="size-4" aria-hidden="true" />
-						{isUploading ? "Uploading…" : "Drag an MP3 here, or click to browse"}
-					</button>
-					<input
-						ref={fileInputRef}
-						type="file"
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={disabled || busy}
+							onClick={() => {
+								setDraftUrl(value);
+								setLinkOpen((open) => !open);
+							}}
+						>
+							<LinkIcon aria-hidden="true" />
+							Use a link
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="ml-auto text-destructive hover:text-destructive"
+							disabled={disabled || busy}
+							onClick={() => onChange("")}
+						>
+							<Trash2Icon aria-hidden="true" />
+							Remove
+						</Button>
+					</div>
+				</div>
+			) : (
+				blobConfigured && (
+					<MediaDropZone
 						accept="audio/*"
-						className="sr-only"
-						disabled={dropZoneDisabled}
-						onChange={(event) => {
-							handleFile(event.target.files?.[0]);
-							event.target.value = "";
-						}}
+						disabled={disabled}
+						busyLabel={busyLabel}
+						onFiles={handleFiles}
+						label="Drag an MP3 here, or click to browse"
 					/>
+				)
+			)}
+			{uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+			{showLinkBox && (
+				<div className="flex flex-col gap-1.5">
 					{!blobConfigured && (
 						<p className="text-xs text-muted-foreground">
-							Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — paste an audio URL below
-							instead.
+							Uploads need a Blob store (set BLOB_READ_WRITE_TOKEN) — paste an audio link instead.
 						</p>
 					)}
-					{uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
-					<Input
-						id={inputId}
-						placeholder="https://"
-						value={value}
-						disabled={disabled}
-						onChange={(event) => onChange(event.target.value)}
-					/>
-					{value && (
-						// biome-ignore lint/a11y/useMediaCaption: admin preview of an instrumental track.
-						<audio controls preload="none" src={value} className="w-full">
-							Your browser can't play this file.
-						</audio>
-					)}
+					<div className="flex gap-2">
+						<Input
+							id={inputId}
+							placeholder="https://"
+							value={draftUrl}
+							disabled={disabled}
+							onChange={(event) => setDraftUrl(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									event.preventDefault();
+									applyLink();
+								}
+							}}
+						/>
+						<Button type="button" variant="secondary" disabled={disabled} onClick={applyLink}>
+							Use
+						</Button>
+					</div>
 				</div>
-			</div>
+			)}
+			{!showLinkBox && !value && (
+				<Button
+					type="button"
+					variant="link"
+					size="sm"
+					className="h-auto self-start px-0 text-xs"
+					disabled={disabled}
+					onClick={() => setLinkOpen(true)}
+				>
+					or paste an audio link
+				</Button>
+			)}
 		</div>
 	);
 }
