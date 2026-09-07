@@ -20,11 +20,13 @@ export type StoryMilestoneView = {
 };
 
 export function Story({
+	anchor,
 	heading,
 	intro,
 	milestones,
 	theme,
 }: {
+	anchor: string;
 	heading: string;
 	intro: string;
 	milestones: StoryMilestoneView[];
@@ -36,7 +38,7 @@ export function Story({
 
 	return (
 		<section
-			id="story"
+			id={anchor || undefined}
 			className="mx-auto flex max-w-4xl scroll-mt-[var(--wed-nav-height)] flex-col gap-16 px-6 py-24"
 		>
 			<Reveal className="flex flex-col gap-4 text-center">

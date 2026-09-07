@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { seedContent } from "../prisma/content-seed";
+import { migrateToPages } from "../prisma/page-migration";
 import { resolveDatabaseUrl } from "../src/lib/database-url";
 
 const url = resolveDatabaseUrl(process.env);
@@ -23,3 +24,8 @@ if (push.status !== 0) {
 // no-op on every later deploy.
 const events = await seedContent();
 console.info(`Content seed complete, ${events.length} event(s) in the database.`);
+
+// Same guard, one level up: a site that predates pages gets its fixed sections copied into
+// blocks once; a database that already has pages is left alone.
+const pages = await migrateToPages();
+console.info(`Page migration ${pages}.`);

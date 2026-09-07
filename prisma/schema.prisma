@@ -270,3 +270,97 @@ model FaqEntryTranslation {
 
   @@id([entryId, locale])
 }
+
+/// What a block renders. The first six are the home page's built-in sections: they read their
+/// data from the tables above (events, milestones, settings) or from the block itself (hero photo
+/// and tagline, gallery photos, FAQ items, RSVP note) and can be reordered like any other block.
+/// The rest are free content the couple adds anywhere: a rich-text block, a card grid (a guide
+/// section), one picture, or a teaser linking to another page.
+enum BlockType {
+  HERO
+  STORY
+  EVENTS
+  GALLERY
+  FAQ
+  RSVP
+  TEXT
+  CARDS
+  IMAGE
+  PAGE_LINK
+}
+
+/// A public page. `home` is the root route; any other slug is served at `/<slug>`. Pages with no
+/// blocks that render anything hide from the nav and 404, so an empty page never gets a link.
+model Page {
+  id           String            @id @default(cuid())
+  slug         String            @unique
+  sortOrder    Int               @default(0)
+  showInNav    Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  translations PageTranslation[]
+  blocks       Block[]
+}
+
+model PageTranslation {
+  pageId String
+  locale Locale
+  /// Nav label and page heading; the dictionary's generic label is the fallback.
+  title  String @default("")
+  /// Shown under the heading on a non-home page.
+  intro  String @default("")
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@id([pageId, locale])
+}
+
+/// One block on a page, edited on its own in `/admin/pages/<id>` so saving one can never touch
+/// another. `anchor` is the `#fragment` the nav links to (empty = no link). Which of the optional
+/// columns a block uses depends on its `type`; see `src/domain/blocks.ts`.
+model Block {
+  id           String             @id @default(cuid())
+  pageId       String
+  sortOrder    Int                @default(0)
+  type         BlockType
+  anchor       String             @default("")
+  imageUrl     String?
+  imageUrls    String[]           @default([])
+  /// PAGE_LINK: the target path (`/guide`); CARDS items carry their own links instead.
+  url          String?
+  page         Page               @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  translations BlockTranslation[]
+  items        BlockItem[]
+}
+
+model BlockTranslation {
+  blockId String
+  locale  Locale
+  /// Heading (or the hero tagline, or an image caption). Empty falls back to the dictionary.
+  title   String @default("")
+  /// Rich text: the story intro, the RSVP note, a text block, a card grid's intro.
+  body    String @default("")
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@id([blockId, locale])
+}
+
+/// A card inside a CARDS block (a hotel, a beach) or a question inside a FAQ block.
+model BlockItem {
+  id           String                 @id @default(cuid())
+  blockId      String
+  sortOrder    Int                    @default(0)
+  url          String?
+  imageUrl     String?
+  block        Block                  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  translations BlockItemTranslation[]
+}
+
+model BlockItemTranslation {
+  itemId String
+  locale Locale
+  title  String    @default("")
+  body   String    @default("")
+  item   BlockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, locale])
+}

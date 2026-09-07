@@ -1,6 +1,13 @@
 "use client";
 
-import { GlobeIcon, LayoutDashboardIcon, LogOutIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import {
+	FileTextIcon,
+	GlobeIcon,
+	LayoutDashboardIcon,
+	LogOutIcon,
+	SettingsIcon,
+	UsersIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -10,6 +17,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
 	{ href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon },
 	{ href: "/admin/guests", label: "Guests", icon: UsersIcon },
+	{ href: "/admin/pages", label: "Pages", icon: FileTextIcon },
 	{ href: "/admin/website", label: "Website", icon: GlobeIcon, children: WEBSITE_SECTIONS },
 	{ href: "/admin/settings", label: "Settings", icon: SettingsIcon },
 ] as const;

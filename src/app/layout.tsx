@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import "@/app/globals.css";
 import { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { getHomeHero } from "@/lib/home-hero";
 
 const cormorant = Cormorant_Garamond({
 	subsets: ["latin"],
@@ -79,15 +80,13 @@ const DEFAULT_COUPLE_NAMES = "Our Wedding";
 const DEFAULT_TAGLINE = "We're getting married and can't wait to celebrate with you.";
 
 export async function generateMetadata(): Promise<Metadata> {
-	const [settings, siteContent] = await Promise.all([
+	const [settings, hero] = await Promise.all([
 		db.settings.findUnique({ where: { id: 1 } }),
-		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
+		getHomeHero(Locale.en),
 	]);
 
 	const coupleNames = settings?.coupleNames || DEFAULT_COUPLE_NAMES;
-	const tagline =
-		siteContent?.translations.find((translation) => translation.locale === Locale.en)?.tagline ||
-		DEFAULT_TAGLINE;
+	const tagline = hero.tagline || DEFAULT_TAGLINE;
 	const title = `${coupleNames} — Wedding RSVP`;
 
 	return {
