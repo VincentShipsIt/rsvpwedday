@@ -23,7 +23,18 @@ export function EmailShell({
 }) {
 	return (
 		<Html lang={locale} dir={locales[locale].dir}>
-			<Head />
+			<Head>
+				{/* The message body is admin-authored HTML (see `src/domain/rich-text.ts`); these are the
+				    only styles it needs, mirroring `.rich-text` on the site. */}
+				<style>{`
+					.rich-text p, .rich-text ul, .rich-text ol, .rich-text blockquote { margin: 0 0 12px; }
+					.rich-text h3, .rich-text h4 { margin: 18px 0 8px; font-family: ${theme.headingFont}; font-weight: 500; line-height: 1.2; }
+					.rich-text h3 { font-size: 21px; }
+					.rich-text h4 { font-size: 17px; }
+					.rich-text a { color: ${theme.accent}; }
+					.rich-text ul, .rich-text ol { padding-left: 22px; }
+				`}</style>
+			</Head>
 			<Preview>{preview}</Preview>
 			<Body
 				style={{

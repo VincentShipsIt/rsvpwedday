@@ -44,7 +44,8 @@ export function InvitationEmail({
 			>
 				{copy.heading}
 			</Heading>
-			<Section
+			{/* A plain div: React Email's `Section` wraps children in a table and rejects raw HTML. */}
+			<div
 				className="rich-text"
 				style={{ fontSize: "15px", lineHeight: 1.6, color: theme.ink }}
 				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised by resolveEmailCopy
