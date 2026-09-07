@@ -22,6 +22,8 @@ export type BlockContext = {
 	events: EventView[];
 	milestones: StoryMilestoneView[];
 	settings: { rsvpDeadline: Date; replyTo: string | null } | null;
+	/** What the countdown counts to: the couple's wedding date, or the earliest event until set. */
+	weddingDate: Date | null;
 };
 
 // Renders one page's blocks in order, with the theme's divider between them. Every block type is
@@ -49,7 +51,8 @@ function BlockContent({
 	context: BlockContext;
 	isFirst: boolean;
 }) {
-	const { coupleNames, locale, dictionary, theme, events, milestones, settings } = context;
+	const { coupleNames, locale, dictionary, theme, events, milestones, settings, weddingDate } =
+		context;
 	const heading = blockHeading(block, dictionary);
 
 	switch (block.type) {
@@ -59,7 +62,7 @@ function BlockContent({
 					coupleNames={coupleNames}
 					heroImageUrl={block.imageUrl}
 					tagline={block.title}
-					firstEventStartsAt={events[0]?.startsAt ?? null}
+					countdownTarget={weddingDate}
 					locale={locale}
 					dictionary={dictionary}
 					theme={theme}

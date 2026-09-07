@@ -1,30 +1,25 @@
 import { MemoriesForm } from "@/app/admin/memories/memories-form";
 import { PhotoModeration } from "@/app/admin/memories/photo-moderation";
 import { resolvePhotoBookAccess } from "@/domain/photo-book";
+import { resolveWeddingDate } from "@/domain/wedding-date";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
+import { toWireDateOrEmpty } from "@/lib/wire-date";
 
 export const dynamic = "force-dynamic";
 
-// `datetime-local` wants `YYYY-MM-DDTHH:mm` in no particular zone; the stored instant is rendered
-// in the server's zone, which is the same one `updateMemories` reads it back in.
-function toDateTimeLocal(value: Date | null | undefined): string {
-	if (!value) {
-		return "";
-	}
-	const offsetMs = value.getTimezoneOffset() * 60_000;
-	return new Date(value.getTime() - offsetMs).toISOString().slice(0, 16);
-}
-
 export default async function MemoriesPage() {
-	const [siteContent, photos, firstEvent] = await Promise.all([
+	const [siteContent, photos, settings, events] = await Promise.all([
 		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
 		db.photo.findMany({
 			orderBy: { createdAt: "desc" },
 			include: { invitation: { select: { email: true } } },
 		}),
-		db.event.findFirst({ orderBy: { startsAt: "asc" }, select: { startsAt: true } }),
+		db.settings.findUnique({ where: { id: 1 }, select: { weddingDate: true } }),
+		db.event.findMany({ orderBy: { startsAt: "asc" }, select: { startsAt: true } }),
 	]);
+
+	const wedding = resolveWeddingDate(settings?.weddingDate, events);
 
 	const access = resolvePhotoBookAccess(
 		{
@@ -47,9 +42,9 @@ export default async function MemoriesPage() {
 			</div>
 			<MemoriesForm
 				initialEnabled={siteContent?.photosEnabled ?? false}
-				initialOpenAt={toDateTimeLocal(siteContent?.photosOpenAt)}
+				initialOpenAt={toWireDateOrEmpty(siteContent?.photosOpenAt)}
 				initialTestMode={siteContent?.photosTestMode ?? false}
-				firstEventStartsAt={toDateTimeLocal(firstEvent?.startsAt)}
+				weddingDate={toWireDateOrEmpty(wedding.date)}
 				initialTranslations={localeCodes.map((locale) => {
 					const stored = siteContent?.translations.find(
 						(translation) => translation.locale === locale

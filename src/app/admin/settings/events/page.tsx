@@ -1,34 +1,39 @@
+import Link from "next/link";
 import { EventsForm } from "@/app/admin/settings/events/events-form";
 import { SettingsNav } from "@/app/admin/settings/settings-nav";
+import { resolveWeddingDate } from "@/domain/wedding-date";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
+import { toWireDateOrEmpty } from "@/lib/wire-date";
 
 export const dynamic = "force-dynamic";
 
-function toDateTimeLocal(date: Date): string {
-	return date.toISOString().slice(0, 16);
-}
-
 export default async function EventsPage() {
-	const events = await db.event.findMany({
-		orderBy: { sortOrder: "asc" },
-		include: { translations: true },
-	});
+	const [events, settings] = await Promise.all([
+		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
+		db.settings.findUnique({ where: { id: 1 }, select: { weddingDate: true } }),
+	]);
+	const wedding = resolveWeddingDate(settings?.weddingDate, events);
 
 	return (
 		<div className="flex flex-col gap-6">
 			<SettingsNav current="/admin/settings/events" />
 			<h1 className="text-2xl font-medium">Events</h1>
 			<p className="text-sm text-muted-foreground">
-				The first event&apos;s start date is the wedding date: it drives the date on the hero, the
-				countdown, and the calendar files guests download.
+				Each event keeps its own date, so a henna night the evening before and a brunch the morning
+				after are ordinary events. Every one is labelled against the wedding day, which is set under{" "}
+				<Link href="/admin/settings" className="underline underline-offset-4">
+					Settings
+				</Link>
+				.
 			</p>
 			<EventsForm
+				weddingDate={toWireDateOrEmpty(wedding.date)}
 				initialEvents={events.map((event) => ({
 					id: event.id,
 					slug: event.slug,
-					startsAt: toDateTimeLocal(event.startsAt),
-					endsAt: event.endsAt ? toDateTimeLocal(event.endsAt) : "",
+					startsAt: toWireDateOrEmpty(event.startsAt),
+					endsAt: toWireDateOrEmpty(event.endsAt),
 					venue: event.venue,
 					address: event.address,
 					mapsUrl: event.mapsUrl ?? "",

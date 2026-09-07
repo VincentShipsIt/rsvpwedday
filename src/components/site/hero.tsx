@@ -12,7 +12,7 @@ type HeroProps = {
 	coupleNames: string;
 	heroImageUrl: string | null;
 	tagline: string;
-	firstEventStartsAt: Date | null;
+	countdownTarget: Date | null;
 	locale: Locale;
 	dictionary: Dictionary;
 	theme: SiteTheme;
@@ -65,7 +65,7 @@ function EditorialHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -107,12 +107,12 @@ function EditorialHero({
 				>
 					{coupleNames}
 				</h1>
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<p
 						className="hero-entrance-item text-lg tracking-wide text-ivory/90"
 						style={heroDelayStyle(1)}
 					>
-						{formatDate(firstEventStartsAt, locale)}
+						{formatDate(countdownTarget, locale)}
 					</p>
 				)}
 				{tagline && (
@@ -123,10 +123,10 @@ function EditorialHero({
 						{tagline}
 					</p>
 				)}
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(3)}>
 						<Countdown
-							targetDate={firstEventStartsAt.toISOString()}
+							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 						/>
 					</div>
@@ -140,7 +140,7 @@ function ModernHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -160,10 +160,10 @@ function ModernHero({
 						className="hero-entrance-item flex flex-wrap items-center gap-6 border-t border-ink/15 pt-6 text-xs uppercase tracking-[0.2em] text-ink/70"
 						style={heroDelayStyle(1)}
 					>
-						{firstEventStartsAt && <span>{formatDate(firstEventStartsAt, locale)}</span>}
-						{firstEventStartsAt && (
+						{countdownTarget && <span>{formatDate(countdownTarget, locale)}</span>}
+						{countdownTarget && (
 							<Countdown
-								targetDate={firstEventStartsAt.toISOString()}
+								targetDate={countdownTarget.toISOString()}
 								labels={countdownLabels(dictionary)}
 							/>
 						)}
@@ -200,7 +200,7 @@ function GardenHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -225,12 +225,12 @@ function GardenHero({
 				)}
 			</div>
 			<HeroEntrance className="flex flex-col items-center gap-4">
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<p
 						className="hero-entrance-item text-lg tracking-wide text-ink/70"
 						style={heroDelayStyle(0)}
 					>
-						{formatDate(firstEventStartsAt, locale)}
+						{formatDate(countdownTarget, locale)}
 					</p>
 				)}
 				{tagline && (
@@ -241,10 +241,10 @@ function GardenHero({
 						{tagline}
 					</p>
 				)}
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(2)}>
 						<Countdown
-							targetDate={firstEventStartsAt.toISOString()}
+							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 							variant="pills"
 						/>
@@ -259,7 +259,7 @@ function MidnightHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -297,12 +297,12 @@ function MidnightHero({
 			)}
 			<HeroEntrance className="relative z-10 flex w-full flex-col gap-8 px-6 pb-16 sm:px-12 sm:pb-20">
 				<div className="flex flex-col items-start gap-3 text-left">
-					{firstEventStartsAt && (
+					{countdownTarget && (
 						<p
 							className="hero-entrance-item text-xs uppercase tracking-[0.3em] text-ink/70"
 							style={heroDelayStyle(0)}
 						>
-							{formatDate(firstEventStartsAt, locale)}
+							{formatDate(countdownTarget, locale)}
 						</p>
 					)}
 					<h1
@@ -320,16 +320,16 @@ function MidnightHero({
 						</p>
 					)}
 				</div>
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<div
 						className="hero-entrance-item flex flex-wrap items-center gap-6 border-t border-green/30 pt-6 text-green"
 						style={heroDelayStyle(3)}
 					>
 						<span className="text-xs uppercase tracking-[0.25em]">
-							{formatDate(firstEventStartsAt, locale)}
+							{formatDate(countdownTarget, locale)}
 						</span>
 						<Countdown
-							targetDate={firstEventStartsAt.toISOString()}
+							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 						/>
 					</div>
@@ -343,7 +343,7 @@ function BohoHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -359,12 +359,12 @@ function BohoHero({
 					>
 						{coupleNames}
 					</h1>
-					{firstEventStartsAt && (
+					{countdownTarget && (
 						<span
 							className="hero-entrance-item inline-flex w-fit items-center rounded-full bg-ivory px-5 py-2 text-sm font-medium tracking-wide text-ink"
 							style={heroDelayStyle(1)}
 						>
-							{formatDate(firstEventStartsAt, locale)}
+							{formatDate(countdownTarget, locale)}
 						</span>
 					)}
 					{tagline && (
@@ -375,10 +375,10 @@ function BohoHero({
 							{tagline}
 						</p>
 					)}
-					{firstEventStartsAt && (
+					{countdownTarget && (
 						<div className="hero-entrance-item" style={heroDelayStyle(3)}>
 							<Countdown
-								targetDate={firstEventStartsAt.toISOString()}
+								targetDate={countdownTarget.toISOString()}
 								labels={countdownLabels(dictionary)}
 								variant="pills"
 							/>
@@ -412,7 +412,7 @@ function VintageHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -460,12 +460,12 @@ function VintageHero({
 				</div>
 			</div>
 			<HeroEntrance className="flex flex-col items-center gap-4">
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<p
 						className="hero-entrance-item text-lg tracking-wide text-ink/70"
 						style={heroDelayStyle(0)}
 					>
-						{formatDate(firstEventStartsAt, locale)}
+						{formatDate(countdownTarget, locale)}
 					</p>
 				)}
 				{tagline && (
@@ -476,10 +476,10 @@ function VintageHero({
 						{tagline}
 					</p>
 				)}
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(2)}>
 						<Countdown
-							targetDate={firstEventStartsAt.toISOString()}
+							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 							variant="pills"
 						/>
@@ -494,7 +494,7 @@ function MediterraneanHero({
 	coupleNames,
 	heroImageUrl,
 	tagline,
-	firstEventStartsAt,
+	countdownTarget,
 	locale,
 	dictionary,
 }: HeroProps) {
@@ -507,12 +507,12 @@ function MediterraneanHero({
 			className="relative flex scroll-mt-[var(--wed-nav-height)] flex-col items-center overflow-hidden pb-16 text-center sm:pb-24"
 		>
 			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-5 px-6 pt-20 text-center">
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<p
 						className="hero-entrance-item text-xs uppercase tracking-[0.35em] text-green"
 						style={heroDelayStyle(0)}
 					>
-						{formatDate(firstEventStartsAt, locale)}
+						{formatDate(countdownTarget, locale)}
 					</p>
 				)}
 				<h1
@@ -563,10 +563,10 @@ function MediterraneanHero({
 						{tagline}
 					</p>
 				)}
-				{firstEventStartsAt && (
+				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(4)}>
 						<Countdown
-							targetDate={firstEventStartsAt.toISOString()}
+							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 							variant="pills"
 						/>

@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { type MemoriesTranslationInput, updateMemories } from "@/app/admin/memories/actions";
+import { DateTimeField } from "@/components/admin/date-time-field";
 import { SaveStatus } from "@/components/admin/save-status";
 import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,8 @@ export type MemoriesFormProps = {
 	initialEnabled: boolean;
 	initialOpenAt: string;
 	initialTestMode: boolean;
-	/** Offered as a one-click default, since the book usually opens when the first event starts. */
-	firstEventStartsAt: string;
+	/** Offered as a one-click default: the book almost always opens on the wedding day itself. */
+	weddingDate: string;
 	initialTranslations: MemoriesTranslationInput[];
 };
 
@@ -27,11 +28,10 @@ export function MemoriesForm({
 	initialEnabled,
 	initialOpenAt,
 	initialTestMode,
-	firstEventStartsAt,
+	weddingDate,
 	initialTranslations,
 }: MemoriesFormProps) {
 	const enabledId = useId();
-	const openAtId = useId();
 	const testModeId = useId();
 	const [photosEnabled, setPhotosEnabled] = useState(initialEnabled);
 	const [photosOpenAt, setPhotosOpenAt] = useState(initialOpenAt);
@@ -73,36 +73,25 @@ export function MemoriesForm({
 					<CardTitle>When it opens</CardTitle>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-5">
-					<div className="grid gap-2">
-						<Label htmlFor={openAtId}>Uploads open at</Label>
-						<div className="flex flex-wrap items-center gap-2">
-							<Input
-								id={openAtId}
-								type="datetime-local"
-								className="w-auto"
-								value={photosOpenAt}
-								onChange={(event) => setPhotosOpenAt(event.target.value)}
-							/>
-							{firstEventStartsAt && photosOpenAt !== firstEventStartsAt && (
-								<Button
-									type="button"
-									variant="secondary"
-									size="sm"
-									onClick={() => setPhotosOpenAt(firstEventStartsAt)}
-								>
-									Use the first event&apos;s start
-								</Button>
-							)}
-							{photosOpenAt && (
-								<Button type="button" variant="ghost" size="sm" onClick={() => setPhotosOpenAt("")}>
-									Clear
-								</Button>
-							)}
-						</div>
-						<p className="text-xs text-muted-foreground">
-							Before this moment guests see the date instead of the camera. Leave it empty to open
-							the book as soon as it is switched on.
-						</p>
+					<div className="flex flex-col gap-2">
+						<DateTimeField
+							label="Uploads open at"
+							value={photosOpenAt}
+							onChange={setPhotosOpenAt}
+							clearable
+							description="Before this moment guests see the date instead of the camera. Leave it empty to open the book as soon as it is switched on."
+						/>
+						{weddingDate && photosOpenAt !== weddingDate && (
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								className="self-start"
+								onClick={() => setPhotosOpenAt(weddingDate)}
+							>
+								Open it on the wedding day
+							</Button>
+						)}
 					</div>
 
 					<div className="flex items-center justify-between gap-6 rounded-lg border border-dashed p-4">

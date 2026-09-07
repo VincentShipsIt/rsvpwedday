@@ -57,6 +57,13 @@ model Settings {
   rsvpDeadline DateTime
   replyTo      String?
   updatedAt    DateTime @updatedAt
+
+  /// The ceremony itself: what the countdown counts to, and what "the day" means everywhere else.
+  /// Events keep their own absolute `startsAt` and are not derived from this — a henna night the
+  /// evening before and a brunch the morning after are ordinary events, not exceptions. Optional
+  /// so an existing database keeps working: until it is set, `src/domain/wedding-date.ts` falls
+  /// back to the earliest event by date.
+  weddingDate  DateTime?
 }
 
 model Event {

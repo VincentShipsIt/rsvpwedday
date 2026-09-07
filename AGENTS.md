@@ -141,6 +141,27 @@ saving/saved/error state next to a secondary "Save now" button, which stays as a
 and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,
 one-shot actions and do not autosave.
 
+## The wedding date
+
+`Settings.weddingDate` is the ceremony itself: what the countdown counts to, and what "the day"
+means everywhere else. Events are **not** derived from it — each `Event` keeps its own absolute
+`startsAt`, because a henna night the evening before and a brunch the morning after are ordinary
+events, not exceptions.
+
+It is optional, so a database that predates it keeps working: `src/domain/wedding-date.ts`'s
+`resolveWeddingDate` falls back to the earliest event **by date**, never by `sortOrder`, which is a
+display preference and can disagree with the calendar. That fallback is what the site did for every
+event before this column existed, and it is why the countdown could point at a welcome dinner. The
+settings page says out loud which date is in use and where it came from, and the events page labels
+every event against it (`dayOffset` / `describeDayOffset`), so a mistyped year reads as "364 days
+before" instead of hiding inside a timestamp.
+
+Every admin date field is `src/components/admin/date-time-field.tsx`: a calendar popover plus a
+time input, exchanging the same `yyyy-MM-ddTHH:mm` string a native `datetime-local` used, so no
+server action had to change. Build that string with `src/lib/wire-date.ts` and never with
+`toISOString()` — that is UTC, and an evening in Berlin comes back an hour early, or near midnight
+on the wrong day.
+
 ## Memories book
 
 Guests photograph the wedding from their own invitation link and everything they add appears in

@@ -13,6 +13,7 @@ import type { StoryMilestoneView } from "@/components/site/story";
 import { ThemePicker } from "@/components/site/theme-picker";
 import { isHomePage } from "@/domain/blocks";
 import { clampEffectsSettings } from "@/domain/effects-settings";
+import { resolveWeddingDate } from "@/domain/wedding-date";
 import { BlockType, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -191,6 +192,7 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 						theme,
 						events: localizedEvents,
 						milestones: localizedMilestones,
+						weddingDate: resolveWeddingDate(settings?.weddingDate, events).date,
 						settings: settings
 							? { rsvpDeadline: settings.rsvpDeadline, replyTo: settings.replyTo }
 							: null,

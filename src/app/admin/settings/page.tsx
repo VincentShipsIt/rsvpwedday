@@ -3,24 +3,30 @@ import Link from "next/link";
 import { SETTINGS_SECTIONS } from "@/app/admin/settings/sections";
 import { SettingsForm } from "@/app/admin/settings/settings-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { resolveWeddingDate } from "@/domain/wedding-date";
 import { db } from "@/lib/db";
+import { toWireDateOrEmpty } from "@/lib/wire-date";
 
 export const dynamic = "force-dynamic";
 
-function toDateTimeLocal(date: Date): string {
-	return date.toISOString().slice(0, 16);
-}
-
 export default async function SettingsPage() {
-	const settings = await db.settings.findUnique({ where: { id: 1 } });
+	const [settings, events] = await Promise.all([
+		db.settings.findUnique({ where: { id: 1 } }),
+		db.event.findMany({ orderBy: { startsAt: "asc" }, select: { startsAt: true } }),
+	]);
+	const derivedWeddingDate = resolveWeddingDate(settings?.weddingDate, events);
 
 	return (
 		<div className="flex flex-col gap-8">
 			<h1 className="text-2xl font-medium">Settings</h1>
 			<SettingsForm
 				initialCoupleNames={settings?.coupleNames ?? ""}
-				initialRsvpDeadline={settings ? toDateTimeLocal(settings.rsvpDeadline) : ""}
+				initialWeddingDate={toWireDateOrEmpty(settings?.weddingDate)}
+				initialRsvpDeadline={toWireDateOrEmpty(settings?.rsvpDeadline)}
 				initialReplyTo={settings?.replyTo ?? ""}
+				derivedWeddingDate={
+					derivedWeddingDate.source === "derived" ? toWireDateOrEmpty(derivedWeddingDate.date) : ""
+				}
 			/>
 			<div className="grid gap-4 sm:grid-cols-2">
 				{SETTINGS_SECTIONS.map((section) => (
