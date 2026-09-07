@@ -1,13 +1,15 @@
 "use client";
 
-import { LinkIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
+import { LinkIcon, RefreshCwIcon, SparklesIcon, Trash2Icon } from "lucide-react";
 import { useId, useState } from "react";
 import { MediaDropZone } from "@/components/admin/media-drop-zone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { IllustrationSubject } from "@/domain/illustration-prompt";
 import { uploadImage } from "@/lib/blob-upload";
 import { downscaleImage } from "@/lib/downscale-image";
+import { generateIllustration } from "@/lib/generate-illustration";
 
 export type ImageFieldProps = {
 	label: string;
@@ -15,13 +17,28 @@ export type ImageFieldProps = {
 	onChange: (url: string) => void;
 	/** Server-computed `isBlobConfigured()`, passed down rather than read client-side. */
 	blobConfigured: boolean;
+	/** Server-computed `isImageGenerationConfigured()`; without it the generate button is hidden. */
+	aiConfigured?: boolean;
+	/**
+	 * What this field illustrates and what the block currently says. Present means the field can
+	 * offer "Generate illustration"; the prompt itself is built on the server.
+	 */
+	illustrate?: IllustrationSubject;
 	disabled?: boolean;
 };
 
 // Shared by the hero image, each story milestone, and the guide sections and cards. Empty, it is
 // a drop zone; filled, it shows the picture itself with Replace and Remove. The URL never shows —
 // "Use a link" reveals a paste box for the no-Blob fallback or an external picture.
-export function ImageField({ label, value, onChange, blobConfigured, disabled }: ImageFieldProps) {
+export function ImageField({
+	label,
+	value,
+	onChange,
+	blobConfigured,
+	aiConfigured,
+	illustrate,
+	disabled,
+}: ImageFieldProps) {
 	const inputId = useId();
 	const [busyLabel, setBusyLabel] = useState<string | null>(null);
 	const [uploadError, setUploadError] = useState<string | null>(null);
@@ -49,6 +66,25 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 		}
 	}
 
+	async function handleGenerate() {
+		if (!illustrate) {
+			return;
+		}
+		setUploadError(null);
+		setBusyLabel("Generating…");
+		try {
+			const result = await generateIllustration(illustrate);
+			if (result.ok) {
+				onChange(result.url);
+				setLinkOpen(false);
+			} else {
+				setUploadError(result.error);
+			}
+		} finally {
+			setBusyLabel(null);
+		}
+	}
+
 	function applyLink() {
 		const url = draftUrl.trim();
 		if (url) {
@@ -60,6 +96,8 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 
 	const showLinkBox = linkOpen || (!blobConfigured && !value);
 	const busy = Boolean(busyLabel);
+	// Generation stores its result in Blob, so it needs that token as much as an upload does.
+	const canGenerate = Boolean(illustrate) && Boolean(aiConfigured) && blobConfigured;
 
 	return (
 		<div className="flex flex-col gap-1.5">
@@ -83,6 +121,18 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 								}
 								className="min-h-8 flex-row border-0 px-2 py-1 text-xs [&>svg:first-child]:hidden"
 							/>
+						)}
+						{canGenerate && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								disabled={disabled || busy}
+								onClick={handleGenerate}
+							>
+								<SparklesIcon aria-hidden="true" />
+								Regenerate
+							</Button>
 						)}
 						<Button
 							type="button"
@@ -121,6 +171,25 @@ export function ImageField({ label, value, onChange, blobConfigured, disabled }:
 						className="min-h-32"
 					/>
 				)
+			)}
+			{canGenerate && !value && (
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						disabled={disabled || busy}
+						onClick={handleGenerate}
+					>
+						<SparklesIcon aria-hidden="true" />
+						{busyLabel === "Generating…" ? "Generating…" : "Generate illustration"}
+					</Button>
+					<span className="text-xs text-muted-foreground">
+						{busyLabel === "Generating…"
+							? "This takes a few seconds."
+							: "Drawn in the site's theme, from what you have typed."}
+					</span>
+				</div>
 			)}
 			{uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
 			{showLinkBox && (

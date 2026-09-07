@@ -54,6 +54,7 @@ export type PageEditorProps = {
 	blocks: BlockState[];
 	pageOptions: PageOption[];
 	blobConfigured: boolean;
+	aiConfigured: boolean;
 };
 
 // The block editor. One language switcher at the top drives every block below it, blocks reorder
@@ -64,6 +65,7 @@ export function PageEditor({
 	blocks: initialBlocks,
 	pageOptions,
 	blobConfigured,
+	aiConfigured,
 }: PageEditorProps) {
 	const [locale, setLocale] = useState<Locale>(localeCodes[0]);
 	const [blocks, setBlocks] = useState(initialBlocks);
@@ -164,6 +166,7 @@ export function PageEditor({
 								block={block}
 								locale={locale}
 								blobConfigured={blobConfigured}
+								aiConfigured={aiConfigured}
 								pageOptions={pageOptions}
 								onRemoved={(id) =>
 									setBlocks((current) => current.filter((entry) => entry.id !== id))

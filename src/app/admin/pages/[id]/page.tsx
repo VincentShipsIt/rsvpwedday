@@ -11,6 +11,7 @@ import { localeCodes } from "@/i18n/locales";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import { localizePage, pageInclude, pageLabel } from "@/lib/page-content";
+import { isImageGenerationConfigured } from "@/lib/replicate";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,7 @@ export default async function AdminPageEditorPage({ params }: { params: Promise<
 				blocks={blocks}
 				pageOptions={pageOptions}
 				blobConfigured={isBlobConfigured()}
+				aiConfigured={isImageGenerationConfigured()}
 			/>
 		</div>
 	);
