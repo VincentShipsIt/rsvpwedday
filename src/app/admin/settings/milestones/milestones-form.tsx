@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateStory } from "@/app/admin/website/actions";
+import { updateStory } from "@/app/admin/settings/site-actions";
 import { ImageField } from "@/components/admin/image-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";

@@ -1,7 +1,7 @@
 import { render } from "@react-email/components";
 import { createElement } from "react";
 import { Resend } from "resend";
-import { resolveEmailCopy } from "@/domain/email-copy";
+import { type EmailCopyOverride, resolveEmailCopy } from "@/domain/email-copy";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { InvitationEmail } from "@/emails/invitation-email";
 import type { EmailEvent, EmailTemplateProps } from "@/emails/types";
@@ -45,12 +45,15 @@ export async function renderEmail(
 	guestFirstName: string,
 	link: string,
 	// The household's invited events; `null` (previews, tests) lists every event.
-	eventIds: string[] | null = null
+	eventIds: string[] | null = null,
+	// Unsaved copy from the admin's editor, so its preview shows what is being typed rather than
+	// what was last saved. Omitted everywhere else, which uses the stored template.
+	copyOverride?: EmailCopyOverride
 ): Promise<RenderedEmail> {
 	const context = await loadEmailContext(kind, locale);
 	const { settings, siteContent, hero, template } = context;
 	const events = eventIds ? filterToInvited(context.events, eventIds) : context.events;
-	const copy = resolveEmailCopy(kind, getDictionary(locale), template, {
+	const copy = resolveEmailCopy(kind, getDictionary(locale), copyOverride ?? template, {
 		name: guestFirstName,
 		coupleNames: settings.coupleNames,
 		deadline: formatDate(settings.rsvpDeadline, locale),

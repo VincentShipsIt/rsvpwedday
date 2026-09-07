@@ -1,5 +1,5 @@
-import { StoryForm } from "@/app/admin/website/story/story-form";
-import { WebsiteNav } from "@/app/admin/website/website-nav";
+import { StoryForm } from "@/app/admin/settings/milestones/milestones-form";
+import { SettingsNav } from "@/app/admin/settings/settings-nav";
 import { localeCodes } from "@/i18n/locales";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
@@ -14,7 +14,7 @@ export default async function StoryPage() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<WebsiteNav current="/admin/website/story" />
+			<SettingsNav current="/admin/settings/milestones" />
 			<h1 className="text-2xl font-medium">Milestones</h1>
 			<StoryForm
 				initialMilestones={milestones.map((milestone) => ({

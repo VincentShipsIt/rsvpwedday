@@ -1,5 +1,5 @@
-import { EventsForm } from "@/app/admin/website/events/events-form";
-import { WebsiteNav } from "@/app/admin/website/website-nav";
+import { EventsForm } from "@/app/admin/settings/events/events-form";
+import { SettingsNav } from "@/app/admin/settings/settings-nav";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
 
@@ -17,7 +17,7 @@ export default async function EventsPage() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<WebsiteNav current="/admin/website/events" />
+			<SettingsNav current="/admin/settings/events" />
 			<h1 className="text-2xl font-medium">Events</h1>
 			<p className="text-sm text-muted-foreground">
 				The first event&apos;s start date is the wedding date: it drives the date on the hero, the

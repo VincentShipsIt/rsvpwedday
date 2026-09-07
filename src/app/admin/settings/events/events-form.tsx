@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateEvents } from "@/app/admin/website/actions";
+import { updateEvents } from "@/app/admin/settings/site-actions";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
 import { useAutosave } from "@/components/admin/use-autosave";

@@ -3,7 +3,7 @@
 import { cn } from "cn";
 import { ExternalLinkIcon } from "lucide-react";
 import { useId, useState } from "react";
-import { updateEffects } from "@/app/admin/website/actions";
+import { updateEffects } from "@/app/admin/settings/site-actions";
 import { AudioField } from "@/components/admin/audio-field";
 import { SaveStatus } from "@/components/admin/save-status";
 import { useAutosave } from "@/components/admin/use-autosave";

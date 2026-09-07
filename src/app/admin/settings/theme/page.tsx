@@ -1,5 +1,5 @@
-import { ThemeForm } from "@/app/admin/website/theme/theme-form";
-import { WebsiteNav } from "@/app/admin/website/website-nav";
+import { SettingsNav } from "@/app/admin/settings/settings-nav";
+import { ThemeForm } from "@/app/admin/settings/theme/theme-form";
 import { SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 
@@ -10,7 +10,7 @@ export default async function ThemePage() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<WebsiteNav current="/admin/website/theme" />
+			<SettingsNav current="/admin/settings/theme" />
 			<h1 className="text-2xl font-medium">Theme</h1>
 			<ThemeForm initialTheme={siteContent?.theme ?? SiteTheme.EDITORIAL} />
 		</div>
