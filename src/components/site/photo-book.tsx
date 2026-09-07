@@ -92,6 +92,17 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [turnForward, turnBack]);
 
+	/*
+	 * A real book's sheets have thickness, and here that thickness is what puts them in the right
+	 * order. Inside a perspective context the browser paints 3D-transformed siblings by their depth
+	 * and ignores `z-index`, so coplanar leaves stack arbitrarily — the first-turned sheet was
+	 * covering the last-turned one. Applying `translateZ` after the rotation lifts an unturned leaf
+	 * toward the reader and pushes a turned one away by the same amount, which is exactly the two
+	 * piles of an open book. The whole spine is kept under 40px however many pages there are, so it
+	 * never reads as a visible offset mid-turn.
+	 */
+	const depthStep = Math.min(1, 40 / Math.max(leaves.length, 1));
+
 	const transition = prefersReducedMotion
 		? "none"
 		: `transform ${TURN_MS}ms cubic-bezier(0.2, 0.7, 0.3, 1)`;
@@ -99,13 +110,15 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 	const currentPage = Math.min(turned * pagesPerLeaf + 1, pages.length);
 
 	return (
-		<div className="flex flex-col items-center gap-6">
-			<div
-				className="relative w-full max-w-4xl overflow-hidden rounded-lg"
-				style={{ perspective: "2200px" }}
-			>
-				{/* Portrait on a phone (one page), landscape on a desktop (two facing pages). */}
-				<div className="relative aspect-[3/4] w-full md:aspect-[16/10]">
+		<div className="flex w-full flex-col items-center gap-6">
+			<div className="w-full max-w-4xl">
+				{/* Portrait on a phone (one page), landscape on a desktop (two facing pages). The ground
+				    is the book itself, so the half a leaf has not covered reads as blank paper rather
+				    than a hole; `overflow-hidden` is what lets a phone's turned sheets leave the frame. */}
+				<div
+					className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-ivory shadow-xl shadow-ink/10 ring-1 ring-ink/10 md:aspect-[16/10]"
+					style={{ perspective: "2200px" }}
+				>
 					{leaves.map((leaf, index) => {
 						const isTurned = index < turned;
 						return (
@@ -115,14 +128,19 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 								style={{
 									transformOrigin: "left center",
 									transformStyle: "preserve-3d",
-									transform: isTurned ? "rotateY(-180deg)" : "rotateY(0deg)",
+									transform: `rotateY(${isTurned ? -180 : 0}deg) translateZ(${
+										(leaves.length - index) * depthStep
+									}px)`,
 									transition,
-									zIndex: isTurned ? index : leaves.length - index,
+									// A fallback for anything that does honour it; the depth above is what decides.
+									zIndex: isTurned ? index : leaves.length * 2 - index,
 								}}
 							>
 								<Face
 									page={leaf[0] ?? null}
 									side="front"
+									isTurned={isTurned}
+									isInstant={prefersReducedMotion}
 									coupleNames={coupleNames}
 									title={title}
 									intro={intro}
@@ -132,6 +150,8 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 								<Face
 									page={leaf[1] ?? null}
 									side="back"
+									isTurned={isTurned}
+									isInstant={prefersReducedMotion}
 									coupleNames={coupleNames}
 									title={title}
 									intro={intro}
@@ -142,23 +162,27 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 						);
 					})}
 
-					{/* Tapping the page itself is how people expect to turn one; the buttons below stay
-					    for anyone using a keyboard or a screen reader. */}
+					{/* Tapping the page itself is how people expect to turn one. These are pointer targets
+					    only — they are kept out of the tab order and hidden from assistive tech, because
+					    the labelled buttons below already do the same two things, and arrow keys work
+					    anywhere on the page. */}
 					<button
 						type="button"
-						aria-label={copy.previousPage}
+						aria-hidden="true"
+						tabIndex={-1}
 						onClick={turnBack}
 						disabled={turned === 0}
 						className="absolute inset-y-0 left-0 w-1/3 cursor-w-resize disabled:cursor-default"
-						style={{ zIndex: leaves.length + 1 }}
+						style={{ zIndex: leaves.length * 2 + 1 }}
 					/>
 					<button
 						type="button"
-						aria-label={copy.nextPage}
+						aria-hidden="true"
+						tabIndex={-1}
 						onClick={turnForward}
 						disabled={turned >= lastLeaf - 1}
 						className="absolute inset-y-0 right-0 w-1/3 cursor-e-resize disabled:cursor-default"
-						style={{ zIndex: leaves.length + 1 }}
+						style={{ zIndex: leaves.length * 2 + 1 }}
 					/>
 				</div>
 			</div>
@@ -202,6 +226,8 @@ function describePage(page: BookPage | null | undefined): string {
 type FaceProps = {
 	page: BookPage | null;
 	side: "front" | "back";
+	isTurned: boolean;
+	isInstant: boolean;
 	coupleNames: string;
 	title: string;
 	intro: string;
@@ -209,13 +235,34 @@ type FaceProps = {
 	copy: Dictionary["photos"];
 };
 
-function Face({ page, side, coupleNames, title, intro, photoCount, copy }: FaceProps) {
+/*
+ * Which of a sheet's two faces you can see is decided here rather than by `backface-visibility`.
+ * Browsers disagree about culling a face whose own `rotateY(180deg)` is cancelled by its parent's
+ * turn — Chrome hides the back face of a turned leaf even though the two rotations compose to
+ * identity, which leaves the left-hand page blank. Swapping opacity with a delay of exactly half
+ * the turn instead is unambiguous, and it happens at the moment the sheet is edge-on to the
+ * reader, so there is nothing to see at the instant it changes.
+ */
+function Face({
+	page,
+	side,
+	isTurned,
+	isInstant,
+	coupleNames,
+	title,
+	intro,
+	photoCount,
+	copy,
+}: FaceProps) {
+	const isFacingReader = (side === "back") === isTurned;
 	return (
 		<div
+			aria-hidden={!isFacingReader}
 			className="absolute inset-0 overflow-hidden bg-ivory"
 			style={{
-				backfaceVisibility: "hidden",
 				transform: side === "back" ? "rotateY(180deg)" : undefined,
+				opacity: isFacingReader ? 1 : 0,
+				transition: isInstant ? "none" : `opacity 0s linear ${TURN_MS / 2}ms`,
 			}}
 		>
 			{/* The shading that falls into the gutter of an open book. It sits on the spine edge,
@@ -250,7 +297,7 @@ function PageContent({
 	intro,
 	photoCount,
 	copy,
-}: Omit<FaceProps, "side">) {
+}: Omit<FaceProps, "side" | "isTurned" | "isInstant">) {
 	if (!page) {
 		return <div className="h-full w-full bg-ivory-dark/30" />;
 	}
