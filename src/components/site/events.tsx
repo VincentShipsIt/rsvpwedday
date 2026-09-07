@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/card";
+import { EventsTimeline } from "@/components/site/events-timeline";
 import { Reveal } from "@/components/site/reveal";
 import { RichText } from "@/components/site/rich-text";
 import { type Locale, SiteTheme } from "@/generated/prisma/enums";
@@ -66,6 +67,9 @@ export function Events({
 			)}
 			{theme === SiteTheme.VINTAGE && (
 				<VintageEventCards events={events} locale={locale} dictionary={dictionary} />
+			)}
+			{theme === SiteTheme.MEDITERRANEAN && (
+				<EventsTimeline events={events} locale={locale} dictionary={dictionary} />
 			)}
 		</section>
 	);

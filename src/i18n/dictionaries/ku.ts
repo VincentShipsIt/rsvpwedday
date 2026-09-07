@@ -41,6 +41,8 @@ export const ku: Dictionary = {
 		eventDressCodeLabel: "Kodê cilan",
 		eventMapsLinkLabel: "Di Nexşeyan de veke",
 		eventCalendarLabel: "Li salnameyê zêde bike",
+		eventDetailsShowLabel: "Hûrgiliyan nîşan bide",
+		eventDetailsHideLabel: "Hûrgiliyan veşêre",
 		attendingLabel: "Tu yê beşdarî {event} bibî?",
 		dietaryLabel: "Hewcedariyên xwarinê",
 		dietaryPlaceholder: "Alerjî, riwekî, vegan...",

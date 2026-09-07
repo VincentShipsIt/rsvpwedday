@@ -49,6 +49,8 @@ export function Story({
 			{theme === SiteTheme.MIDNIGHT && <MidnightMilestones milestones={milestones} />}
 			{theme === SiteTheme.BOHO && <BohoMilestones milestones={milestones} />}
 			{theme === SiteTheme.VINTAGE && <VintageMilestones milestones={milestones} />}
+			{/* MEDITERRANEAN shares Garden's polaroids; only the tokens (blue date, Playfair title) differ. */}
+			{theme === SiteTheme.MEDITERRANEAN && <GardenMilestones milestones={milestones} />}
 		</section>
 	);
 }

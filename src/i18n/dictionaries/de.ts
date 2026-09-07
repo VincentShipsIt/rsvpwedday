@@ -41,6 +41,8 @@ export const de: Dictionary = {
 		eventDressCodeLabel: "Dresscode",
 		eventMapsLinkLabel: "In Maps öffnen",
 		eventCalendarLabel: "Zum Kalender hinzufügen",
+		eventDetailsShowLabel: "Details anzeigen",
+		eventDetailsHideLabel: "Details ausblenden",
 		attendingLabel: "Nimmst du an {event} teil?",
 		dietaryLabel: "Ernährungshinweise",
 		dietaryPlaceholder: "Allergien, vegetarisch, vegan...",

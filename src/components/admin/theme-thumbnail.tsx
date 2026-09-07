@@ -28,7 +28,7 @@ export function ThemeThumbnail({ themeKey, label }: { themeKey: string; label: s
 		});
 		resizeObserver.observe(node);
 
-		// Six iframes of a database-backed page is a lot to fire at once, so each one waits until
+		// Seven iframes of a database-backed page is a lot to fire at once, so each one waits until
 		// its card is close to the viewport.
 		const intersectionObserver = new IntersectionObserver(
 			(entries) => {
