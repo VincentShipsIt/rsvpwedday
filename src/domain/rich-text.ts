@@ -23,7 +23,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
 		"a",
 		"blockquote",
 	],
-	allowedAttributes: { a: ["href"] },
+	allowedAttributes: { a: ["href", "rel", "target"] },
 	allowedSchemes: ["https", "http", "mailto"],
 	transformTags: {
 		b: "strong",
@@ -77,7 +77,8 @@ export function normalizeRichText(value: string): string {
 export function richTextToPlainText(value: string): string {
 	const html = normalizeRichText(value)
 		.replace(/<br\s*\/?>/gi, "\n")
-		.replace(/<\/(p|h3|h4|li|blockquote)>/gi, "\n");
+		.replace(/<\/li>/gi, "\n")
+		.replace(/<\/(p|h3|h4|blockquote)>/gi, "\n\n");
 	return sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} })
 		.replaceAll("&amp;", "&")
 		.replaceAll("&lt;", "<")
