@@ -1,5 +1,6 @@
 /*
- * A discreet layer of small white hearts drifting up the whole page (MEDITERRANEAN). Fixed and
+ * The moving half of the heart texture (the static scattered hearts are `.med-hearts` in
+ * globals.css): a discreet layer of small white hearts drifting up the whole page (MEDITERRANEAN). Fixed and
  * pointer-transparent, so it sits over every section without touching layout; the hearts are
  * few, small and translucent so they read as a hint rather than confetti. Positions, sizes and
  * timings are a fixed table rather than random, so server and client render identically. The

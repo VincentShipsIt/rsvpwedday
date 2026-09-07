@@ -452,6 +452,24 @@ h3 {
 	}
 }
 
+/*
+ * The static half of the same effect: nine white hearts at sizes from 7 to 22px scattered over a
+ * 400px tile, repeated across the page ground (`main` for this theme, plus the hero's own
+ * backdrop, which paints over `main`). White on cream is deliberately faint; it's texture, not
+ * pattern.
+ */
+.med-hearts {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg transform='translate(40 60) rotate(-12) scale(0.917)' opacity='0.9'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(210 30) rotate(15) scale(0.500)' opacity='0.7'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(320 120) rotate(-6) scale(0.667)' opacity='0.8'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(120 180) rotate(20) scale(0.375)' opacity='0.6'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(270 250) rotate(8) scale(0.833)' opacity='0.85'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(60 300) rotate(-18) scale(0.542)' opacity='0.7'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(190 340) rotate(10) scale(0.333)' opacity='0.6'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(350 330) rotate(-8) scale(0.458)' opacity='0.7'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(150 100) rotate(0) scale(0.292)' opacity='0.55'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
+	background-size: 400px 400px;
+	background-repeat: repeat;
+}
+
+main[data-theme="mediterranean"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg transform='translate(40 60) rotate(-12) scale(0.917)' opacity='0.9'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(210 30) rotate(15) scale(0.500)' opacity='0.7'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(320 120) rotate(-6) scale(0.667)' opacity='0.8'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(120 180) rotate(20) scale(0.375)' opacity='0.6'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(270 250) rotate(8) scale(0.833)' opacity='0.85'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(60 300) rotate(-18) scale(0.542)' opacity='0.7'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(190 340) rotate(10) scale(0.333)' opacity='0.6'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(350 330) rotate(-8) scale(0.458)' opacity='0.7'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3Cg transform='translate(150 100) rotate(0) scale(0.292)' opacity='0.55'%3E%3Cpath d='M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9Z' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
+	background-size: 400px 400px;
+	background-repeat: repeat;
+}
+
 .heart-particle {
 	animation-name: heart-drift;
 	animation-timing-function: linear;

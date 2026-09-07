@@ -305,12 +305,15 @@ function VintageMilestones({ milestones }: { milestones: StoryMilestoneView[] })
 // Mediterranean invitations — finished with a small lemon underneath.
 function MediterraneanMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 	return (
-		<div className="flex flex-wrap justify-center gap-8">
+		// A fixed three-up grid from `lg` (two-up from `sm`, one column below) rather than the
+		// wrapped row the other card themes use, so three milestones sit on one line inside the
+		// section's `max-w-4xl` instead of wrapping the third underneath.
+		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
 					delay={staggerDelay(index)}
-					className="hover-lift flex w-72 flex-col bg-white p-3 pb-5 shadow-md ring-1 ring-green/15"
+					className="hover-lift flex flex-col bg-white p-3 pb-5 shadow-md ring-1 ring-green/15"
 				>
 					{milestone.imageUrl && (
 						<Parallax factor={0.12} className="aspect-[4/3] w-full">
@@ -318,7 +321,7 @@ function MediterraneanMilestones({ milestones }: { milestones: StoryMilestoneVie
 								src={milestone.imageUrl}
 								alt=""
 								fill
-								sizes="18rem"
+								sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
 								className="reveal-photo-frame object-cover"
 							/>
 						</Parallax>

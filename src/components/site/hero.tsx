@@ -502,13 +502,12 @@ function MediterraneanHero({
 	return (
 		<section
 			id="top"
-			// Garden's arched photo frame on a sunlit lemon-to-cream ground, a lemon sprig either
+			// Garden's arched photo frame on the plain cream ground, a lemon sprig either
 			// side of the arch from `sm:` up (they'd crowd the photo on a phone), and the majolica
 			// tile rail flush on the bottom edge. `mb-12` because the rail ends the hero flush, and
 			// the section divider that follows would otherwise sit right on top of it.
 			className="relative mb-12 flex scroll-mt-[var(--wed-nav-height)] flex-col items-center overflow-hidden text-center"
 		>
-			<div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,var(--color-gold),transparent_45%),linear-gradient(to_bottom,var(--color-ivory-dark),var(--color-ivory))]" />
 			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-5 px-6 pt-20 text-center">
 				{firstEventStartsAt && (
 					<p
@@ -536,22 +535,20 @@ function MediterraneanHero({
 			<div className="relative z-10 mt-10 w-full max-w-3xl px-6">
 				<LemonSprig className="pointer-events-none absolute bottom-4 -left-6 hidden w-44 -rotate-6 sm:block lg:-left-12 lg:w-56" />
 				<LemonSprig className="pointer-events-none absolute -right-6 bottom-4 hidden w-44 -scale-x-100 rotate-6 sm:block lg:-right-12 lg:w-56" />
-				{/* A white mat around the arch, like a print on a whitewashed wall. */}
-				<div className="mx-auto w-full max-w-md rounded-t-[999px] rounded-b-3xl bg-white p-2 shadow-md ring-1 ring-green/20">
-					<div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark">
-						{heroImageUrl && (
-							<Parallax factor={0.25} className="h-full w-full rounded-t-[999px] rounded-b-3xl">
-								<Image
-									src={heroImageUrl}
-									alt=""
-									fill
-									priority
-									sizes="(min-width: 768px) 28rem, 100vw"
-									className="hero-photo-img object-cover"
-								/>
-							</Parallax>
-						)}
-					</div>
+				{/* Garden's bare arch on the plain cream ground, with only a blue hairline. */}
+				<div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-t-[999px] rounded-b-3xl bg-ivory-dark ring-1 ring-green/20">
+					{heroImageUrl && (
+						<Parallax factor={0.25} className="h-full w-full rounded-t-[999px] rounded-b-3xl">
+							<Image
+								src={heroImageUrl}
+								alt=""
+								fill
+								priority
+								sizes="(min-width: 768px) 28rem, 100vw"
+								className="hero-photo-img object-cover"
+							/>
+						</Parallax>
+					)}
 				</div>
 			</div>
 			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-6 px-6 pt-10 pb-16 text-center">
