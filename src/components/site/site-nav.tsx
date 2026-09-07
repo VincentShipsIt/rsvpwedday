@@ -16,8 +16,8 @@ const navClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.MEDITERRANEAN]: "border-b",
 };
 
-// The couple's wordmark is set in `--font-accent` everywhere; MEDITERRANEAN's script face is
-// far lighter than the others at `text-lg`, so it alone gets a size step up.
+// The couple's wordmark is set in `--font-accent` everywhere at the same size; kept as a record
+// so a theme with a lighter script face can step up on its own.
 const wordmarkClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.EDITORIAL]: "text-lg",
 	[SiteTheme.MODERN]: "text-lg",
@@ -25,7 +25,7 @@ const wordmarkClassNames: Record<SiteTheme, string> = {
 	[SiteTheme.MIDNIGHT]: "text-lg",
 	[SiteTheme.BOHO]: "text-lg",
 	[SiteTheme.VINTAGE]: "text-lg",
-	[SiteTheme.MEDITERRANEAN]: "text-2xl leading-none",
+	[SiteTheme.MEDITERRANEAN]: "text-lg",
 };
 
 const linkClassNames: Record<SiteTheme, string> = {

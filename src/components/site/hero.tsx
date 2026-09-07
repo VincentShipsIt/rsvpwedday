@@ -37,8 +37,7 @@ function heroDelayStyle(step: number): CSSProperties {
 
 // The seven themes need genuinely different hero layouts (photo backdrop vs. split columns vs.
 // an arched frame vs. a bottom-anchored dark overlay vs. a two-tone block-and-frame split vs. a
-// pressed-flower arched frame with a botanical rule vs. an arch flanked by lemon sprigs over a tile
-// rail), so this branches on `theme` rather than trying to fold everything into
+// pressed-flower arched frame with a botanical rule vs. an arch flanked by lemon sprigs), so this branches on `theme` rather than trying to fold everything into
 // one shared markup tree.
 export function Hero(props: HeroProps) {
 	if (props.theme === SiteTheme.MODERN) {
@@ -503,10 +502,9 @@ function MediterraneanHero({
 		<section
 			id="top"
 			// Garden's arched photo frame on the plain cream ground, a lemon sprig either
-			// side of the arch from `sm:` up (they'd crowd the photo on a phone), and the majolica
-			// tile rail flush on the bottom edge. `mb-12` because the rail ends the hero flush, and
-			// the section divider that follows would otherwise sit right on top of it.
-			className="relative mb-12 flex scroll-mt-[var(--wed-nav-height)] flex-col items-center overflow-hidden text-center"
+			// side of the arch from `sm:` up (they'd crowd the photo on a phone). Generous bottom
+			// padding so the hero and the story beneath it breathe rather than abut.
+			className="relative flex scroll-mt-[var(--wed-nav-height)] flex-col items-center overflow-hidden pb-16 text-center sm:pb-24"
 		>
 			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-5 px-6 pt-20 text-center">
 				{firstEventStartsAt && (
@@ -554,7 +552,7 @@ function MediterraneanHero({
 			<HeroEntrance className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-6 px-6 pt-10 pb-16 text-center">
 				{tagline && (
 					<p
-						className="hero-entrance-item font-accent max-w-2xl text-balance text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-green"
+						className="hero-entrance-item font-display max-w-2xl text-balance text-[clamp(1.375rem,2.6vw,1.875rem)] leading-snug text-green italic"
 						style={heroDelayStyle(3)}
 					>
 						{tagline}
@@ -570,10 +568,6 @@ function MediterraneanHero({
 					</div>
 				)}
 			</HeroEntrance>
-			<div
-				aria-hidden="true"
-				className="med-tiles relative z-10 h-7 w-full border-t border-green/30"
-			/>
 		</section>
 	);
 }
