@@ -102,8 +102,8 @@ describe("parseImportCsv", () => {
 	it("reports an invalid locale on its own row without dropping other rows", () => {
 		const text = [
 			IMPORT_CSV_HEADER.join(","),
-			"a@example.com,fr,0,Jane,Doe,ADULT,,",
-			"b@example.com,en,0,Max,Muster,ADULT,,",
+			"a@example.com,fr,0,Jane,Doe,ADULT,,,",
+			"b@example.com,en,0,Max,Muster,ADULT,,,",
 		].join("\n");
 
 		const result = parseImportCsv(text);
