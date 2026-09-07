@@ -45,7 +45,7 @@ unchanged. The invitation create/edit form is a single `InvitationDialog` compon
 `/admin/invitations/[id]` routes redirect to `/admin?invitation=new|<id>`, which opens it.
 
 `/admin/website` is a section index linking to one page per home-page section — `hero`, `story`,
-`events`, `gallery`, `rsvp`, `theme` — each saving through its own server action in
+`events`, `gallery`, `rsvp`, `theme`, `effects` — each saving through its own server action in
 `src/app/admin/website/actions.ts`. `events` edits the `Event` rows and their translations (moved
 here from Settings, which keeps only couple names, RSVP deadline, and reply-to). Every image field
 (hero, milestones, gallery) is `src/components/admin/image-field.tsx` or `image-list-field.tsx`:
@@ -65,6 +65,23 @@ to hidden and on `beforeunload`. `src/components/admin/save-status.tsx` renders 
 saving/saved/error state next to a secondary "Save now" button, which stays as a manual fallback
 and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,
 one-shot actions and do not autosave.
+
+## Site effects
+
+`/admin/website/effects` edits three `SiteContent` columns. `openingAnimation` picks the first-load
+cover (`src/components/site/invitation-opening.tsx` plus one SVG art file per variant under
+`src/components/site/opening/`): `SEAL` (wax-sealed envelope, doors part), `MONOGRAM` (stroke-drawn
+initials, iris reveal), `BLOOM` (growing branches, curtain lift), or `NONE`. The cover doubles as the
+loading screen — it waits for fonts and the hero photo (capped at 4s) before offering the button —
+and never traps a guest: reduced motion skips it, Escape opens it in any phase, and `sessionStorage`
+stops it repeating within a visit. `?opening=seal|monogram|bloom|none` previews a variant by URL
+(and forces it to show again), the same way `?theme=` previews a theme. `particlesEnabled` toggles
+`src/components/site/particles.tsx`, a fixed canvas inside `<main>` whose particle kind and colours
+come from the active theme's own `--color-*` tokens. `musicUrl` is an https audio URL (uploaded to
+Blob via `AudioField`, or pasted); `src/components/site/music-toggle.tsx` renders the floating
+on/off button and only ever starts playback from a real click — the guest's own toggle, or the
+cover's open button via the `wed:invitation-opened` window event. `?preview=1` (the admin theme
+thumbnails) drops all three.
 
 ## Translations
 

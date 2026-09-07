@@ -1,30 +1,57 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SiteTheme } from "@/generated/prisma/enums";
+import { BloomArt } from "@/components/site/opening/bloom-art";
+import { getInitials } from "@/components/site/opening/initials";
+import { MonogramArt } from "@/components/site/opening/monogram-art";
+import { SealArt } from "@/components/site/opening/seal-art";
+import { OpeningAnimation, type SiteTheme } from "@/generated/prisma/enums";
+import { dataOpening } from "@/lib/site-effects";
 import { dataTheme } from "@/lib/site-theme";
+
+// Fired on `window` the moment a guest opens the cover, from inside their click, so
+// `MusicToggle` can start the track while the browser still counts it as a user gesture.
+export const INVITATION_OPENED_EVENT = "wed:invitation-opened";
 
 const SESSION_KEY = "wed-invitation-opened";
 
-// Short connector words dropped before taking initials, so "Anna & Mark" or "Anna and Mark"
-// both resolve to "AM" instead of picking up a stray "A" from "and".
-const CONNECTOR_WORDS = new Set(["and", "und", "the", "de", "di", "von", "van", "û", "u"]);
+// The cover doubles as the page's loading screen: it waits for the fonts and the hero photo
+// before offering the button, but never for longer than this, so a slow image can't hold a
+// guest at the door.
+const MAX_LOADING_MS = 4000;
 
-function getInitials(coupleNames: string): string {
-	const words = coupleNames
-		.split(/[^\p{L}]+/u)
-		.map((word) => word.trim())
-		.filter((word) => word.length > 0 && !CONNECTOR_WORDS.has(word.toLowerCase()));
+type Phase = "loading" | "ready" | "opening";
 
-	const [first, ...rest] = words;
-	if (!first) {
-		return "";
-	}
-	if (rest.length === 0) {
-		return first.slice(0, 2).toUpperCase();
-	}
-	const last = words.at(-1) ?? first;
-	return `${first[0]}${last[0]}`.toUpperCase();
+type CoverAnimation = Exclude<OpeningAnimation, typeof OpeningAnimation.NONE>;
+
+// `minLoadingMs` lets each animation's own draw complete at least once on a fast connection,
+// so the ring/monogram/branches read as a deliberate intro rather than a flash. `revealMs` is
+// how long the open transition runs before the cover unmounts.
+const timings: Record<CoverAnimation, { minLoadingMs: number; revealMs: number }> = {
+	[OpeningAnimation.SEAL]: { minLoadingMs: 1400, revealMs: 1800 },
+	[OpeningAnimation.MONOGRAM]: { minLoadingMs: 2200, revealMs: 1300 },
+	[OpeningAnimation.BLOOM]: { minLoadingMs: 2400, revealMs: 1400 },
+};
+
+function wait(ms: number): Promise<void> {
+	return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+// The hero photo is a `priority` next/image already in the DOM by the time this mounts, so the
+// real element is awaited rather than a second fetch of the raw URL (which `next/image` never
+// requests as-is).
+function waitForHeroAssets(): Promise<void> {
+	const fonts =
+		"fonts" in document ? document.fonts.ready.then(() => undefined) : Promise.resolve();
+	const heroImage = document.querySelector<HTMLImageElement>("img.hero-photo-img");
+	const image =
+		heroImage && !heroImage.complete
+			? new Promise<void>((resolve) => {
+					heroImage.addEventListener("load", () => resolve(), { once: true });
+					heroImage.addEventListener("error", () => resolve(), { once: true });
+				})
+			: Promise.resolve();
+	return Promise.all([fonts, image]).then(() => undefined);
 }
 
 /*
@@ -32,55 +59,89 @@ function getInitials(coupleNames: string): string {
  * guest, so every escape hatch is real rather than cosmetic:
  * - `prefers-reduced-motion` skips it entirely (the effect below never arms `shouldShow`).
  * - It only mounts from a `useEffect`, so server HTML and a no-JS client never render it at all.
- * - `sessionStorage` remembers an opened cover so it doesn't reappear on the same visit.
- * - The button is autofocused and Escape opens it too, so a keyboard-only guest isn't stuck
- *   needing a pointer.
+ * - `sessionStorage` remembers an opened cover so it doesn't reappear on the same visit
+ *   (`forceShow`, set by the `?opening=` preview param, ignores that so every variant can be
+ *   compared without clearing storage).
+ * - Escape opens it in any phase, loading included, so a keyboard-only guest isn't stuck
+ *   needing a pointer or waiting on a slow photo.
  */
 export function InvitationOpening({
 	coupleNames,
 	theme,
-	openLabel,
+	animation,
+	forceShow = false,
+	labels,
 }: {
 	coupleNames: string;
 	theme: SiteTheme;
-	openLabel: string;
+	animation: CoverAnimation;
+	forceShow?: boolean;
+	labels: { open: string; loading: string };
 }) {
 	const [shouldShow, setShouldShow] = useState(false);
-	const [isOpening, setIsOpening] = useState(false);
+	const [phase, setPhase] = useState<Phase>("loading");
 	const [isVisible, setIsVisible] = useState(true);
+	const hasOpenedRef = useRef(false);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 
 	const handleOpen = useCallback(() => {
-		setIsOpening(true);
+		if (hasOpenedRef.current) {
+			return;
+		}
+		hasOpenedRef.current = true;
+		setPhase("opening");
 		try {
 			sessionStorage.setItem(SESSION_KEY, "1");
 		} catch {
 			// Private browsing or storage disabled: opening still proceeds, it just won't be
 			// remembered as "already seen" for the rest of the session.
 		}
-		window.setTimeout(() => setIsVisible(false), 900);
-	}, []);
+		window.dispatchEvent(new CustomEvent(INVITATION_OPENED_EVENT));
+		window.setTimeout(() => setIsVisible(false), timings[animation].revealMs);
+	}, [animation]);
 
 	useEffect(() => {
 		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		if (prefersReducedMotion) {
 			return;
 		}
-		try {
-			if (sessionStorage.getItem(SESSION_KEY)) {
-				return;
+		if (!forceShow) {
+			try {
+				if (sessionStorage.getItem(SESSION_KEY)) {
+					return;
+				}
+			} catch {
+				// Storage disabled: still show the cover for this page view, see the comment above.
 			}
-		} catch {
-			// Storage disabled: still show the cover for this page view, see the comment above.
 		}
 		setShouldShow(true);
-	}, []);
+	}, [forceShow]);
 
 	useEffect(() => {
-		if (!shouldShow || isOpening) {
+		if (!shouldShow) {
 			return;
 		}
-		buttonRef.current?.focus();
+		let isCancelled = false;
+		Promise.race([
+			Promise.all([waitForHeroAssets(), wait(timings[animation].minLoadingMs)]),
+			wait(MAX_LOADING_MS),
+		]).then(() => {
+			if (!isCancelled) {
+				setPhase((current) => (current === "loading" ? "ready" : current));
+			}
+		});
+		return () => {
+			isCancelled = true;
+		};
+	}, [shouldShow, animation]);
+
+	useEffect(() => {
+		if (!shouldShow || phase === "opening") {
+			return;
+		}
+		if (phase === "ready") {
+			buttonRef.current?.focus();
+		}
 
 		function handleKeyDown(event: KeyboardEvent) {
 			if (event.key === "Escape") {
@@ -90,63 +151,73 @@ export function InvitationOpening({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [shouldShow, isOpening, handleOpen]);
+	}, [shouldShow, phase, handleOpen]);
 
 	if (!shouldShow || !isVisible || !coupleNames.trim()) {
 		return null;
 	}
 
 	const initials = getInitials(coupleNames);
+	const isSeal = animation === OpeningAnimation.SEAL;
+	const isBloom = animation === OpeningAnimation.BLOOM;
 
 	return (
 		<div
 			data-theme={dataTheme[theme]}
+			data-opening={dataOpening[animation]}
+			data-phase={phase}
 			role="dialog"
 			aria-modal="true"
 			aria-label={coupleNames}
-			className="fixed inset-0 z-50 flex overflow-hidden"
+			aria-busy={phase === "loading"}
+			className="opening-cover fixed inset-0 z-50 overflow-hidden text-ink"
 		>
-			{/* Two solid, full-height "doors"; each carries its own faint paper texture on top of a
-			    solid fill so the page behind is fully hidden at rest and genuinely revealed, not
-			    just masked by a shared backdrop, once they slide apart. */}
-			<div
-				className={`w-1/2 border-r border-ink/10 bg-ivory bg-[radial-gradient(circle_at_80%_30%,rgb(224_200_140/0.35),transparent_55%)] transition-transform duration-[900ms] ease-in-out ${
-					isOpening ? "-translate-x-full" : "translate-x-0"
-				}`}
-			/>
-			<div
-				className={`w-1/2 bg-ivory bg-[radial-gradient(circle_at_20%_70%,rgb(224_200_140/0.35),transparent_55%)] transition-transform duration-[900ms] ease-in-out ${
-					isOpening ? "translate-x-full" : "translate-x-0"
-				}`}
-			/>
-			<div
-				className={`pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center transition-opacity duration-300 ${
-					isOpening ? "opacity-0" : "opacity-100"
-				}`}
-			>
-				<svg aria-hidden="true" viewBox="0 0 96 96" className="h-20 w-20 text-green-dark">
-					<circle cx="48" cy="48" r="42" fill="var(--color-gold)" opacity="0.9" />
-					<circle cx="48" cy="48" r="42" fill="none" stroke="currentColor" strokeWidth="1.5" />
-					<text
-						x="48"
-						y="58"
-						textAnchor="middle"
-						fill="var(--color-ivory)"
-						fontSize="30"
-						style={{ fontFamily: "var(--font-accent)" }}
+			{isSeal ? (
+				<>
+					{/* Two solid, full-height "doors"; each carries its own faint paper texture on top of
+					    a solid fill so the page behind is fully hidden at rest and genuinely revealed,
+					    not just masked by a shared backdrop, once they slide apart. */}
+					<div className="opening-door opening-door-left absolute inset-y-0 left-0 w-1/2 border-r border-ink/10 bg-ivory bg-[radial-gradient(circle_at_80%_30%,rgb(224_200_140/0.35),transparent_55%)]" />
+					<div className="opening-door opening-door-right absolute inset-y-0 right-0 w-1/2 bg-ivory bg-[radial-gradient(circle_at_20%_70%,rgb(224_200_140/0.35),transparent_55%)]" />
+				</>
+			) : (
+				<div className="absolute inset-0 bg-ivory bg-[radial-gradient(circle_at_50%_40%,transparent_40%,rgb(0_0_0/0.06)_100%)]" />
+			)}
+			<div className="opening-content absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
+				{isSeal && <SealArt initials={initials} />}
+				{animation === OpeningAnimation.MONOGRAM && <MonogramArt initials={initials} />}
+				{isBloom ? (
+					<div className="relative flex items-center justify-center">
+						<BloomArt />
+						<h2 className="opening-names absolute font-accent text-3xl text-ink sm:text-4xl">
+							{coupleNames}
+						</h2>
+					</div>
+				) : (
+					<h2 className="opening-names font-accent text-3xl text-ink sm:text-4xl">{coupleNames}</h2>
+				)}
+				{/* The loading label and the button share one grid cell so swapping them never
+				    shifts the art above. */}
+				<div className="grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
+					<p className="opening-loading-label text-xs uppercase tracking-[0.3em] text-ink/60">
+						{labels.loading}
+						<span aria-hidden="true" className="opening-loading-dots">
+							<span>.</span>
+							<span>.</span>
+							<span>.</span>
+						</span>
+					</p>
+					<button
+						ref={buttonRef}
+						type="button"
+						onClick={handleOpen}
+						tabIndex={phase === "ready" ? 0 : -1}
+						aria-hidden={phase !== "ready"}
+						className="opening-button min-h-11 rounded-full border border-ink/20 bg-ivory px-6 text-sm uppercase tracking-widest text-ink transition-colors hover:bg-ivory-dark"
 					>
-						{initials}
-					</text>
-				</svg>
-				<h2 className="font-accent text-3xl text-ink sm:text-4xl">{coupleNames}</h2>
-				<button
-					ref={buttonRef}
-					type="button"
-					onClick={handleOpen}
-					className="pointer-events-auto min-h-11 rounded-full border border-ink/20 bg-ivory px-6 text-sm uppercase tracking-widest text-ink transition-colors hover:bg-ivory-dark"
-				>
-					{openLabel}
-				</button>
+						{labels.open}
+					</button>
+				</div>
 			</div>
 		</div>
 	);

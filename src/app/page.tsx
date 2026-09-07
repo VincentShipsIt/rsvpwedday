@@ -3,16 +3,19 @@ import { Gallery } from "@/components/site/gallery";
 import { HashScrollFix } from "@/components/site/hash-scroll";
 import { Hero } from "@/components/site/hero";
 import { InvitationOpening } from "@/components/site/invitation-opening";
+import { MusicToggle } from "@/components/site/music-toggle";
+import { Particles } from "@/components/site/particles";
 import { RsvpSection } from "@/components/site/rsvp-section";
 import { SectionDivider } from "@/components/site/section-divider";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import { Story, type StoryMilestoneView } from "@/components/site/story";
 import { ThemePicker } from "@/components/site/theme-picker";
-import { SiteTheme } from "@/generated/prisma/enums";
+import { OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
 import { db } from "@/lib/db";
+import { resolveOpeningAnimation } from "@/lib/site-effects";
 import { resolveSiteLocale } from "@/lib/site-locale";
 import { dataTheme, resolveSiteTheme } from "@/lib/site-theme";
 
@@ -21,12 +24,25 @@ export const dynamic = "force-dynamic";
 export default async function LandingPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ lang?: string; theme?: string; pick?: string; preview?: string }>;
+	searchParams: Promise<{
+		lang?: string;
+		theme?: string;
+		opening?: string;
+		pick?: string;
+		preview?: string;
+	}>;
 }) {
-	const { lang, theme: themeParam, pick: pickParam, preview: previewParam } = await searchParams;
-	// `?preview=1` is how the admin's theme thumbnails embed this page in an iframe. The only
-	// thing it changes is the first-load invitation cover, which would otherwise hide every
-	// theme behind an identical closed envelope and make the thumbnails useless.
+	const {
+		lang,
+		theme: themeParam,
+		opening: openingParam,
+		pick: pickParam,
+		preview: previewParam,
+	} = await searchParams;
+	// `?preview=1` is how the admin's theme thumbnails embed this page in an iframe. It drops
+	// the first-load invitation cover, which would otherwise hide every theme behind an identical
+	// closed envelope and make the thumbnails useless, and the particle canvas and music button,
+	// which six scaled-down iframes have no use for.
 	const isPreview = previewParam === "1";
 	const showThemePicker = pickParam === "1";
 	const locale = await resolveSiteLocale(lang);
@@ -85,17 +101,27 @@ export default async function LandingPage({
 	const hasEvents = localizedEvents.length > 0;
 	const hasGallery = (siteContent?.galleryUrls ?? []).length > 0;
 
-	const hasInvitationOpening =
-		!isPreview && (theme === SiteTheme.VINTAGE || theme === SiteTheme.GARDEN);
+	// `?opening=` previews a cover animation the same way `?theme=` previews a theme, and also
+	// forces the cover to show again in a session that has already opened one.
+	const openingAnimation = isPreview
+		? OpeningAnimation.NONE
+		: resolveOpeningAnimation(openingParam, siteContent?.openingAnimation ?? OpeningAnimation.SEAL);
+	const hasParticles = !isPreview && (siteContent?.particlesEnabled ?? true);
+	const musicUrl = isPreview ? null : (siteContent?.musicUrl ?? null);
 
 	return (
 		<>
 			<HashScrollFix />
-			{hasInvitationOpening && (
+			{openingAnimation !== OpeningAnimation.NONE && (
 				<InvitationOpening
 					coupleNames={coupleNames}
 					theme={theme}
-					openLabel={dictionary.site.openInvitationLabel}
+					animation={openingAnimation}
+					forceShow={Boolean(openingParam)}
+					labels={{
+						open: dictionary.site.openInvitationLabel,
+						loading: dictionary.site.loadingLabel,
+					}}
 				/>
 			)}
 			<SiteNav
@@ -120,6 +146,8 @@ export default async function LandingPage({
 				data-theme={dataTheme[theme]}
 				className={isNavOverPhoto ? undefined : "pt-[var(--wed-nav-height)]"}
 			>
+				{/* Inside `<main>` so the canvas inherits this theme's `--color-*` tokens. */}
+				{hasParticles && <Particles theme={theme} />}
 				<Hero
 					coupleNames={coupleNames}
 					heroImageUrl={siteContent?.heroImageUrl ?? null}
@@ -170,6 +198,16 @@ export default async function LandingPage({
 				theme={theme}
 				hasThemePicker={showThemePicker}
 			/>
+			{musicUrl && (
+				<MusicToggle
+					src={musicUrl}
+					theme={theme}
+					labels={{
+						play: dictionary.site.musicPlayLabel,
+						pause: dictionary.site.musicPauseLabel,
+					}}
+				/>
+			)}
 			{showThemePicker && <ThemePicker currentTheme={theme} />}
 		</>
 	);

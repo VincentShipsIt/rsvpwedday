@@ -30,6 +30,9 @@ export const ku: Dictionary = {
 		rsvpQuestions: "Pirs hene? Ji {email} re binivîse",
 		footerLine: "{coupleNames} · {year}",
 		openInvitationLabel: "Vexwendinê veke",
+		loadingLabel: "Tê barkirin",
+		musicPlayLabel: "Muzîkê lêde",
+		musicPauseLabel: "Muzîkê rawestîne",
 	},
 	rsvp: {
 		heading: "Tu vexwendî yî, {name}",

@@ -39,6 +39,15 @@ enum SiteTheme {
   VINTAGE
 }
 
+/// The first-load cover a guest sees before the page (see `src/components/site/opening`).
+/// `NONE` skips it entirely; the other three are alternative SVG animations of the same cover.
+enum OpeningAnimation {
+  NONE
+  SEAL
+  MONOGRAM
+  BLOOM
+}
+
 model Settings {
   id           Int      @id @default(1)
   coupleNames  String
@@ -127,6 +136,13 @@ model SiteContent {
   theme        SiteTheme                @default(EDITORIAL)
   updatedAt    DateTime                 @updatedAt
   translations SiteContentTranslation[]
+
+  /// Site-wide effects, edited on `/admin/website/effects`: the first-load cover animation, the
+  /// ambient particle layer, and an optional background-music track (an https audio URL, usually
+  /// a Blob upload) that guests can toggle from the floating music button.
+  openingAnimation OpeningAnimation @default(SEAL)
+  particlesEnabled Boolean          @default(true)
+  musicUrl         String?
 
   /// Which generation of stand-in photography the deploy seed has applied, so it fills a site
   /// once and then leaves every image alone — including a deliberate removal of all photos.

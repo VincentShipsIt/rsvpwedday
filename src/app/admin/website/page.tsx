@@ -9,6 +9,11 @@ const SECTIONS = [
 	{ href: "/admin/website/gallery", label: "Gallery", description: "Gallery photos" },
 	{ href: "/admin/website/rsvp", label: "RSVP", description: "RSVP note shown to guests" },
 	{ href: "/admin/website/theme", label: "Theme", description: "Site theme and previews" },
+	{
+		href: "/admin/website/effects",
+		label: "Effects",
+		description: "Opening animation, particles, and music",
+	},
 ] as const;
 
 export default function WebsiteIndexPage() {

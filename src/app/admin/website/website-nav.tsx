@@ -9,6 +9,7 @@ const SECTIONS = [
 	{ href: "/admin/website/gallery", label: "Gallery" },
 	{ href: "/admin/website/rsvp", label: "RSVP" },
 	{ href: "/admin/website/theme", label: "Theme" },
+	{ href: "/admin/website/effects", label: "Effects" },
 ] as const;
 
 // Shared sub-nav and breadcrumb for every `/admin/website/<section>` page, so each page can stay
