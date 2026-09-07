@@ -5,6 +5,27 @@ const SKIP_BELOW_BYTES = 1 * 1024 * 1024;
 // Animated or vector formats a canvas re-draw would break: pass these through untouched.
 const PASSTHROUGH_TYPES = new Set(["image/gif", "image/svg+xml"]);
 
+// What an iPhone shoots by default. Safari decodes it, so the canvas pass below turns it into a
+// JPEG every other browser can display — which is the whole point of forcing it through even when
+// it is small enough to skip. A browser that cannot decode it hands the original back untouched,
+// and `isWebDisplayable` is how a caller notices and says something useful instead of storing a
+// photo nobody can open.
+const HEIF_TYPES = new Set(["image/heic", "image/heif", "image/heic-sequence"]);
+const HEIF_EXTENSION = /\.(heic|heif)$/i;
+
+function isHeif(file: File): boolean {
+	// iOS sometimes hands over an empty `type`, so the filename is the fallback signal.
+	return HEIF_TYPES.has(file.type.toLowerCase()) || HEIF_EXTENSION.test(file.name);
+}
+
+/**
+ * Whether a browser can actually render this file in an `<img>`. False only for the HEIF family
+ * that `downscaleImage` was unable to transcode.
+ */
+export function isWebDisplayable(file: File): boolean {
+	return !isHeif(file);
+}
+
 async function decodeToBitmapSource(file: File): Promise<ImageBitmap | HTMLImageElement> {
 	if (typeof createImageBitmap === "function") {
 		return createImageBitmap(file, { imageOrientation: "from-image" });
@@ -38,6 +59,15 @@ function sourceDimensions(source: ImageBitmap | HTMLImageElement): {
 	return { width: source.width, height: source.height };
 }
 
+// A transcoded HEIC keeps its old `.heic` name otherwise, which makes the stored blob look like
+// something it is not.
+function renamedFor(name: string, outputType: string): string {
+	if (outputType !== "image/jpeg" || !HEIF_EXTENSION.test(name)) {
+		return name;
+	}
+	return name.replace(HEIF_EXTENSION, ".jpg");
+}
+
 function canvasToFile(canvas: HTMLCanvasElement, name: string, type: string): Promise<File> {
 	return new Promise((resolve, reject) => {
 		canvas.toBlob(
@@ -62,10 +92,10 @@ function canvasToFile(canvas: HTMLCanvasElement, name: string, type: string): Pr
 // without it fall back to an <img> element, which applies EXIF rotation on decode too. Any
 // failure returns the original file rather than blocking the upload.
 export async function downscaleImage(file: File): Promise<File> {
+	const mustTranscode = isHeif(file);
 	if (
-		file.size < SKIP_BELOW_BYTES ||
 		PASSTHROUGH_TYPES.has(file.type) ||
-		!file.type.startsWith("image/")
+		(!mustTranscode && (file.size < SKIP_BELOW_BYTES || !file.type.startsWith("image/")))
 	) {
 		return file;
 	}
@@ -81,6 +111,8 @@ export async function downscaleImage(file: File): Promise<File> {
 			}
 
 			const longEdge = Math.max(width, height);
+			// A HEIC below the size threshold is re-encoded at full size: the point of that pass is
+			// the format change, not the shrink.
 			const scale = Math.min(1, MAX_LONG_EDGE / longEdge);
 			const targetWidth = Math.round(width * scale);
 			const targetHeight = Math.round(height * scale);
@@ -94,7 +126,7 @@ export async function downscaleImage(file: File): Promise<File> {
 			}
 			context.drawImage(source, 0, 0, targetWidth, targetHeight);
 
-			return await canvasToFile(canvas, file.name, outputType);
+			return await canvasToFile(canvas, renamedFor(file.name, outputType), outputType);
 		} finally {
 			if (typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap) {
 				source.close();

@@ -5,7 +5,7 @@ import { type EmailCopyOverride, resolveEmailCopy } from "@/domain/email-copy";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { InvitationEmail } from "@/emails/invitation-email";
 import type { EmailEvent, EmailTemplateProps } from "@/emails/types";
-import type { EmailKind, Locale } from "@/generated/prisma/enums";
+import { EmailKind, type Locale } from "@/generated/prisma/enums";
 import { getDictionary } from "@/i18n";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -105,7 +105,12 @@ export async function sendInvitationEmail(kind: EmailKind, invitationId: string)
 		include: { guests: { where: { addedByGuest: false }, include: { attendance: true } } },
 	});
 	const settings = await db.settings.findUniqueOrThrow({ where: { id: 1 } });
-	const link = `${env.APP_URL}/rsvp/${invitation.token}`;
+	// Every kind but the photo-day nudge sends the guest to their RSVP form; that one sends them
+	// straight to the camera, which is the only thing it asks for.
+	const link =
+		kind === EmailKind.PHOTOS
+			? `${env.APP_URL}/rsvp/${invitation.token}/memories`
+			: `${env.APP_URL}/rsvp/${invitation.token}`;
 
 	const email = await renderEmail(
 		kind,

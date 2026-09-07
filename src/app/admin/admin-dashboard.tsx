@@ -2,7 +2,11 @@
 
 import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
-import { remindAllPending, sendInvitesToUnsent } from "@/app/admin/actions";
+import {
+	remindAllPending,
+	sendInvitesToUnsent,
+	sendPhotoInviteToAttending,
+} from "@/app/admin/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -33,11 +37,13 @@ export function AdminDashboard({
 	eventRows,
 	unsentCount,
 	pendingCount,
+	attendingCount,
 }: {
 	headcount: Headcount;
 	eventRows: { id: string; name: string; adults: number; children: number }[];
 	unsentCount: number;
 	pendingCount: number;
+	attendingCount: number;
 }) {
 	return (
 		<div className="flex flex-col gap-8">
@@ -125,6 +131,14 @@ export function AdminDashboard({
 					description={`This sends a reminder email to ${pendingCount} pending invitation(s).`}
 					confirmLabel="Yes, send reminders"
 					disabled={pendingCount === 0}
+				/>
+				<ConfirmActionButton
+					action={sendPhotoInviteToAttending}
+					label={`Send the photo-day email (${attendingCount})`}
+					title="Send the photo-day email?"
+					description={`This emails ${attendingCount} attending invitation(s) a link to the memories book. Send it on the day, once the book is open.`}
+					confirmLabel="Yes, send it"
+					disabled={attendingCount === 0}
 				/>
 			</div>
 		</div>

@@ -17,6 +17,7 @@ const dictionaryKeyByKind: Record<EmailKind, keyof Dictionary["emails"]> = {
 	INVITE: "invite",
 	REMINDER: "reminder",
 	CONFIRMATION: "confirmation",
+	PHOTOS: "photos",
 };
 
 /*

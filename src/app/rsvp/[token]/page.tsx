@@ -7,6 +7,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { StatusBadge } from "@/components/status-badge";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
+import { resolvePhotoBookAccess } from "@/domain/photo-book";
 import { Attendance } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -34,9 +35,13 @@ export default async function RsvpPage({
 		notFound();
 	}
 
-	const [settings, allEvents] = await Promise.all([
+	const [settings, allEvents, siteContent] = await Promise.all([
 		db.settings.findUniqueOrThrow({ where: { id: 1 } }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
+		db.siteContent.findUnique({
+			where: { id: 1 },
+			select: { photosEnabled: true, photosOpenAt: true, photosTestMode: true },
+		}),
 	]);
 	// Only the events this household was invited to; the rest never appear on their page.
 	const events = filterToInvited(allEvents, invitedEventIds(invitation.guests));
@@ -47,6 +52,16 @@ export default async function RsvpPage({
 	const canRespondNow = canRespond(new Date(), settings.rsvpDeadline);
 	const hasResponded = invitation.respondedAt !== null;
 	const showForm = canRespondNow && (!hasResponded || edit === "1");
+	// The photo book only shows up here once it is actually open; before the day, the guest's
+	// invitation says nothing about it.
+	const photoBook = resolvePhotoBookAccess(
+		{
+			enabled: siteContent?.photosEnabled ?? false,
+			openAt: siteContent?.photosOpenAt ?? null,
+			testMode: siteContent?.photosTestMode ?? false,
+		},
+		new Date()
+	);
 
 	const localizedEvents = events.map((event) => {
 		const translation =
@@ -95,6 +110,19 @@ export default async function RsvpPage({
 					/>
 				</div>
 			</header>
+
+			{photoBook.state === "open" && (
+				<Card className="flex flex-col gap-2">
+					<h2 className="text-xl">{dictionary.photos.title}</h2>
+					<p className="text-sm text-ink/70">{dictionary.photos.addHint}</p>
+					<Link
+						href={`/rsvp/${token}/memories`}
+						className="text-sm text-green underline underline-offset-4"
+					>
+						{dictionary.photos.openBookLabel}
+					</Link>
+				</Card>
+			)}
 
 			<div className="flex flex-col gap-4">
 				{localizedEvents.map((event) => (

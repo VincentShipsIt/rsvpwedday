@@ -1,11 +1,17 @@
 import { upload } from "@vercel/blob/client";
 import { MAX_UPLOAD_BYTES, type UploadResult as UploadImageResult } from "@/lib/upload-limits";
 
-const HANDLE_UPLOAD_URL = "/admin/upload";
+const ADMIN_HANDLE_UPLOAD_URL = "/admin/upload";
 
-// Browser-side uploads: the file goes from the guest's browser straight to Blob using a token
-// minted by `src/app/admin/upload/route.ts`, so no Server Action body limit applies.
-async function uploadFile(file: File, kind: "image" | "audio"): Promise<UploadImageResult> {
+// Browser-side uploads: the file goes from the browser straight to Blob using a token minted by a
+// route on this site, so no Server Action body limit applies. The admin's own fields use
+// `src/app/admin/upload/route.ts`; a guest adding to the photo book passes the token route under
+// their invitation instead, which authorises them by that token rather than the admin cookie.
+async function uploadFile(
+	file: File,
+	kind: "image" | "audio",
+	handleUploadUrl: string
+): Promise<UploadImageResult> {
 	if (file.size > MAX_UPLOAD_BYTES) {
 		return {
 			ok: false,
@@ -15,7 +21,7 @@ async function uploadFile(file: File, kind: "image" | "audio"): Promise<UploadIm
 	try {
 		const blob = await upload(file.name, file, {
 			access: "public",
-			handleUploadUrl: HANDLE_UPLOAD_URL,
+			handleUploadUrl,
 			clientPayload: kind,
 		});
 		return { ok: true, url: blob.url };
@@ -25,11 +31,14 @@ async function uploadFile(file: File, kind: "image" | "audio"): Promise<UploadIm
 	}
 }
 
-export function uploadImage(file: File): Promise<UploadImageResult> {
+export function uploadImage(
+	file: File,
+	handleUploadUrl: string = ADMIN_HANDLE_UPLOAD_URL
+): Promise<UploadImageResult> {
 	if (!file.type.startsWith("image/")) {
 		return Promise.resolve({ ok: false, error: "Only image files are allowed." });
 	}
-	return uploadFile(file, "image");
+	return uploadFile(file, "image", handleUploadUrl);
 }
 
 // The background-music track. Same store and size cap as photos; a three-minute MP3 at a normal
@@ -41,5 +50,5 @@ export function uploadAudio(file: File): Promise<UploadImageResult> {
 			error: "Only audio files (MP3, M4A, OGG) are allowed.",
 		});
 	}
-	return uploadFile(file, "audio");
+	return uploadFile(file, "audio", ADMIN_HANDLE_UPLOAD_URL);
 }

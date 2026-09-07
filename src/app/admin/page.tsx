@@ -22,6 +22,9 @@ export default async function AdminDashboardPage() {
 	const pendingCount = invitations.filter(
 		(invitation) => getInvitationStatus(invitation) === "pending"
 	).length;
+	const attendingCount = invitations.filter(
+		(invitation) => getInvitationStatus(invitation) === "accepted"
+	).length;
 
 	const eventRows = events.map((event) => {
 		const translation =
@@ -42,6 +45,7 @@ export default async function AdminDashboardPage() {
 			eventRows={eventRows}
 			unsentCount={unsentCount}
 			pendingCount={pendingCount}
+			attendingCount={attendingCount}
 		/>
 	);
 }
