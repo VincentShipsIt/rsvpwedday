@@ -300,23 +300,24 @@ function VintageMilestones({ milestones }: { milestones: StoryMilestoneView[] })
 	);
 }
 
-// Whitewashed postcards: a white card with a blue hairline, the photo on top, then a tracked
-// small-caps date, serif title and italic body — the label/title/italic stack of the reference
-// Mediterranean invitations — finished with a small lemon underneath.
+// No card: each milestone is a small arch of photo (echoing the hero) sitting straight on the
+// cream, with a tracked small-caps date, serif title and italic body beneath it and a lemon to
+// close. Three-up from `lg`, two from `sm`, one below, so three sit on one line inside the
+// section's `max-w-4xl`.
 function MediterraneanMilestones({ milestones }: { milestones: StoryMilestoneView[] }) {
 	return (
-		// A fixed three-up grid from `lg` (two-up from `sm`, one column below) rather than the
-		// wrapped row the other card themes use, so three milestones sit on one line inside the
-		// section's `max-w-4xl` instead of wrapping the third underneath.
-		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+		<div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
 			{milestones.map((milestone, index) => (
 				<Reveal
 					key={milestone.id}
 					delay={staggerDelay(index)}
-					className="hover-lift flex flex-col bg-white p-3 pb-5 shadow-md ring-1 ring-green/15"
+					className="flex flex-col items-center"
 				>
 					{milestone.imageUrl && (
-						<Parallax factor={0.12} className="aspect-[4/3] w-full">
+						<Parallax
+							factor={0.12}
+							className="aspect-[4/5] w-full max-w-64 rounded-t-[999px] rounded-b-2xl"
+						>
 							<Image
 								src={milestone.imageUrl}
 								alt=""

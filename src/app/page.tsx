@@ -1,7 +1,6 @@
 import { Events, type EventView } from "@/components/site/events";
 import { Gallery } from "@/components/site/gallery";
 import { HashScrollFix } from "@/components/site/hash-scroll";
-import { HeartParticles } from "@/components/site/heart-particles";
 import { Hero } from "@/components/site/hero";
 import { InvitationOpening } from "@/components/site/invitation-opening";
 import { RsvpSection } from "@/components/site/rsvp-section";
@@ -121,7 +120,6 @@ export default async function LandingPage({
 				data-theme={dataTheme[theme]}
 				className={isNavOverPhoto ? undefined : "pt-[var(--wed-nav-height)]"}
 			>
-				{theme === SiteTheme.MEDITERRANEAN && <HeartParticles />}
 				<Hero
 					coupleNames={coupleNames}
 					heroImageUrl={siteContent?.heroImageUrl ?? null}
