@@ -123,9 +123,12 @@ export async function updateGifts(input: GiftsInput): Promise<FormActionResult> 
  */
 export async function releaseClaim(
 	giftId: string,
-	claimVersion: string
+	claimVersion: string | null
 ): Promise<FormActionResult> {
 	await requireAdmin();
+	if (!giftId || (claimVersion !== null && typeof claimVersion !== "string")) {
+		return { ok: false, error: "Refresh the gift list before releasing this reservation." };
+	}
 	const result = await db.giftClaim.deleteMany({ where: { giftId, version: claimVersion } });
 	revalidateGifts();
 	if (result.count === 0)

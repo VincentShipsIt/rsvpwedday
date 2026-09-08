@@ -29,7 +29,7 @@ import {
 
 export type ClaimRow = {
 	giftId: string;
-	claimVersion: string;
+	claimVersion: string | null;
 	giftTitle: string;
 	price: string;
 	guestName: string;

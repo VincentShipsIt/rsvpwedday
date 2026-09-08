@@ -33,6 +33,15 @@ describe("admin release of a reviewed gift reservation", () => {
 			expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/gifts");
 		}
 	);
+	it("rejects an omitted version rather than broadening the deletion", async () => {
+		expect(await releaseClaim("gift", undefined as unknown as string)).toMatchObject({ ok: false });
+		expect(mocks.deleteMany).not.toHaveBeenCalled();
+	});
+	it("can release an unchanged legacy claim with its explicit null version", async () => {
+		mocks.deleteMany.mockResolvedValue({ count: 1 });
+		expect(await releaseClaim("gift", null)).toEqual({ ok: true });
+		expect(mocks.deleteMany).toHaveBeenCalledWith({ where: { giftId: "gift", version: null } });
+	});
 	it("releases an unchanged reviewed claim", async () => {
 		mocks.deleteMany.mockResolvedValue({ count: 1 });
 		expect(await releaseClaim("gift", "reviewed-version")).toEqual({ ok: true });
