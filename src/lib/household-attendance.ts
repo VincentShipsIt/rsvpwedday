@@ -1,4 +1,5 @@
 import { childAttendanceCounts } from "@/domain/children";
+import { notDeleted } from "@/domain/soft-delete";
 import type { Prisma } from "@/generated/prisma/client";
 
 export async function syncHouseholdAttendance(
@@ -9,7 +10,10 @@ export async function syncHouseholdAttendance(
 ) {
 	const household = await tx.invitation.findUniqueOrThrow({
 		where: { id: invitationId },
-		include: { guests: { include: { attendance: true } }, childAttendance: true },
+		include: {
+			guests: { where: notDeleted, include: { attendance: true } },
+			childAttendance: true,
+		},
 	});
 	const previousChildren = childAttendanceCounts(household);
 	for (const guest of household.guests) {

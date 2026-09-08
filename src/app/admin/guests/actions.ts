@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { childAttendanceCounts, childrenUnder12 } from "@/domain/children";
 import { parseImportCsv } from "@/domain/csv";
 import { eventImportImpact, planGuestImport } from "@/domain/import-guests";
+import { notDeleted } from "@/domain/soft-delete";
 import { newToken } from "@/domain/token";
 import type { Prisma } from "@/generated/prisma/client";
 import { GuestKind } from "@/generated/prisma/enums";
@@ -47,7 +48,11 @@ async function readImport(tx: Prisma.TransactionClient, text: string) {
 			email: { in: invitations.map((invitation) => invitation.email), mode: "insensitive" },
 		},
 		include: {
-			guests: { orderBy: { id: "asc" }, include: { attendance: { orderBy: { eventId: "asc" } } } },
+			guests: {
+				where: notDeleted,
+				orderBy: { id: "asc" },
+				include: { attendance: { orderBy: { eventId: "asc" } } },
+			},
 			childAttendance: { orderBy: { eventId: "asc" } },
 		},
 		orderBy: { id: "asc" },

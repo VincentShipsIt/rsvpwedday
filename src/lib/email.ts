@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { type EmailCopyOverride, resolveEmailCopy } from "@/domain/email-copy";
 import type { EmailDeliveryStatus } from "@/domain/email-delivery";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
+import { notDeleted } from "@/domain/soft-delete";
 import { populatedTranslation } from "@/domain/translations";
 import { InvitationEmail } from "@/emails/invitation-email";
 import type { EmailEvent, EmailTemplateProps } from "@/emails/types";
@@ -125,7 +126,12 @@ export async function sendInvitationEmail(
 ): Promise<DeliveryResult> {
 	const invitation = await db.invitation.findUniqueOrThrow({
 		where: { id: invitationId },
-		include: { guests: { where: { addedByGuest: false }, include: { attendance: true } } },
+		include: {
+			guests: {
+				where: { ...notDeleted, addedByGuest: false },
+				include: { attendance: true },
+			},
+		},
 	});
 	const settings = await db.settings.findUniqueOrThrow({ where: { id: 1 } });
 	// Every kind but the photo-day nudge sends the guest to their RSVP form; that one sends them

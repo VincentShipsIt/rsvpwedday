@@ -4,11 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
-import {
-	processMediaCleanup,
-	queueAbandonedPhotoUploads,
-	queuePhotoMediaCleanup,
-} from "@/lib/media-cleanup";
+import { processMediaCleanup, queueAbandonedPhotoUploads } from "@/lib/media-cleanup";
 import { requireAdmin } from "@/lib/require-admin";
 import { parseWireDatePreserving } from "@/lib/wire-date";
 
@@ -94,21 +90,21 @@ export async function setPhotoHidden(photoId: string, hidden: boolean): Promise<
 	return { ok: true };
 }
 
-export async function deletePhoto(
-	photoId: string
-): Promise<FormActionResult & { cleanupPending?: boolean; legacy?: boolean }> {
+/*
+ * Takes a photo out of the book for good, as far as anyone using the site is concerned: it leaves
+ * every guest's book and the moderation list, and only a restore brings it back.
+ *
+ * The stored file is deliberately left alone. Queueing it for storage cleanup would make this the
+ * one delete that cannot be undone, because a restored row pointing at a deleted object is not a
+ * photo. The cleanup pipeline still sweeps abandoned upload batches nobody registered — that is
+ * what `retryPhotoCleanup` below drives — and whatever eventually purges tombstones is what should
+ * take these files with them.
+ */
+export async function deletePhoto(photoId: string): Promise<FormActionResult> {
 	await requireAdmin();
-	const outcome = await db.$transaction(async (tx) => {
-		const photo = await tx.photo.findUnique({ where: { id: photoId } });
-		if (!photo) return { legacy: false };
-		await tx.$queryRaw`SELECT id FROM "Invitation" WHERE id = ${photo.invitationId} FOR UPDATE`;
-		if (photo.uploadReceiptId) await queuePhotoMediaCleanup(tx, photo.uploadReceiptId);
-		await tx.photo.deleteMany({ where: { id: photoId } });
-		return { legacy: photo.uploadReceiptId === null };
-	});
-	const cleanup = await processMediaCleanup();
+	await db.photo.updateMany({ where: { id: photoId }, data: { deletedAt: new Date() } });
 	revalidateMemories();
-	return { ok: true, cleanupPending: cleanup.pending > 0, legacy: outcome.legacy };
+	return { ok: true };
 }
 
 export async function retryPhotoCleanup(): Promise<FormActionResult & { pending?: number }> {

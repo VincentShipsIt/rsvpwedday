@@ -64,7 +64,11 @@ export async function updateGifts(input: GiftsInput): Promise<FormActionResult> 
 	await db.$transaction(async (tx) => {
 		for (const giftId of existingIds) {
 			if (!submittedIds.has(giftId)) {
-				await tx.gift.delete({ where: { id: giftId } });
+				// The reservation goes with it: a gift nobody can see is not one anybody is still
+				// bringing. Claims are not soft-deleted, so restoring the gift puts it back as
+				// available.
+				await tx.giftClaim.deleteMany({ where: { giftId } });
+				await tx.gift.update({ where: { id: giftId }, data: { deletedAt: new Date() } });
 			}
 		}
 

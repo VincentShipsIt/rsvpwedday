@@ -6,6 +6,7 @@ import { type EffectsSettings, effectsLimits } from "@/domain/effects-settings";
 import { isAllowedImageUrl } from "@/domain/image-url";
 import { isAllowedMediaUrl } from "@/domain/media-url";
 import { sanitizeRichText } from "@/domain/rich-text";
+import { retireUniqueValue } from "@/domain/soft-delete";
 import type { Locale, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
@@ -67,7 +68,10 @@ export async function updateStory(input: StoryInput): Promise<FormActionResult> 
 	await db.$transaction(async (tx) => {
 		for (const milestoneId of existingMilestoneIds) {
 			if (!submittedMilestoneIds.has(milestoneId)) {
-				await tx.storyMilestone.delete({ where: { id: milestoneId } });
+				await tx.storyMilestone.update({
+					where: { id: milestoneId },
+					data: { deletedAt: new Date() },
+				});
 			}
 		}
 
@@ -170,7 +174,8 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 		return { ok: false, error: "A removed event cannot also be saved. Reload the editor." };
 
 	const existingEvents = await db.event.findMany({
-		select: { id: true, startsAt: true, endsAt: true },
+		// `slug` so a removed event can have its slug retired out of the live namespace.
+		select: { id: true, slug: true, startsAt: true, endsAt: true },
 	});
 	const eventsById = new Map(existingEvents.map((event) => [event.id, event]));
 	const existingEventIds = new Set(existingEvents.map((event) => event.id));
@@ -178,8 +183,20 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 	await db.$transaction(async (tx) => {
 		await tx.siteContent.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
 
-		// Only an explicit confirmed removal can cascade attendance, never a stale form's omission.
-		await tx.event.deleteMany({ where: { id: { in: input.deletedEventIds ?? [] } } });
+		// Only an explicit confirmed removal takes an event off the list, never a stale form's
+		// omission. The row survives (`deletedAt`), so the guests' answers survive with it; the
+		// slug leaves the live namespace or the couple could never reuse it.
+		for (const eventId of input.deletedEventIds ?? []) {
+			const doomed = eventsById.get(eventId);
+			if (!doomed) {
+				continue;
+			}
+			const now = new Date();
+			await tx.event.update({
+				where: { id: eventId },
+				data: { deletedAt: now, slug: retireUniqueValue(doomed.slug, now) },
+			});
+		}
 
 		for (const event of input.events) {
 			const previous = event.id ? eventsById.get(event.id) : undefined;

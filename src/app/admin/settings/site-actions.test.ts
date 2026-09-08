@@ -79,14 +79,17 @@ describe("event and milestone persistence", () => {
 		expect(fixture.db.event.create).toHaveBeenCalledTimes(1);
 	});
 	it("does not delete events omitted by a stale editor, but deletes explicitly confirmed IDs", async () => {
-		fixture.events.set("another-event", {});
+		fixture.events.set("another-event", { slug: "another-event" });
 		fixture.attendance.set("another-event", "ACCEPTED");
 		await updateEvents({ events: [event] });
 		expect(fixture.attendance.get("another-event")).toBe("ACCEPTED");
 		await updateEvents({ events: [event], deletedEventIds: ["another-event"] });
 		expect(fixture.events.has(event.id ?? "")).toBe(true);
-		expect(fixture.events.has("another-event")).toBe(false);
-		expect(fixture.attendance.has("another-event")).toBe(false);
+		// Removal is a tombstone now, so the guests' answers survive with the row and the event can
+		// be put back; the slug leaves the live namespace so it can be reused meanwhile.
+		expect(fixture.events.get("another-event")?.deletedAt).toBeInstanceOf(Date);
+		expect(fixture.events.get("another-event")?.slug).not.toBe("another-event");
+		expect(fixture.attendance.get("another-event")).toBe("ACCEPTED");
 	});
 	it("retains milestone IDs on subsequent saves", async () => {
 		const milestone = {

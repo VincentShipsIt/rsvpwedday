@@ -1,6 +1,7 @@
 import { childAttendanceCounts, childrenUnder12 } from "@/domain/children";
 import { type ExportGuestRow, serializeExportCsv } from "@/domain/csv";
 import { getInvitationStatus } from "@/domain/invitation";
+import { notDeleted } from "@/domain/soft-delete";
 import { GuestKind } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
@@ -11,7 +12,10 @@ export async function GET() {
 	await requireAdmin();
 	const [invitations, events] = await Promise.all([
 		db.invitation.findMany({
-			include: { guests: { include: { attendance: true } }, childAttendance: true },
+			include: {
+				guests: { where: notDeleted, include: { attendance: true } },
+				childAttendance: true,
+			},
 			orderBy: { createdAt: "asc" },
 		}),
 		db.event.findMany({ orderBy: { sortOrder: "asc" } }),

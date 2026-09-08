@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { hasSuccessfulEmail } from "@/domain/email-delivery";
 import { getInvitationStatus } from "@/domain/invitation";
+import { notDeleted } from "@/domain/soft-delete";
 import { EmailKind } from "@/generated/prisma/enums";
 import { ADMIN_SESSION_COOKIE } from "@/lib/admin-session";
 import { db } from "@/lib/db";
@@ -72,7 +73,10 @@ export async function sendInvitesToUnsent(): Promise<void> {
 export async function sendPhotoInviteToAttending(): Promise<void> {
 	await requireAdmin();
 	const invitations = await db.invitation.findMany({
-		include: { childAttendance: true, guests: { include: { attendance: true } } },
+		include: {
+			childAttendance: true,
+			guests: { where: notDeleted, include: { attendance: true } },
+		},
 	});
 	const attending = invitations.filter(
 		(invitation) => getInvitationStatus(invitation) === "accepted"
@@ -84,7 +88,10 @@ export async function sendPhotoInviteToAttending(): Promise<void> {
 export async function remindAllPending(): Promise<void> {
 	await requireAdmin();
 	const invitations = await db.invitation.findMany({
-		include: { childAttendance: true, guests: { include: { attendance: true } } },
+		include: {
+			childAttendance: true,
+			guests: { where: notDeleted, include: { attendance: true } },
+		},
 	});
 	const pending = invitations.filter((invitation) => getInvitationStatus(invitation) === "pending");
 

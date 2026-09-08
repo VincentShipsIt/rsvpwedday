@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { canRespond } from "@/domain/invitation";
 import { isRsvpPermitted } from "@/domain/rsvp-permissions";
 import { createRsvpSubmissionSchema } from "@/domain/rsvp-schema";
+import { notDeleted } from "@/domain/soft-delete";
 import { Attendance, EmailKind, GuestKind } from "@/generated/prisma/enums";
 import { getDictionary } from "@/i18n";
 import { isLocale } from "@/i18n/locales";
@@ -24,7 +25,7 @@ export async function submitRsvp(token: string, payload: unknown): Promise<FormA
 			async (tx) => {
 				const invitation = await tx.invitation.findUnique({
 					where: { token },
-					include: { guests: { include: { attendance: true } } },
+					include: { guests: { where: notDeleted, include: { attendance: true } } },
 				});
 				if (!invitation) return { ok: false as const, error: "Invitation not found" };
 				const copy = getDictionary(invitation.locale).rsvp;

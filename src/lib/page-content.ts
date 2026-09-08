@@ -1,5 +1,6 @@
 import { BLOCK_DEFINITIONS, pagePath } from "@/domain/blocks";
 import { isRichTextEmpty } from "@/domain/rich-text";
+import { notDeleted } from "@/domain/soft-delete";
 import { populatedTranslation } from "@/domain/translations";
 import { BlockType, type Locale } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
@@ -61,10 +62,11 @@ type PageRecord = {
 export const pageInclude = {
 	translations: true,
 	blocks: {
+		where: notDeleted,
 		orderBy: { sortOrder: "asc" },
 		include: {
 			translations: true,
-			items: { orderBy: { sortOrder: "asc" }, include: { translations: true } },
+			items: { where: notDeleted, orderBy: { sortOrder: "asc" }, include: { translations: true } },
 		},
 	},
 } as const;

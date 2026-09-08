@@ -79,15 +79,7 @@ export function PhotoModeration({
 		startTransition(async () => {
 			const result = await deletePhoto(photo.id);
 			if (result.ok) {
-				if (result.legacy)
-					toast.info(
-						"Photo removed from the book. Its legacy file was kept because ownership cannot be verified."
-					);
-				else if (result.cleanupPending)
-					toast.info(
-						"Photo removed from the book. Storage removal is pending; retry cleanup below."
-					);
-				else toast.success("Photo and its file deleted");
+				toast.success("Photo removed from the book. Ask if you need it back.");
 			} else {
 				toast.error(result.error);
 			}

@@ -2,6 +2,7 @@ import { AdminDashboard } from "@/app/admin/admin-dashboard";
 import { hasSuccessfulEmail } from "@/domain/email-delivery";
 import { computeHeadcount } from "@/domain/headcount";
 import { getInvitationStatus } from "@/domain/invitation";
+import { notDeleted } from "@/domain/soft-delete";
 import { populatedTranslation } from "@/domain/translations";
 import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
@@ -24,7 +25,11 @@ export default async function AdminDashboardPage({
 			: undefined;
 	const [invitations, events] = await Promise.all([
 		db.invitation.findMany({
-			include: { childAttendance: true, guests: { include: { attendance: true } }, emails: true },
+			include: {
+				childAttendance: true,
+				guests: { where: notDeleted, include: { attendance: true } },
+				emails: true,
+			},
 			orderBy: { createdAt: "asc" },
 		}),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
