@@ -4,6 +4,7 @@ import { computeHeadcount } from "@/domain/headcount";
 import { getInvitationStatus } from "@/domain/invitation";
 import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function AdminDashboardPage({
 }: {
 	searchParams: Promise<{ accepted?: string; failed?: string; simulated?: string }>;
 }) {
+	await requireAdmin();
 	const result = await searchParams;
 	const count = (value?: string) =>
 		/^\d+$/.test(value ?? "") ? Math.min(Number(value), 1_000_000) : 0;

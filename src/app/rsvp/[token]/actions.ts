@@ -18,6 +18,7 @@ export async function updateInvitationLocale(token: string, formData: FormData):
 }
 export async function submitRsvp(token: string, payload: unknown): Promise<FormActionResult> {
 	let savedId: string;
+	let failureMessage = getDictionary("en").rsvp.saveError;
 	try {
 		const result = await db.$transaction(
 			async (tx) => {
@@ -27,6 +28,7 @@ export async function submitRsvp(token: string, payload: unknown): Promise<FormA
 				});
 				if (!invitation) return { ok: false as const, error: "Invitation not found" };
 				const copy = getDictionary(invitation.locale).rsvp;
+				failureMessage = copy.saveError;
 				const settings = await tx.settings.findUniqueOrThrow({ where: { id: 1 } });
 				if (!canRespond(new Date(), settings.rsvpDeadline))
 					return { ok: false as const, error: copy.closedError };
@@ -122,7 +124,7 @@ export async function submitRsvp(token: string, payload: unknown): Promise<FormA
 		savedId = result.id;
 	} catch (error) {
 		console.error("RSVP save failed", error);
-		return { ok: false, error: "Your response could not be saved. Please reload and try again." };
+		return { ok: false, error: failureMessage };
 	}
 	try {
 		await sendInvitationEmail(EmailKind.CONFIRMATION, savedId);

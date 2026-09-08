@@ -11,6 +11,7 @@ import { localizeGift, publishableGifts } from "@/domain/gifts";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { resolvePhotoBookAccess } from "@/domain/photo-book";
+import { populatedTranslation } from "@/domain/translations";
 import { Attendance, GuestKind } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -73,13 +74,14 @@ export default async function RsvpPage({
 	);
 
 	const localizedEvents = events.map((event) => {
-		const translation =
-			event.translations.find((candidate) => candidate.locale === invitation.locale) ??
-			event.translations[0];
+		const translation = populatedTranslation(event.translations, invitation.locale, [
+			"name",
+			"description",
+		]);
 		return {
 			id: event.id,
 			slug: event.slug,
-			name: translation?.name ?? event.slug,
+			name: translation.name || event.slug,
 			description: translation?.description ?? null,
 			startsAt: event.startsAt,
 			venue: event.venue,
@@ -162,7 +164,9 @@ export default async function RsvpPage({
 				{localizedEvents.map((event) => (
 					<Card key={event.id} className="flex flex-col gap-1">
 						<h2 className="text-xl">{event.name}</h2>
-						<p className="text-sm text-ink/70">{formatDate(event.startsAt, invitation.locale)}</p>
+						<p className="text-sm text-ink/70">
+							{formatDate(event.startsAt, invitation.locale, settings?.timeZone)}
+						</p>
 						<p className="text-sm">
 							{dictionary.rsvp.eventVenueLabel}: {event.venue}
 						</p>

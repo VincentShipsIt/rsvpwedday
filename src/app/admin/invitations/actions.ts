@@ -8,6 +8,7 @@ import { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
 import { syncHouseholdAttendance } from "@/lib/household-attendance";
+import { processMediaCleanup, queueInvitationMediaCleanup } from "@/lib/media-cleanup";
 import { requireAdmin } from "@/lib/require-admin";
 
 const guestSchema = z.object({
@@ -136,7 +137,12 @@ export async function updateInvitation(
 }
 export async function deleteInvitation(invitationId: string): Promise<void> {
 	await requireAdmin();
-	await db.invitation.delete({ where: { id: invitationId } });
+	const cleanup = await db.$transaction(async (tx) => {
+		const result = await queueInvitationMediaCleanup(tx, invitationId);
+		await tx.invitation.delete({ where: { id: invitationId } });
+		return result;
+	});
+	const { pending } = await processMediaCleanup();
 	saved();
-	redirect("/admin/guests");
+	redirect(`/admin/guests?mediaPending=${pending}&legacyPhotos=${cleanup.legacyCount}`);
 }

@@ -20,8 +20,8 @@ const companionSchema = z
 		lastName: z.string().trim().min(1).max(100),
 		kind: z.literal(GuestKind.ADULT).default(GuestKind.ADULT),
 		attendance: z.array(guestAttendanceSchema).max(100).optional(),
-		email: z.email().optional(),
-		phone: z.string().min(3).max(30).optional(),
+		email: z.string().trim().pipe(z.email()).optional(),
+		phone: z.string().trim().min(3).max(30).optional(),
 	})
 	.refine((companion) => Boolean(companion.email) || Boolean(companion.phone), {
 		message: "Provide an email or a phone number",

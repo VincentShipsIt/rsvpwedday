@@ -5,11 +5,13 @@ import { SettingsForm } from "@/app/admin/settings/settings-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { resolveWeddingDate } from "@/domain/wedding-date";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 import { toWireDateOrEmpty } from "@/lib/wire-date";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
+	await requireAdmin();
 	const [settings, events] = await Promise.all([
 		db.settings.findUnique({ where: { id: 1 } }),
 		db.event.findMany({ orderBy: { startsAt: "asc" }, select: { startsAt: true } }),

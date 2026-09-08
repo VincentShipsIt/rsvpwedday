@@ -4,11 +4,13 @@ import { resolvePhotoBookAccess } from "@/domain/photo-book";
 import { resolveWeddingDate } from "@/domain/wedding-date";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 import { toWireDateOrEmpty } from "@/lib/wire-date";
 
 export const dynamic = "force-dynamic";
 
 export default async function MemoriesPage() {
+	await requireAdmin();
 	const [siteContent, photos, settings, events, pendingCleanup] = await Promise.all([
 		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
 		db.photo.findMany({

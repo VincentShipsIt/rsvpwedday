@@ -4,6 +4,7 @@ import { getDictionary } from "@/i18n";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ const DICTIONARY_KEY = {
 } as const;
 
 export default async function EmailsPage() {
+	await requireAdmin();
 	const templates = await db.emailTemplate.findMany();
 
 	return (

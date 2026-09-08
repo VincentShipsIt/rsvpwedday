@@ -7,6 +7,7 @@ import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { isImageGenerationConfigured } from "@/lib/replicate";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
  * written once, the reservations are read all spring.
  */
 export default async function GiftsAdminPage() {
+	await requireAdmin();
 	const gifts = await db.gift.findMany({
 		orderBy: { sortOrder: "asc" },
 		include: {

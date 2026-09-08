@@ -40,6 +40,10 @@ export const en = {
 		musicPauseLabel: "Pause music",
 	},
 	photos: {
+		uploadError:
+			"Could not finish uploading. Your completed photos are saved; retry the remaining photos.",
+		batchLimitError: "Choose up to {count} photos at a time.",
+		retryButton: "Retry remaining photos",
 		title: "The memories book",
 		coverSubtitle: "Photographed by everyone who was there",
 		backToInvitation: "Back to your invitation",
@@ -98,6 +102,18 @@ export const en = {
 		genericError: "That didn't work. Please try again.",
 	},
 	rsvp: {
+		savingLabel: "Saving…",
+		saveError: "Your response could not be saved. Please try again.",
+		changedInvitationError: "Your invitation changed. Reload the page before replying.",
+		invalidResponseError: "Please check your answers and try again.",
+		closedError: "The RSVP deadline has passed. Please contact the couple.",
+		additionalGuestLabel: "Additional guest {number}",
+		childrenDietaryLabel: "Children’s dietary requirements",
+		childrenAtEventLabel: "Children attending {event}",
+		childrenCountLabel: "Number of children under 12",
+		childrenHint:
+			"Count children separately from additional guests. No names or contact details are needed. Enter how many will attend each event.",
+		childrenHeading: "Children under 12",
 		heading: "You're invited, {name}",
 		notFoundTitle: "We couldn't find that invitation",
 		notFoundBody: "Please check the link from your email, or contact us if it still doesn't work.",
@@ -112,7 +128,8 @@ export const en = {
 		dietaryLabel: "Dietary requirements",
 		dietaryPlaceholder: "Allergies, vegetarian, vegan...",
 		companionsHeading: "Bringing someone?",
-		companionsHint: "You may bring up to {count} additional guest(s).",
+		companionsHint:
+			"You may bring up to {count} additional guests aged 12 and over. Children under 12 are counted separately.",
 		companionFirstNameLabel: "First name",
 		companionLastNameLabel: "Last name",
 		companionKindLabel: "Guest type",

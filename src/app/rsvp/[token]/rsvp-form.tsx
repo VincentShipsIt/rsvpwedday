@@ -162,7 +162,7 @@ export function RsvpForm(props: RsvpFormProps) {
 								className="grid gap-3 border-t border-ink/10 pt-4 sm:grid-cols-2"
 							>
 								<legend className="px-1 text-sm font-medium">
-									{copy.additionalGuestLabel} {index + 1}
+									{t(copy.additionalGuestLabel, { number: String(index + 1) })}
 								</legend>
 								<label
 									className="flex flex-col gap-1 text-sm"

@@ -69,7 +69,14 @@ export function computeHeadcount(
 			}
 		}
 		const children = childAttendanceCounts(invitation);
-		headcount.attendingOverall.children += Math.max(0, ...Object.values(children));
+		headcount.attendingOverall.children +=
+			invitation.childrenUnder12 == null
+				? invitation.guests.filter(
+						(guest) =>
+							guest.kind === GuestKind.CHILD &&
+							guest.attendance.some((row) => row.status === Attendance.ACCEPTED)
+					).length
+				: Math.max(0, ...Object.values(children));
 		for (const [eventId, count] of Object.entries(children)) {
 			headcount.byEvent[eventId] ??= emptyAgeGroupCounts();
 			headcount.byEvent[eventId].children += count;
