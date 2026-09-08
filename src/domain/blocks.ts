@@ -34,6 +34,7 @@ export type BlockDefinition = {
 		| "galleryHeading"
 		| "faqHeading"
 		| "rsvpHeading"
+		| "giftsHeading"
 		| null;
 	/** Anchor assigned by the migration and suggested by the editor. */
 	defaultAnchor: string;
@@ -100,6 +101,15 @@ export const BLOCK_DEFINITIONS: Record<BlockType, BlockDefinition> = {
 		bodyLabel: "Note",
 		defaultHeadingKey: "rsvpHeading",
 		defaultAnchor: "rsvp",
+	},
+	[BlockType.GIFTS]: {
+		label: "Wish list",
+		description: "The gifts the couple would love, and which ones guests have already taken.",
+		builtIn: true,
+		fields: { ...NO_FIELDS, title: true, body: true, anchor: true },
+		bodyLabel: "Intro",
+		defaultHeadingKey: "giftsHeading",
+		defaultAnchor: "gifts",
 	},
 	[BlockType.TEXT]: {
 		label: "Text",

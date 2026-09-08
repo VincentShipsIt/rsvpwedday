@@ -104,6 +104,7 @@ model Invitation {
   guests             Guest[]
   emails             EmailLog[]
   photos             Photo[]
+  giftClaims         GiftClaim[]
 }
 
 model Guest {
@@ -312,11 +313,60 @@ model FaqEntryTranslation {
   @@id([entryId, locale])
 }
 
-/// What a block renders. The first six are the home page's built-in sections: they read their
-/// data from the tables above (events, milestones, settings) or from the block itself (hero photo
-/// and tagline, gallery photos, FAQ items, RSVP note) and can be reordered like any other block.
-/// The rest are free content the couple adds anywhere: a rich-text block, a card grid (a guide
-/// section), one picture, or a teaser linking to another page.
+/// One entry on the couple's wish list: a present, or a share of the honeymoon. Nothing here says
+/// which — a registry becomes a honeymoon registry through the block's own heading and intro and
+/// each entry's own words, so the couple can run either without a second table or a mode switch.
+model Gift {
+  id        String  @id @default(cuid())
+  sortOrder Int     @default(0)
+  imageUrl  String?
+  /// Where to buy it, or read about the experience. Optional: "a night of the hotel" needs no link.
+  url       String?
+  /// Free text, not a number: "€120", "about 80 francs" and "" all have to read naturally, and a
+  /// family site has no business modelling currency.
+  price     String  @default("")
+
+  claim        GiftClaim?
+  translations GiftTranslation[]
+
+  @@index([sortOrder])
+}
+
+model GiftTranslation {
+  giftId String
+  locale Locale
+  title  String @default("")
+  /// Rich text, like every other guest-facing description.
+  body   String @default("")
+  gift   Gift   @relation(fields: [giftId], references: [id], onDelete: Cascade)
+
+  @@id([giftId, locale])
+}
+
+/// Who is bringing a gift. `giftId` is the primary key, so "one gift, one taker" is the database's
+/// own rule rather than a check every action has to remember: two guests reserving the same entry
+/// in the same second cannot both win, and the loser is told so. `guestName` is the name the
+/// reserver picked from their own household, denormalised the way a photo's uploader is, so the
+/// couple's overview still reads correctly after that guest row is renamed or removed.
+model GiftClaim {
+  giftId       String   @id
+  invitationId String
+  guestName    String   @default("")
+  /// An optional word for the couple, shown only in the admin: this is a gift, not a comment feed.
+  message      String   @default("")
+  createdAt    DateTime @default(now())
+
+  gift       Gift       @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@index([invitationId])
+}
+
+/// What a block renders. The built-in sections read their data from the tables above (events,
+/// milestones, settings, gifts) or from the block itself (hero photo and tagline, gallery photos,
+/// FAQ items, RSVP note) and can be reordered like any other block. The rest are free content the
+/// couple adds anywhere: a rich-text block, a card grid (a guide section), one picture, or a
+/// teaser linking to another page.
 enum BlockType {
   HERO
   STORY
@@ -328,6 +378,7 @@ enum BlockType {
   CARDS
   IMAGE
   PAGE_LINK
+  GIFTS
 }
 
 /// A public page. `home` is the root route; any other slug is served at `/<slug>`. Pages with no

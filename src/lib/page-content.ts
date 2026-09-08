@@ -112,6 +112,7 @@ export function localizePage(page: PageRecord, locale: Locale): PageView {
 export type SiteData = {
 	eventCount: number;
 	milestoneCount: number;
+	giftCount: number;
 	hasSettings: boolean;
 };
 
@@ -131,6 +132,8 @@ export function blockHasContent(block: BlockView, site: SiteData): boolean {
 			return block.items.some((item) => item.title.trim() !== "");
 		case BlockType.RSVP:
 			return site.hasSettings;
+		case BlockType.GIFTS:
+			return site.giftCount > 0;
 		case BlockType.TEXT:
 			return block.title.trim() !== "" || !isRichTextEmpty(block.body);
 		case BlockType.CARDS:

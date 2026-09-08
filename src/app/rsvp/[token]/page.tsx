@@ -4,7 +4,9 @@ import { updateInvitationLocale } from "@/app/rsvp/[token]/actions";
 import { RsvpForm } from "@/app/rsvp/[token]/rsvp-form";
 import { Card } from "@/components/card";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { giftCountLine } from "@/components/site/gifts";
 import { StatusBadge } from "@/components/status-badge";
+import { localizeGift, publishableGifts } from "@/domain/gifts";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { resolvePhotoBookAccess } from "@/domain/photo-book";
@@ -35,12 +37,17 @@ export default async function RsvpPage({
 		notFound();
 	}
 
-	const [settings, allEvents, siteContent] = await Promise.all([
+	const [settings, allEvents, siteContent, giftRecords] = await Promise.all([
 		db.settings.findUniqueOrThrow({ where: { id: 1 } }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 		db.siteContent.findUnique({
 			where: { id: 1 },
 			select: { photosEnabled: true, photosOpenAt: true, photosTestMode: true },
+		}),
+		// The card below only needs a count, but it is counted from the same rows and the same rule
+		// the list itself uses, so the two can never disagree about how much is left.
+		db.gift.findMany({
+			include: { translations: true, claim: { select: { invitationId: true, guestName: true } } },
 		}),
 	]);
 	// Only the events this household was invited to; the rest never appear on their page.
@@ -54,6 +61,7 @@ export default async function RsvpPage({
 	const showForm = canRespondNow && (!hasResponded || edit === "1");
 	// The photo book only shows up here once it is actually open; before the day, the guest's
 	// invitation says nothing about it.
+	const gifts = publishableGifts(giftRecords.map((gift) => localizeGift(gift, invitation.locale)));
 	const photoBook = resolvePhotoBookAccess(
 		{
 			enabled: siteContent?.photosEnabled ?? false,
@@ -110,6 +118,19 @@ export default async function RsvpPage({
 					/>
 				</div>
 			</header>
+
+			{gifts.length > 0 && (
+				<Card className="flex flex-col gap-2">
+					<h2 className="text-xl">{dictionary.gifts.title}</h2>
+					<p className="text-sm text-ink/70">{giftCountLine(gifts, dictionary.gifts)}</p>
+					<Link
+						href={`/rsvp/${token}/gifts`}
+						className="text-sm text-green underline underline-offset-4"
+					>
+						{dictionary.gifts.openListLabel}
+					</Link>
+				</Card>
+			)}
 
 			{photoBook.state === "open" && (
 				<Card className="flex flex-col gap-2">

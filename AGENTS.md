@@ -67,10 +67,11 @@ the editor shows and the renderer reads, whether the type is built-in (one per p
 heading key and its default anchor. Adding a type means a `BlockType` value, a definition there, an
 editor case and a case in `src/components/site/page-blocks.tsx` — nothing else.
 
-Six types are built in and display data owned by other tables: `HERO` (photo and tagline on the
+Seven types are built in and display data owned by other tables: `HERO` (photo and tagline on the
 block, couple names and countdown from settings and events), `STORY` (heading and intro on the
 block, milestones from `StoryMilestone`), `EVENTS`, `GALLERY` (photos on the block), `FAQ`
-(questions as `BlockItem` rows) and `RSVP`. Four are free content the couple adds anywhere: `TEXT`,
+(questions as `BlockItem` rows), `RSVP` and `GIFTS` (heading and intro on the block, entries from
+`Gift`). Four are free content the couple adds anywhere: `TEXT`,
 `CARDS` (what a travel-guide section was — heading, intro, and cards with optional links and
 photos), `IMAGE` and `PAGE_LINK` (a teaser pointing at another page). Every text field is the
 rich-text editor; `anchor` is the block's `#fragment` and is unique within its page, and an empty
@@ -161,6 +162,41 @@ time input, exchanging the same `yyyy-MM-ddTHH:mm` string a native `datetime-loc
 server action had to change. Build that string with `src/lib/wire-date.ts` and never with
 `toISOString()` — that is UTC, and an evening in Berlin comes back an hour early, or near midnight
 on the wrong day.
+
+## Wish list
+
+The couple keeps a list of gifts at `/admin/gifts`; guests reserve from their own invitation link
+at `/rsvp/<token>/gifts`, and a `GIFTS` block puts the same list on any public page. One gift has
+one taker, and that is enforced by the schema rather than by the actions: `GiftClaim.giftId` is the
+**primary key**, so two guests reserving in the same second cannot both win — the loser's insert
+fails with `P2002`, which `reserveGift` turns into `already-taken` and the guest reads as "someone
+reserved that one a moment ago" in their own language. Releasing is a `deleteMany` scoped by
+`invitationId` as well as `giftId`, so a household can only ever take back its own reservation.
+
+Nothing in the data says whether it is a gift registry or a honeymoon registry. A `Gift` is a
+picture, an optional link, a **free-text** `price` (`"€120"`, `"about 80 francs"`, `""` — a family
+site has no business modelling currency) and per-locale title and rich-text body; "Two nights in
+the riad" and "Espresso machine" are the same row. What names the section is the block's own
+heading and intro, which is why the block carries `title` and `body` and the dictionary's
+`giftsHeading` is only the fallback.
+
+`src/domain/gifts.ts` holds the decisions all three surfaces share, so they cannot drift:
+`giftStatus` (`available` / `mine` / `taken`, where `mine` is the whole permission model),
+`sortByAvailability` (still-available first, so a guest sees what they can act on),
+`publishableGifts` (an untitled row never reaches a guest) and `localizeGift`. The public page
+passes `viewerInvitationId: null`, which is exactly why a claimed gift reads as "already taken"
+there and never as somebody's name — who gave what is the couple's business, and it is shown only
+in `/admin/gifts`, alongside the household's email, the note the giver left, and a Release action
+for the guest who emails to say they cannot manage it after all.
+
+`src/components/site/gifts.tsx` is one grid serving both surfaces; the difference between reading
+the list and reserving from it is the `renderAction` prop. That function runs on the server and
+returns `GiftActions`, the page's only client component — the cards stay server-rendered so
+`RichText`'s sanitiser never reaches a guest's bundle. `GiftGrid`'s `w-full` is load-bearing: the
+guest page centres its children, and without it the grid collapses to one narrow column.
+
+Deleting a gift cascades its claim, which is why the admin's remove dialog says so when somebody
+has already taken it. Claims also cascade with the invitation, like photos.
 
 ## Memories book
 
@@ -261,3 +297,13 @@ access, so a build never needs runtime secrets or a database.
 Names, the venue, dates, and every other guest- or couple-specific fact live in the database, not
 in source, so the repository can be made public; a fresh checkout has no wedding details until it is seeded
 or configured.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

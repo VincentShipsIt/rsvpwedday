@@ -17,6 +17,8 @@ export const ILLUSTRATION_PLACEMENTS = [
 	"ITEM",
 	/** A story milestone, which lives outside the block tree (`/admin/settings/milestones`). */
 	"MILESTONE",
+	/** One entry on the wish list (`/admin/gifts`), which also lives outside the block tree. */
+	"GIFT",
 ] as const;
 
 export type IllustrationPlacement = (typeof ILLUSTRATION_PLACEMENTS)[number];
@@ -37,6 +39,8 @@ const blockPlacements: Record<BlockType, IllustrationPlacement | null> = {
 	[BlockType.FAQ]: null,
 	[BlockType.RSVP]: null,
 	[BlockType.TEXT]: null,
+	// The wish-list block carries no picture of its own; each gift illustrates itself.
+	[BlockType.GIFTS]: null,
 };
 
 export function blockIllustrationPlacement(type: BlockType): IllustrationPlacement | null {
@@ -100,6 +104,9 @@ const placementBriefs: Record<IllustrationPlacement, string> = {
 	PAGE_LINK: "A wide banner teasing another page of the site.",
 	ITEM: "A single clear subject for a small card: one place, dish or object.",
 	MILESTONE: "A small intimate vignette illustrating one moment in the couple's story.",
+	// A wish list runs from kettles to nights in a hotel, so the brief has to cover an object and
+	// an experience without switching styles between two cards sitting side by side.
+	GIFT: "A single gift on a wish-list card: one object, or one small scene of the experience it pays for, composed as a still life against plain ground.",
 };
 
 const placementAspectRatios: Record<IllustrationPlacement, string> = {
@@ -110,6 +117,7 @@ const placementAspectRatios: Record<IllustrationPlacement, string> = {
 	PAGE_LINK: "16:9",
 	ITEM: "3:2",
 	MILESTONE: "4:3",
+	GIFT: "4:3",
 };
 
 export function illustrationAspectRatio(placement: IllustrationPlacement): string {
