@@ -30,11 +30,11 @@ export function isSessionValid(cookieValue: string | undefined): boolean {
 		return false;
 	}
 
-	const [expiresAtMs, signature] = cookieValue.split(".");
-	if (!expiresAtMs || !signature) {
+	const [expiresAtMs, signature, extra] = cookieValue.split(".");
+	if (!expiresAtMs || !signature || extra !== undefined || !/^\d+$/.test(expiresAtMs)) {
 		return false;
 	}
-	if (Number(expiresAtMs) < Date.now()) {
+	if (!Number.isSafeInteger(Number(expiresAtMs)) || Number(expiresAtMs) <= Date.now()) {
 		return false;
 	}
 

@@ -42,6 +42,10 @@ export const de: Dictionary = {
 		musicPauseLabel: "Musik pausieren",
 	},
 	photos: {
+		uploadError:
+			"Nicht alle Fotos konnten hochgeladen werden. Fertige Fotos sind gespeichert; versuche die übrigen erneut.",
+		batchLimitError: "Wähle höchstens {count} Fotos auf einmal.",
+		retryButton: "Übrige Fotos erneut versuchen",
 		title: "Das Erinnerungsbuch",
 		coverSubtitle: "Fotografiert von allen, die dabei waren",
 		backToInvitation: "Zur\u00fcck zu deiner Einladung",
@@ -98,6 +102,19 @@ export const de: Dictionary = {
 		genericError: "Das hat nicht geklappt. Bitte versucht es noch einmal.",
 	},
 	rsvp: {
+		savingLabel: "Wird gespeichert…",
+		saveError: "Deine Antwort konnte nicht gespeichert werden. Bitte versuche es erneut.",
+		changedInvitationError:
+			"Deine Einladung wurde geändert. Lade die Seite vor deiner Antwort neu.",
+		invalidResponseError: "Bitte prüfe deine Angaben und versuche es erneut.",
+		closedError: "Die Antwortfrist ist abgelaufen. Bitte kontaktiere das Brautpaar.",
+		additionalGuestLabel: "Weiterer Gast {number}",
+		childrenDietaryLabel: "Ernährungswünsche der Kinder",
+		childrenAtEventLabel: "Kinder bei {event}",
+		childrenCountLabel: "Anzahl der Kinder unter 12 Jahren",
+		childrenHint:
+			"Zähle Kinder getrennt von weiteren Gästen. Namen und Kontaktdaten sind nicht nötig. Gib für jede Veranstaltung die Anzahl der teilnehmenden Kinder an.",
+		childrenHeading: "Kinder unter 12 Jahren",
 		heading: "Du bist eingeladen, {name}",
 		notFoundTitle: "Diese Einladung konnten wir nicht finden",
 		notFoundBody:
@@ -113,7 +130,8 @@ export const de: Dictionary = {
 		dietaryLabel: "Ernährungshinweise",
 		dietaryPlaceholder: "Allergien, vegetarisch, vegan...",
 		companionsHeading: "Bringst du jemanden mit?",
-		companionsHint: "Du darfst bis zu {count} weitere Person(en) mitbringen.",
+		companionsHint:
+			"Du darfst bis zu {count} weitere Gäste ab 12 Jahren mitbringen. Kinder unter 12 Jahren werden getrennt gezählt.",
 		companionFirstNameLabel: "Vorname",
 		companionLastNameLabel: "Nachname",
 		companionKindLabel: "Art des Gastes",

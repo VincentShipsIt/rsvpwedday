@@ -1,15 +1,30 @@
 import { AdminDashboard } from "@/app/admin/admin-dashboard";
+import { hasSuccessfulEmail } from "@/domain/email-delivery";
 import { computeHeadcount } from "@/domain/headcount";
 import { getInvitationStatus } from "@/domain/invitation";
+import { populatedTranslation } from "@/domain/translations";
 import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ accepted?: string; failed?: string; simulated?: string }>;
+}) {
+	await requireAdmin();
+	const result = await searchParams;
+	const count = (value?: string) =>
+		/^\d+$/.test(value ?? "") ? Math.min(Number(value), 1_000_000) : 0;
+	const deliverySummary =
+		result.accepted !== undefined
+			? `${count(result.accepted)} accepted by the email provider, ${count(result.failed)} failed, ${count(result.simulated)} simulated. Failed and simulated invites remain eligible for retry; see All guests for details.`
+			: undefined;
 	const [invitations, events] = await Promise.all([
 		db.invitation.findMany({
-			include: { guests: { include: { attendance: true } }, emails: true },
+			include: { childAttendance: true, guests: { include: { attendance: true } }, emails: true },
 			orderBy: { createdAt: "asc" },
 		}),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
@@ -17,7 +32,7 @@ export default async function AdminDashboardPage() {
 
 	const headcount = computeHeadcount(invitations, events);
 	const unsentCount = invitations.filter(
-		(invitation) => !invitation.emails.some((log) => log.kind === EmailKind.INVITE)
+		(invitation) => !hasSuccessfulEmail(invitation.emails, EmailKind.INVITE)
 	).length;
 	const pendingCount = invitations.filter(
 		(invitation) => getInvitationStatus(invitation) === "pending"
@@ -27,13 +42,11 @@ export default async function AdminDashboardPage() {
 	).length;
 
 	const eventRows = events.map((event) => {
-		const translation =
-			event.translations.find((candidate) => candidate.locale === Locale.en) ??
-			event.translations[0];
+		const translation = populatedTranslation(event.translations, Locale.en, ["name"]);
 		const counts = headcount.byEvent[event.id] ?? { adults: 0, children: 0 };
 		return {
 			id: event.id,
-			name: translation?.name ?? event.slug,
+			name: translation.name || event.slug,
 			adults: counts.adults,
 			children: counts.children,
 		};
@@ -41,6 +54,7 @@ export default async function AdminDashboardPage() {
 
 	return (
 		<AdminDashboard
+			deliverySummary={deliverySummary}
 			headcount={headcount}
 			eventRows={eventRows}
 			unsentCount={unsentCount}

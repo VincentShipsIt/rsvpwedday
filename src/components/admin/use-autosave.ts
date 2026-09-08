@@ -1,141 +1,86 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { registerAutosaveNavigation } from "@/components/admin/autosave-navigation";
+import { Autosave, type AutosaveState, type AutosaveStatus } from "@/domain/autosave";
 import type { FormActionResult } from "@/lib/form-action";
 
-export type AutosaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
-
+export type { AutosaveStatus };
 export type UseAutosaveOptions<T> = {
 	value: T;
 	save: (value: T) => Promise<FormActionResult>;
 	debounceMs?: number;
 };
+export type UseAutosaveResult = { status: AutosaveStatus; error: string | null; retry: () => void };
 
-export type UseAutosaveResult = {
-	status: AutosaveStatus;
-	error: string | null;
-	retry: () => void;
-};
-
-const DEFAULT_DEBOUNCE_MS = 1500;
-
-// Debounced autosave for the admin website/settings forms: fires `save` a fixed delay after
-// `value` stops changing, skips the initial mount, and never lets two saves race — a value that
-// arrives mid-save is queued and run once the in-flight save settles instead of overlapping it.
 export function useAutosave<T>({
 	value,
 	save,
-	debounceMs = DEFAULT_DEBOUNCE_MS,
+	debounceMs = 1500,
 }: UseAutosaveOptions<T>): UseAutosaveResult {
-	const [status, setStatus] = useState<AutosaveStatus>("idle");
-	const [error, setError] = useState<string | null>(null);
-
-	const hasMountedRef = useRef(false);
-	const savedSnapshotRef = useRef(JSON.stringify(value));
-	const isSavingRef = useRef(false);
-	const queuedValueRef = useRef<T | null>(null);
-	const hasQueuedRef = useRef(false);
-	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const valueRef = useRef(value);
 	const saveRef = useRef(save);
-
-	valueRef.current = value;
 	saveRef.current = save;
-
-	const runSave = useCallback(async (nextValue: T) => {
-		isSavingRef.current = true;
-		setStatus("saving");
-		setError(null);
-		try {
-			const result = await saveRef.current(nextValue);
-			if (result.ok) {
-				savedSnapshotRef.current = JSON.stringify(nextValue);
-				setStatus("saved");
-			} else {
-				setError(result.error);
-				setStatus("error");
+	const controllerRef = useRef<Autosave<T> | null>(null);
+	if (!controllerRef.current) {
+		controllerRef.current = new Autosave(
+			value,
+			(draft) => saveRef.current(draft),
+			(retry) => {
+				toast.error("Your previous page has unsaved changes.", {
+					duration: Infinity,
+					action: { label: "Retry save", onClick: retry },
+				});
 			}
-		} catch {
-			setError("Something went wrong while saving.");
-			setStatus("error");
-		} finally {
-			isSavingRef.current = false;
-		}
-		if (hasQueuedRef.current) {
-			const queued = queuedValueRef.current as T;
-			hasQueuedRef.current = false;
-			queuedValueRef.current = null;
-			await runSave(queued);
-		}
-	}, []);
+		);
+	}
+	const controller = controllerRef.current;
+	const [state, setState] = useState<AutosaveState>(controller.state);
+	const snapshot = JSON.stringify(value);
+	const valueRef = useRef(value);
+	valueRef.current = value;
 
-	const flush = useCallback(() => {
-		if (timeoutRef.current) {
-			clearTimeout(timeoutRef.current);
-			timeoutRef.current = null;
-		}
-		const current = valueRef.current;
-		if (JSON.stringify(current) === savedSnapshotRef.current) {
-			return;
-		}
-		if (isSavingRef.current) {
-			queuedValueRef.current = current;
-			hasQueuedRef.current = true;
-			return;
-		}
-		runSave(current);
-	}, [runSave]);
-
+	useEffect(() => controller.subscribe(setState), [controller]);
+	useEffect(() => registerAutosaveNavigation(controller), [controller]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: compare serialized drafts, not freshly allocated form objects.
 	useEffect(() => {
-		if (!hasMountedRef.current) {
-			hasMountedRef.current = true;
-			return;
-		}
-
-		if (JSON.stringify(value) === savedSnapshotRef.current) {
-			return;
-		}
-
-		setStatus("pending");
-		if (timeoutRef.current) {
-			clearTimeout(timeoutRef.current);
-		}
-		timeoutRef.current = setTimeout(() => {
-			timeoutRef.current = null;
-			const latest = valueRef.current;
-			if (isSavingRef.current) {
-				queuedValueRef.current = latest;
-				hasQueuedRef.current = true;
-				return;
-			}
-			runSave(latest);
+		controller.update(valueRef.current);
+		if (!controller.dirty) return;
+		const timer = setTimeout(() => {
+			void controller.flush();
 		}, debounceMs);
-
-		return () => {
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
-			}
-		};
-	}, [value, debounceMs, runSave]);
+		return () => clearTimeout(timer);
+	}, [controller, snapshot, debounceMs]);
 
 	useEffect(() => {
-		function handleVisibilityChange() {
-			if (document.visibilityState === "hidden") {
-				flush();
-			}
+		function flush() {
+			controller.update(valueRef.current);
+			void controller.flush();
 		}
-		document.addEventListener("visibilitychange", handleVisibilityChange);
-		window.addEventListener("beforeunload", flush);
+		function visibility() {
+			if (document.visibilityState === "hidden") flush();
+		}
+		function beforeUnload(event: BeforeUnloadEvent) {
+			controller.update(valueRef.current);
+			if (!controller.dirty) return;
+			flush();
+			// The browser cannot guarantee a Server Action finishes during document teardown.
+			event.preventDefault();
+			event.returnValue = "";
+		}
+		document.addEventListener("visibilitychange", visibility);
+		window.addEventListener("beforeunload", beforeUnload);
 		return () => {
-			document.removeEventListener("visibilitychange", handleVisibilityChange);
-			window.removeEventListener("beforeunload", flush);
+			document.removeEventListener("visibilitychange", visibility);
+			window.removeEventListener("beforeunload", beforeUnload);
+			// Next Link and browser back unmount without hiding the document. The controller and
+			// its retry action survive that unmount until the current draft is durable.
+			flush();
 		};
-	}, [flush]);
+	}, [controller]);
 
 	const retry = useCallback(() => {
-		flush();
-	}, [flush]);
-
-	return { status, error, retry };
+		void controller.flush();
+	}, [controller]);
+	return { ...state, retry };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { computeCountdown, type Remaining } from "@/domain/countdown";
 
 export type CountdownLabels = {
 	days: string;
@@ -10,44 +11,32 @@ export type CountdownLabels = {
 	today: string;
 };
 
-type Remaining = { days: number; hours: number; minutes: number; seconds: number };
-
-function computeRemaining(targetMs: number): Remaining | "today" {
-	const diffMs = targetMs - Date.now();
-	if (diffMs <= 0) {
-		return "today";
-	}
-
-	const totalSeconds = Math.floor(diffMs / 1000);
-	return {
-		days: Math.floor(totalSeconds / 86400),
-		hours: Math.floor((totalSeconds % 86400) / 3600),
-		minutes: Math.floor((totalSeconds % 3600) / 60),
-		seconds: totalSeconds % 60,
-	};
-}
-
 export function Countdown({
 	targetDate,
+	timeZone = "UTC",
 	labels,
 	variant = "plain",
 }: {
 	targetDate: string;
+	timeZone?: string;
 	labels: CountdownLabels;
 	variant?: "plain" | "pills";
 }) {
 	const targetMs = new Date(targetDate).getTime();
 	// Starts null so the server-rendered markup and the first client render match; the effect
 	// fills in the real value once mounted, which also keeps the ticking clock off the server render.
-	const [remaining, setRemaining] = useState<Remaining | "today" | null>(null);
+	const [remaining, setRemaining] = useState<Remaining | "today" | "past" | null>(null);
 
 	useEffect(() => {
-		setRemaining(computeRemaining(targetMs));
-		const interval = setInterval(() => setRemaining(computeRemaining(targetMs)), 1000);
+		setRemaining(computeCountdown(targetMs, Date.now(), timeZone));
+		const interval = setInterval(
+			() => setRemaining(computeCountdown(targetMs, Date.now(), timeZone)),
+			1000
+		);
 		return () => clearInterval(interval);
-	}, [targetMs]);
+	}, [targetMs, timeZone]);
 
-	if (remaining === null) {
+	if (remaining === null || remaining === "past") {
 		return null;
 	}
 

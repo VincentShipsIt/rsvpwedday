@@ -9,6 +9,8 @@ import { sanitizeRichText } from "@/domain/rich-text";
 import type { Locale, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
+import { requireAdmin } from "@/lib/require-admin";
+import { parseWireDate, parseWireDatePreserving } from "@/lib/wire-date";
 
 // Shared validation boundary for every image URL field across the split website sections below.
 const imageUrlSchema = z.string().refine((value) => value === "" || isAllowedImageUrl(value), {
@@ -39,7 +41,12 @@ export type StoryMilestoneInput = {
 export type StoryInput = { milestones: StoryMilestoneInput[] };
 
 export async function updateStory(input: StoryInput): Promise<FormActionResult> {
+	await requireAdmin();
+	const milestoneIds = new Set<string>();
 	for (const [index, milestone] of input.milestones.entries()) {
+		if (!milestone.id || milestoneIds.has(milestone.id))
+			return { ok: false, error: "Reload the editor before saving these milestones." };
+		milestoneIds.add(milestone.id);
 		if (!imageUrlSchema.safeParse(milestone.imageUrl).success) {
 			return invalidImageUrlResult(`milestone #${index + 1} image`);
 		}
@@ -93,6 +100,7 @@ export async function updateStory(input: StoryInput): Promise<FormActionResult> 
 			} else {
 				await tx.storyMilestone.create({
 					data: {
+						...(milestone.id ? { id: milestone.id } : {}),
 						...milestoneData,
 						translations: {
 							create: milestone.translations.map((translation) => ({
@@ -127,22 +135,25 @@ export type EventInput = {
 	showPublicly: boolean;
 	translations: EventTranslationInput[];
 };
-export type EventsInput = { events: EventInput[] };
+export type EventsInput = { events: EventInput[]; deletedEventIds?: string[] };
 
 // A half-filled card autosaves too, so reject incomplete rows here instead of letting Prisma
 // throw on an Invalid Date or a duplicate/empty slug (both surfaced as a bare 500 before).
-function validateEvents(events: EventInput[]): string | null {
+function validateEvents(events: EventInput[], timeZone: string): string | null {
 	const seenSlugs = new Set<string>();
+	const seenIds = new Set<string>();
 	for (const [index, event] of events.entries()) {
 		const label = `Event ${index + 1}`;
+		if (!event.id || seenIds.has(event.id)) return "Reload the editor before saving these events.";
+		seenIds.add(event.id);
 		const slug = event.slug.trim();
 		if (!slug) return `${label} needs a slug.`;
 		if (seenSlugs.has(slug)) return `${label} reuses the slug "${slug}"; slugs must be unique.`;
 		seenSlugs.add(slug);
-		if (!event.startsAt || Number.isNaN(new Date(event.startsAt).getTime())) {
+		if (!event.startsAt || !parseWireDate(event.startsAt, timeZone)) {
 			return `${label} needs a start date and time.`;
 		}
-		if (event.endsAt && Number.isNaN(new Date(event.endsAt).getTime())) {
+		if (event.endsAt && !parseWireDate(event.endsAt, timeZone)) {
 			return `${label} has an invalid end date.`;
 		}
 	}
@@ -150,29 +161,36 @@ function validateEvents(events: EventInput[]): string | null {
 }
 
 export async function updateEvents(input: EventsInput): Promise<FormActionResult> {
-	const validationError = validateEvents(input.events);
+	await requireAdmin();
+	const settings = await db.settings.findUnique({ where: { id: 1 }, select: { timeZone: true } });
+	const timeZone = settings?.timeZone ?? "UTC";
+	const validationError = validateEvents(input.events, timeZone);
 	if (validationError) return { ok: false, error: validationError };
+	if (input.events.some((event) => event.id && input.deletedEventIds?.includes(event.id)))
+		return { ok: false, error: "A removed event cannot also be saved. Reload the editor." };
 
-	const existingEvents = await db.event.findMany({ select: { id: true } });
+	const existingEvents = await db.event.findMany({
+		select: { id: true, startsAt: true, endsAt: true },
+	});
+	const eventsById = new Map(existingEvents.map((event) => [event.id, event]));
 	const existingEventIds = new Set(existingEvents.map((event) => event.id));
-	const submittedEventIds = new Set(
-		input.events.filter((event) => event.id).map((event) => event.id)
-	);
 
 	await db.$transaction(async (tx) => {
 		await tx.siteContent.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
 
-		for (const eventId of existingEventIds) {
-			if (!submittedEventIds.has(eventId)) {
-				await tx.event.delete({ where: { id: eventId } });
-			}
-		}
+		// Only an explicit confirmed removal can cascade attendance, never a stale form's omission.
+		await tx.event.deleteMany({ where: { id: { in: input.deletedEventIds ?? [] } } });
 
 		for (const event of input.events) {
+			const previous = event.id ? eventsById.get(event.id) : undefined;
+			const startsAt = parseWireDatePreserving(event.startsAt, timeZone, previous?.startsAt);
+			if (!startsAt) throw new Error("Invalid event start date.");
 			const eventData = {
 				slug: event.slug.trim(),
-				startsAt: new Date(event.startsAt),
-				endsAt: event.endsAt ? new Date(event.endsAt) : null,
+				startsAt,
+				endsAt: event.endsAt
+					? parseWireDatePreserving(event.endsAt, timeZone, previous?.endsAt)
+					: null,
 				venue: event.venue,
 				address: event.address,
 				mapsUrl: event.mapsUrl || null,
@@ -201,6 +219,7 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 			} else {
 				await tx.event.create({
 					data: {
+						...(event.id ? { id: event.id } : {}),
 						...eventData,
 						translations: {
 							create: event.translations.map((translation) => ({
@@ -225,6 +244,7 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 export type ThemeInput = { theme: SiteTheme };
 
 export async function updateTheme(input: ThemeInput): Promise<FormActionResult> {
+	await requireAdmin();
 	await db.siteContent.upsert({
 		where: { id: 1 },
 		create: { id: 1, theme: input.theme },
@@ -261,6 +281,7 @@ const audioUrlSchema = z.string().refine((value) => value === "" || isAllowedMed
 });
 
 export async function updateEffects(input: EffectsInput): Promise<FormActionResult> {
+	await requireAdmin();
 	if (!audioUrlSchema.safeParse(input.musicUrl).success) {
 		return { ok: false, error: "Enter a valid https audio URL for the background music." };
 	}

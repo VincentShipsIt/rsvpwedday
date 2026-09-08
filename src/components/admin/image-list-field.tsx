@@ -19,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "cn";
 import { GripVerticalIcon, LinkIcon, SparklesIcon, XIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { MediaDropZone } from "@/components/admin/media-drop-zone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,14 @@ export function ImageListField({
 	illustrate,
 	disabled,
 }: ImageListFieldProps) {
+	const currentValues = useRef(values);
+	currentValues.current = values;
+	const changeRef = useRef(onChange);
+	changeRef.current = onChange;
+	function change(next: string[]) {
+		currentValues.current = next;
+		changeRef.current(next);
+	}
 	const inputId = useId();
 	// dnd-kit's accessibility ids default to a counter that differs between server and client
 	// render; a React id keeps them identical and stops the hydration warning.
@@ -89,7 +97,7 @@ export function ImageListField({
 				}
 			}
 			if (uploaded.length > 0) {
-				onChange([...values, ...uploaded]);
+				change([...currentValues.current, ...uploaded]);
 			}
 		} finally {
 			setBusyLabel(null);
@@ -103,12 +111,12 @@ export function ImageListField({
 		const from = tiles.findIndex((tile) => tile.id === active.id);
 		const to = tiles.findIndex((tile) => tile.id === over.id);
 		if (from !== -1 && to !== -1) {
-			onChange(arrayMove(values, from, to));
+			change(arrayMove(currentValues.current, from, to));
 		}
 	}
 
 	function removeAt(index: number) {
-		onChange(values.filter((_, i) => i !== index));
+		change(currentValues.current.filter((_, i) => i !== index));
 	}
 
 	// Appended rather than replacing anything: the gallery is a list, and the couple's own
@@ -122,7 +130,7 @@ export function ImageListField({
 		try {
 			const result = await generateIllustration(illustrate);
 			if (result.ok) {
-				onChange([...values, result.url]);
+				change([...currentValues.current, result.url]);
 			} else {
 				setUploadError(result.error);
 			}
@@ -134,7 +142,7 @@ export function ImageListField({
 	function addLink() {
 		const url = draftUrl.trim();
 		if (url) {
-			onChange([...values, url]);
+			change([...currentValues.current, url]);
 		}
 		setDraftUrl("");
 		setLinkOpen(false);
@@ -187,6 +195,7 @@ export function ImageListField({
 			{linkOpen ? (
 				<div className="flex gap-2">
 					<Input
+						aria-label="Photo link"
 						placeholder="https://"
 						value={draftUrl}
 						disabled={disabled}

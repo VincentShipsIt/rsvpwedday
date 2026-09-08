@@ -12,6 +12,7 @@ import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import { localizePage, pageInclude, pageLabel } from "@/lib/page-content";
 import { isImageGenerationConfigured } from "@/lib/replicate";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ function withEveryLocale<T extends { locale: Locale }>(
 }
 
 export default async function AdminPageEditorPage({ params }: { params: Promise<{ id: string }> }) {
+	await requireAdmin();
 	const { id } = await params;
 	const [record, allPages] = await Promise.all([
 		db.page.findUnique({ where: { id }, include: pageInclude }),

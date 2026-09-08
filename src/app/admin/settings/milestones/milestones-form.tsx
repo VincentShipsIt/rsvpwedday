@@ -60,13 +60,15 @@ export function StoryForm({ initialMilestones, blobConfigured, aiConfigured }: S
 	});
 
 	function addMilestone() {
+		const id = createKey();
 		setMilestones((current) => {
 			const nextSortOrder =
 				current.length === 0 ? 0 : Math.max(...current.map((milestone) => milestone.sortOrder)) + 1;
 			return [
 				...current,
 				{
-					key: createKey(),
+					key: id,
+					id,
 					sortOrder: nextSortOrder,
 					dateLabel: "",
 					imageUrl: "",
@@ -165,16 +167,21 @@ export function StoryForm({ initialMilestones, blobConfigured, aiConfigured }: S
 										value={translation.locale}
 										className="flex flex-col gap-2"
 									>
-										<Input
-											placeholder="Title"
-											value={translation.title}
-											onChange={(event) =>
-												updateMilestoneTranslation(milestone.key, translation.locale, {
-													title: event.target.value,
-												})
-											}
-										/>
+										<div className="flex flex-col gap-1.5">
+											<Label htmlFor={`${milestone.key}-${translation.locale}-title`}>Title</Label>
+											<Input
+												id={`${milestone.key}-${translation.locale}-title`}
+												placeholder="Title"
+												value={translation.title}
+												onChange={(event) =>
+													updateMilestoneTranslation(milestone.key, translation.locale, {
+														title: event.target.value,
+													})
+												}
+											/>
+										</div>
 										<RichTextEditor
+											label="Body"
 											placeholder="Body"
 											value={translation.body}
 											onChange={(html) =>

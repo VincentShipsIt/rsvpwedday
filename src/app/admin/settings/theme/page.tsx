@@ -2,10 +2,12 @@ import { SettingsNav } from "@/app/admin/settings/settings-nav";
 import { ThemeForm } from "@/app/admin/settings/theme/theme-form";
 import { SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function ThemePage() {
+	await requireAdmin();
 	const siteContent = await db.siteContent.findUnique({ where: { id: 1 } });
 
 	return (

@@ -318,14 +318,19 @@ function GiftRow({
 						value={translation.locale}
 						className="flex flex-col gap-2"
 					>
-						<Input
-							placeholder="Title"
-							value={translation.title}
-							onChange={(event) =>
-								onTranslationChange(gift.id, translation.locale, { title: event.target.value })
-							}
-						/>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor={`${gift.id}-${translation.locale}-title`}>Title</Label>
+							<Input
+								id={`${gift.id}-${translation.locale}-title`}
+								placeholder="Title"
+								value={translation.title}
+								onChange={(event) =>
+									onTranslationChange(gift.id, translation.locale, { title: event.target.value })
+								}
+							/>
+						</div>
 						<RichTextEditor
+							label="Description"
 							placeholder="What it is, and why you'd love it"
 							value={translation.body}
 							onChange={(html) => onTranslationChange(gift.id, translation.locale, { body: html })}

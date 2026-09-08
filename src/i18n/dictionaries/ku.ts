@@ -42,6 +42,10 @@ export const ku: Dictionary = {
 		musicPauseLabel: "Muzîkê rawestîne",
 	},
 	photos: {
+		uploadError:
+			"Hemû wêne nehatin barkirin. Wêneyên qediyayî hatin tomarkirin; yên mayî dîsa biceribîne.",
+		batchLimitError: "Her carê herî zêde {count} wêneyan hilbijêre.",
+		retryButton: "Wêneyên mayî dîsa biceribîne",
 		title: "Pirtûka bîranînan",
 		coverSubtitle: "Ji aliyê her kesê ku li wir bû ve hate kişandin",
 		backToInvitation: "Vegere vexwendina xwe",
@@ -98,6 +102,18 @@ export const ku: Dictionary = {
 		genericError: "Ev neçû serî. Ji kerema xwe dîsa biceribîne.",
 	},
 	rsvp: {
+		savingLabel: "Tê tomarkirin…",
+		saveError: "Bersiva te nehat tomarkirin. Ji kerema xwe dîsa biceribîne.",
+		changedInvitationError: "Vexwendina te guherî. Berî bersivdanê rûpelê nû bike.",
+		invalidResponseError: "Ji kerema xwe bersivên xwe kontrol bike û dîsa biceribîne.",
+		closedError: "Dema bersivdanê qediya. Ji kerema xwe bi cotê re têkilî dayne.",
+		additionalGuestLabel: "Mêvanê din {number}",
+		childrenDietaryLabel: "Pêdiviyên xwarinê yên zarokan",
+		childrenAtEventLabel: "Zarokên ku tên {event}",
+		childrenCountLabel: "Hejmara zarokên bin 12 salî",
+		childrenHint:
+			"Zarokan ji mêvanên din cuda bijmêre. Nav û agahiyên têkiliyê ne pêwîst in. Ji bo her çalakiyê hejmara zarokên ku tên binivîse.",
+		childrenHeading: "Zarokên bin 12 salî",
 		heading: "Tu vexwendî yî, {name}",
 		notFoundTitle: "Me ev vexwendî nedît",
 		notFoundBody:
@@ -113,7 +129,8 @@ export const ku: Dictionary = {
 		dietaryLabel: "Hewcedariyên xwarinê",
 		dietaryPlaceholder: "Alerjî, riwekî, vegan...",
 		companionsHeading: "Tu yê kesekî bînî?",
-		companionsHint: "Tu dikarî heta {count} mêvanên din jî bînî.",
+		companionsHint:
+			"Tu dikarî heta {count} mêvanên din ên 12 salî û mezintir bînî. Zarokên bin 12 salî cuda tên jimartin.",
 		companionFirstNameLabel: "Nav",
 		companionLastNameLabel: "Paşnav",
 		companionKindLabel: "Cureyê mêvan",

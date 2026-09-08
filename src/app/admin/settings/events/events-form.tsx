@@ -25,6 +25,17 @@ import { DateTimeField } from "@/components/admin/date-time-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
 import { useAutosave } from "@/components/admin/use-autosave";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,13 +56,17 @@ function createKey(): string {
  * Where this event sits against the wedding day, written under its start date. A raw timestamp
  * hides a mistyped month or year; "364 days before" does not.
  */
-function relativeToWedding(startsAt: string, weddingDate: string): string | undefined {
-	const start = parseWireDate(startsAt);
-	const wedding = parseWireDate(weddingDate);
+function relativeToWedding(
+	startsAt: string,
+	weddingDate: string,
+	timeZone: string
+): string | undefined {
+	const start = parseWireDate(startsAt, timeZone);
+	const wedding = parseWireDate(weddingDate, timeZone);
 	if (!start || !wedding) {
 		return undefined;
 	}
-	return describeDayOffset(dayOffset(start, wedding));
+	return describeDayOffset(dayOffset(start, wedding, timeZone));
 }
 
 function emptyTranslations(): TranslationState[] {
@@ -62,7 +77,8 @@ type TranslationState = { locale: Locale; name: string; description: string };
 
 type EventState = {
 	key: string;
-	id?: string;
+	id: string;
+	attendanceCount?: number;
 	slug: string;
 	startsAt: string;
 	endsAt: string;
@@ -78,15 +94,17 @@ type EventState = {
 export type EventsFormProps = {
 	/** The wedding day, so each event can say where it falls relative to it. */
 	weddingDate: string;
+	timeZone: string;
 	initialEvents: Omit<EventState, "key">[];
 };
 
-export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
+export function EventsForm({ weddingDate, timeZone, initialEvents }: EventsFormProps) {
 	const [events, setEvents] = useState<EventState[]>(() =>
 		initialEvents.map((event) => ({ ...event, key: event.id ?? createKey() }))
 	);
 	const dndId = useId();
 
+	const [deletedEventIds, setDeletedEventIds] = useState<string[]>([]);
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
 		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -95,18 +113,24 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 	// The order on screen is the order that is saved: `sortOrder` is the row's index rather than a
 	// number anyone types, so two events can never claim the same position.
 	const { status, error, retry } = useAutosave({
-		value: { events },
-		save: ({ events: nextEvents }) =>
+		value: { events, deletedEventIds },
+		save: ({ events: nextEvents, deletedEventIds: removed }) =>
 			updateEvents({
-				events: nextEvents.map(({ key, ...event }, sortOrder) => ({ ...event, sortOrder })),
+				events: nextEvents.map(({ key, attendanceCount, ...event }, sortOrder) => ({
+					...event,
+					sortOrder,
+				})),
+				deletedEventIds: removed,
 			}),
 	});
 
 	function addEvent() {
+		const id = createKey();
 		setEvents((current) => [
 			...current,
 			{
-				key: createKey(),
+				key: id,
+				id,
 				slug: "",
 				startsAt: "",
 				endsAt: "",
@@ -122,6 +146,8 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 	}
 
 	function removeEvent(key: string) {
+		const event = events.find((candidate) => candidate.key === key);
+		if (event) setDeletedEventIds((current) => [...current, event.id]);
 		setEvents((current) => current.filter((event) => event.key !== key));
 	}
 
@@ -178,25 +204,33 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 								slug={event.slug}
 							>
 								<div className="grid gap-2 sm:grid-cols-2">
-									<Input
-										placeholder="Slug"
-										value={event.slug}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { slug: changeEvent.target.value })
-										}
-									/>
-									<Input
-										placeholder="Dress code"
-										value={event.dressCode}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { dressCode: changeEvent.target.value })
-										}
-									/>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-slug`}>Slug</Label>
+										<Input
+											id={`${event.key}-slug`}
+											placeholder="Slug"
+											value={event.slug}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { slug: changeEvent.target.value })
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-dress-code`}>Dress code</Label>
+										<Input
+											id={`${event.key}-dress-code`}
+											placeholder="Dress code"
+											value={event.dressCode}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { dressCode: changeEvent.target.value })
+											}
+										/>
+									</div>
 									<DateTimeField
 										label="Starts"
 										value={event.startsAt}
 										onChange={(value) => updateEvent(event.key, { startsAt: value })}
-										description={relativeToWedding(event.startsAt, weddingDate)}
+										description={relativeToWedding(event.startsAt, weddingDate, timeZone)}
 									/>
 									<DateTimeField
 										label="Ends"
@@ -204,28 +238,40 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 										onChange={(value) => updateEvent(event.key, { endsAt: value })}
 										clearable
 									/>
-									<Input
-										placeholder="Venue"
-										value={event.venue}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { venue: changeEvent.target.value })
-										}
-									/>
-									<Input
-										placeholder="Address"
-										value={event.address}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { address: changeEvent.target.value })
-										}
-									/>
-									<Input
-										className="sm:col-span-2"
-										placeholder="Maps URL"
-										value={event.mapsUrl}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { mapsUrl: changeEvent.target.value })
-										}
-									/>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-venue`}>Venue</Label>
+										<Input
+											id={`${event.key}-venue`}
+											placeholder="Venue"
+											value={event.venue}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { venue: changeEvent.target.value })
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-address`}>Address</Label>
+										<Input
+											id={`${event.key}-address`}
+											placeholder="Address"
+											value={event.address}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { address: changeEvent.target.value })
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5 sm:col-span-2">
+										<Label htmlFor={`${event.key}-maps-url`}>Maps URL</Label>
+										<Input
+											className="sm:col-span-2"
+											id={`${event.key}-maps-url`}
+											placeholder="Maps URL"
+											value={event.mapsUrl}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { mapsUrl: changeEvent.target.value })
+											}
+										/>
+									</div>
 								</div>
 
 								<div className="flex items-start justify-between gap-4 rounded-lg border p-3">
@@ -258,16 +304,21 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 											value={translation.locale}
 											className="flex flex-col gap-2"
 										>
-											<Input
-												placeholder="Name"
-												value={translation.name}
-												onChange={(changeEvent) =>
-													updateTranslation(event.key, translation.locale, {
-														name: changeEvent.target.value,
-													})
-												}
-											/>
+											<div className="flex flex-col gap-1.5">
+												<Label htmlFor={`${event.key}-${translation.locale}-name`}>Name</Label>
+												<Input
+													id={`${event.key}-${translation.locale}-name`}
+													placeholder="Name"
+													value={translation.name}
+													onChange={(changeEvent) =>
+														updateTranslation(event.key, translation.locale, {
+															name: changeEvent.target.value,
+														})
+													}
+												/>
+											</div>
 											<RichTextEditor
+												label={`Event description (${locales[translation.locale].label})`}
 												placeholder="Description"
 												value={translation.description}
 												onChange={(html) =>
@@ -280,15 +331,38 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 									))}
 								</Tabs>
 
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									className="self-start text-muted-foreground hover:text-destructive"
-									onClick={() => removeEvent(event.key)}
-								>
-									Remove event
-								</Button>
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button type="button" variant="ghost" size="sm" className="self-start">
+											Remove event
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>
+												Remove{" "}
+												{event.translations.find((row) => row.name.trim())?.name ||
+													event.slug ||
+													"this event"}
+												?
+											</AlertDialogTitle>
+											<AlertDialogDescription>
+												This permanently removes the event and all its guest invitations and
+												attendance responses
+												{event.attendanceCount !== undefined
+													? ` (${event.attendanceCount} guest records when this page loaded)`
+													: ""}
+												. Other events are kept.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancel</AlertDialogCancel>
+											<AlertDialogAction onClick={() => removeEvent(event.key)}>
+												Remove event
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
 							</SortableEventCard>
 						))}
 					</div>

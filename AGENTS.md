@@ -2,8 +2,9 @@
 
 Family wedding RSVP site. Guests get a personal link by email (`/rsvp/<token>`) and confirm
 attendance per named guest per event. The couple manages everything in a password-protected
-`/admin`. There are no anonymous plus-ones: every attendee, including a guest-added companion,
-is a named person with contact details.
+`/admin`. Guests aged 12 and over are named people; guest-added companions need an email or phone.
+Children under 12 are a household count, separate from the adult companion allowance, with
+per-event counts and optional shared dietary notes. They never need names or contact details.
 
 ## Stack
 
@@ -165,7 +166,8 @@ names and hero photo. A test can be sent to any address; test sends are not writ
 Every settings-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
 differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save
-is queued and run once the current save settles), and flushes immediately on `visibilitychange`
+is queued and run once the current save settles), waits for pending saves before internal link navigation, flushes on unmount,
+and flushes immediately on `visibilitychange`
 to hidden and on `beforeunload`. `src/components/admin/save-status.tsx` renders the resulting
 saving/saved/error state next to a secondary "Save now" button, which stays as a manual fallback
 and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,
@@ -341,3 +343,35 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Audit fixes and family counts
+
+`Invitation.childrenUnder12` is nullable for legacy compatibility. Null projects the existing
+`GuestKind.CHILD` records into counts; an explicit count uses `InvitationChildAttendance` rows.
+Legacy child records are retained, but never counted twice after conversion. Per-event totals
+count actual child attendance; the anonymous overall child total is the largest event count.
+`src/domain/children.ts` owns this projection. RSVP submissions validate exact guest/event
+membership before writes inside a serializable transaction; companions retain their IDs.
+
+Every privileged admin Server Action calls `requireAdmin` before reading input or data.
+Database-backed admin pages and export/template routes also guard their own data access.
+Upload token generation checks the session in its callback; signed Blob completion is separate.
+
+CSV imports merge identities instead of replacing guests. Optional `guestId` supports explicit
+matching; existing replies, dietary notes, companions, and omitted guests survive re-import.
+Spreadsheet exports include reply details and one aggregate row for children per household;
+its event cells contain counts, while adult event cells contain attendance status.
+
+`Settings.timeZone` is an IANA zone, initially UTC to preserve existing instants. All date forms
+exchange wall time in this zone through `wire-date.ts`, and all public/email date formatting
+uses it. Changing the zone changes display without silently moving stored timestamps.
+
+Photo writes require reserved upload receipts verified against the configured Blob store.
+Removal queues durable cleanup transactionally, waits for token expiry, and supports retries
+from Memories. Files from legacy records without ownership receipts are not automatically
+deleted. Bootstrap markers prevent deleted seeded pages/gifts from returning on deployment.
+
+`bun run db:push` and deployment preparation share `scripts/push-database.ts`. Before Prisma
+syncs the schema, it adds the nullable legacy-photo receipt column and unique index in an
+idempotent transaction. No ownership is inferred, existing rows are unchanged, actual duplicate
+receipts fail, and Prisma's normal data-loss protection remains enabled.

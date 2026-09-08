@@ -1,26 +1,60 @@
-import { format, parse } from "date-fns";
+export const DEFAULT_TIME_ZONE = "UTC";
 
-/*
- * The one string shape every date field in the admin passes over the wire: `2027-06-12T15:00`,
- * with no zone, written and read back in the same zone. Server pages format a stored instant into
- * it and server actions parse it with `new Date(...)`, so a value must never be built from
- * `toISOString()` — that is UTC, and an evening in Berlin would come back showing the wrong hour,
- * or near midnight the wrong day.
- */
-const WIRE_FORMAT = "yyyy-MM-dd'T'HH:mm";
-
-export function toWireDate(value: Date): string {
-	return format(value, WIRE_FORMAT);
-}
-
-export function toWireDateOrEmpty(value: Date | null | undefined): string {
-	return value ? toWireDate(value) : "";
-}
-
-export function parseWireDate(value: string): Date | null {
-	if (!value) {
-		return null;
+export function isTimeZone(value: string): boolean {
+	try {
+		new Intl.DateTimeFormat("en", { timeZone: value }).format(0);
+		return Boolean(value);
+	} catch {
+		return false;
 	}
-	const parsed = parse(value, WIRE_FORMAT, new Date());
-	return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function toWireDate(value: Date, timeZone = DEFAULT_TIME_ZONE): string {
+	const parts = new Intl.DateTimeFormat("en-CA", {
+		timeZone,
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		hourCycle: "h23",
+	}).formatToParts(value);
+	const get = (type: string) => parts.find((part) => part.type === type)?.value;
+	return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+export function toWireDateOrEmpty(
+	value: Date | null | undefined,
+	timeZone = DEFAULT_TIME_ZONE
+): string {
+	return value ? toWireDate(value, timeZone) : "";
+}
+
+// Enumerate the offsets on both sides of a possible transition. Round-trip validation rejects
+// nonexistent spring-forward times; an autumn overlap consistently chooses its first occurrence.
+export function parseWireDate(value: string, timeZone = DEFAULT_TIME_ZONE): Date | null {
+	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) || !isTimeZone(timeZone)) return null;
+	const wall = new Date(`${value}:00.000Z`);
+	if (Number.isNaN(wall.getTime()) || wall.toISOString().slice(0, 16) !== value) return null;
+	const offsets = new Set<number>();
+	for (const hours of [-48, -24, 0, 24, 48]) {
+		const sample = new Date(wall.getTime() + hours * 3_600_000);
+		offsets.add(new Date(`${toWireDate(sample, timeZone)}:00.000Z`).getTime() - sample.getTime());
+	}
+	const candidates = [...offsets]
+		.map((offset) => new Date(wall.getTime() - offset))
+		.filter((candidate) => toWireDate(candidate, timeZone) === value)
+		.sort((a, b) => a.getTime() - b.getTime());
+	return candidates[0] ?? null;
+}
+
+// A wall-time field has minute precision and cannot distinguish the second autumn occurrence.
+// Retain its stored instant when it still displays the submitted value, including seconds.
+export function parseWireDatePreserving(
+	value: string,
+	timeZone: string,
+	previous: Date | null | undefined
+): Date | null {
+	if (previous && isTimeZone(timeZone) && toWireDate(previous, timeZone) === value) return previous;
+	return parseWireDate(value, timeZone);
 }

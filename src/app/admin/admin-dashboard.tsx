@@ -38,12 +38,14 @@ export function AdminDashboard({
 	unsentCount,
 	pendingCount,
 	attendingCount,
+	deliverySummary,
 }: {
 	headcount: Headcount;
 	eventRows: { id: string; name: string; adults: number; children: number }[];
 	unsentCount: number;
 	pendingCount: number;
 	attendingCount: number;
+	deliverySummary?: string;
 }) {
 	return (
 		<div className="flex flex-col gap-8">
@@ -57,6 +59,11 @@ export function AdminDashboard({
 				</Button>
 			</div>
 
+			{deliverySummary && (
+				<p role="status" className="rounded border p-4 text-sm">
+					{deliverySummary}
+				</p>
+			)}
 			<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
 				<Card>
 					<CardHeader className="pb-2">

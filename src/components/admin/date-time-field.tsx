@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { CalendarIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { parseWireDate, toWireDate } from "@/lib/wire-date";
 
 const DEFAULT_TIME = { hours: 12, minutes: 0 };
 
@@ -42,7 +41,9 @@ export function DateTimeField({
 }: DateTimeFieldProps) {
 	const fieldId = useId();
 	const [isOpen, setIsOpen] = useState(false);
-	const selected = parseWireDate(value);
+	// The calendar manipulates wall-date components only; the server applies the wedding zone.
+	const parsed = parse(`${value.slice(0, 10)}T12:00`, "yyyy-MM-dd'T'HH:mm", new Date());
+	const selected = Number.isNaN(parsed.getTime()) ? null : parsed;
 
 	function pickDay(day: Date | undefined) {
 		if (!day) {
@@ -50,12 +51,8 @@ export function DateTimeField({
 		}
 		// A new day keeps whatever time was already chosen, so picking a different date does not
 		// silently move a 15:00 ceremony to midnight.
-		const time = selected ?? new Date();
-		const hours = selected ? time.getHours() : DEFAULT_TIME.hours;
-		const minutes = selected ? time.getMinutes() : DEFAULT_TIME.minutes;
-		onChange(
-			toWireDate(new Date(day.getFullYear(), day.getMonth(), day.getDate(), hours, minutes))
-		);
+		const time = value ? value.slice(11, 16) : `${DEFAULT_TIME.hours}:00`;
+		onChange(`${format(day, "yyyy-MM-dd")}T${time}`);
 		setIsOpen(false);
 	}
 
@@ -64,10 +61,9 @@ export function DateTimeField({
 		if (Number.isNaN(hours) || Number.isNaN(minutes)) {
 			return;
 		}
+		if (!/^\d{2}:\d{2}$/.test(time) || hours > 23 || minutes > 59) return;
 		const day = selected ?? new Date();
-		onChange(
-			toWireDate(new Date(day.getFullYear(), day.getMonth(), day.getDate(), hours, minutes))
-		);
+		onChange(`${format(day, "yyyy-MM-dd")}T${time}`);
 	}
 
 	return (
@@ -104,7 +100,7 @@ export function DateTimeField({
 						aria-label={`${label} time`}
 						className="w-auto"
 						disabled={disabled}
-						value={selected ? format(selected, "HH:mm") : ""}
+						value={value ? value.slice(11, 16) : ""}
 						onChange={(event) => pickTime(event.target.value)}
 					/>
 				)}

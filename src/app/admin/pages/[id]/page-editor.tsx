@@ -261,8 +261,8 @@ function PageSettingsCard({ page, locale }: { page: PageEditorProps["page"]; loc
 					/>
 				</div>
 				<div className="flex flex-col gap-1.5">
-					<Label>Intro</Label>
 					<RichTextEditor
+						label="Intro"
 						value={translation.intro}
 						onChange={(html) => updateTranslation({ intro: html })}
 					/>

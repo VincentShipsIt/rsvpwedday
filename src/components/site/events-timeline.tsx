@@ -48,10 +48,12 @@ function staggerDelay(index: number): number {
 export function EventsTimeline({
 	events,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: {
 	events: EventView[];
 	locale: Locale;
+	timeZone?: string;
 	dictionary: Dictionary;
 }) {
 	return (
@@ -83,10 +85,10 @@ export function EventsTimeline({
 						</span>
 						<div className={`flex flex-col gap-1 pt-2 lg:row-start-1 lg:pt-3 ${sideClassName}`}>
 							<span className="text-[0.65rem] uppercase tracking-[0.25em] text-green">
-								{formatDayLabel(event.startsAt, locale)}
+								{formatDayLabel(event.startsAt, locale, timeZone)}
 							</span>
 							<span className="font-display text-3xl leading-none text-ink">
-								{formatTime(event.startsAt, locale)}
+								{formatTime(event.startsAt, locale, timeZone)}
 							</span>
 							<h3 className="mt-1 text-xl">{event.name}</h3>
 							{/* The description is rich text from the admin's editor, like every other piece of

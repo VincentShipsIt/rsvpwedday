@@ -89,5 +89,5 @@ export function richTextToPlainText(value: string): string {
 }
 
 export function isRichTextEmpty(value: string): boolean {
-	return richTextToPlainText(value) === "";
+	return richTextToPlainText(value).replaceAll("&nbsp;", " ").trim() === "";
 }

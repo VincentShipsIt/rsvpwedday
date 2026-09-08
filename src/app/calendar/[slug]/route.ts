@@ -1,4 +1,5 @@
 import { richTextToPlainText } from "@/domain/rich-text";
+import { populatedTranslation } from "@/domain/translations";
 import { Locale } from "@/generated/prisma/enums";
 import { isLocale } from "@/i18n/locales";
 import { db } from "@/lib/db";
@@ -33,9 +34,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 		return new Response("Event not found", { status: 404 });
 	}
 
-	const translation =
-		event.translations.find((candidate) => candidate.locale === locale) ?? event.translations[0];
-	const summary = translation?.name ?? event.slug;
+	const translation = populatedTranslation(event.translations, locale, ["name", "description"]);
+	const summary = translation.name || event.slug;
 	const description = richTextToPlainText(translation?.description ?? "");
 
 	const lines = [

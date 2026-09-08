@@ -4,6 +4,7 @@ import {
 	CopyIcon,
 	DownloadIcon,
 	EllipsisIcon,
+	EyeIcon,
 	MailIcon,
 	PencilIcon,
 	PlusIcon,
@@ -13,9 +14,11 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { sendInviteToOne, sendReminderToOne } from "@/app/admin/actions";
 import { GuestsImportForm } from "@/app/admin/guests/import-form";
+import { ResponseDetail } from "@/app/admin/guests/response-detail";
 import { deleteInvitation } from "@/app/admin/invitations/actions";
 import {
 	InvitationDialog,
@@ -23,7 +26,6 @@ import {
 } from "@/app/admin/invitations/invitation-dialog";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -60,8 +62,9 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IMPORT_EVENTS_SEPARATOR } from "@/domain/csv";
+import type { EmailDeliveryStatus } from "@/domain/email-delivery";
 import type { InvitationStatus } from "@/domain/invitation";
-import type { EmailKind, GuestKind, Locale } from "@/generated/prisma/enums";
+import type { Attendance, EmailKind, GuestKind, Locale } from "@/generated/prisma/enums";
 
 export type InvitationRow = {
 	id: string;
@@ -69,6 +72,19 @@ export type InvitationRow = {
 	link: string;
 	locale: Locale;
 	companionAllowance: number;
+	childrenUnder12: number;
+	childAttendance: Record<string, number>;
+	childDietary: string[];
+	respondedAt: string | null;
+	note: string | null;
+	songRequest: string | null;
+	emailHistory: {
+		id: string;
+		kind: EmailKind;
+		status: EmailDeliveryStatus;
+		error: string | null;
+		attemptedAt: string;
+	}[];
 	status: InvitationStatus;
 	emailKinds: EmailKind[];
 	guests: {
@@ -78,16 +94,15 @@ export type InvitationRow = {
 		kind: GuestKind;
 		email: string | null;
 		phone: string | null;
+		dietary: string | null;
+		addedByGuest: boolean;
+		attendance: { eventId: string; status: Attendance }[];
 	}[];
 	eventIds: string[];
 };
 
 const STATUS_FILTERS = ["all", "pending", "accepted", "declined"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
-
-export function isStatusFilter(value: string): value is StatusFilter {
-	return (STATUS_FILTERS as readonly string[]).includes(value);
-}
 
 function toEditTarget(invitation: InvitationRow): InvitationDialogTarget {
 	return {
@@ -96,14 +111,17 @@ function toEditTarget(invitation: InvitationRow): InvitationDialogTarget {
 		email: invitation.email,
 		locale: invitation.locale,
 		companionAllowance: invitation.companionAllowance,
-		guests: invitation.guests.map((guest) => ({
-			id: guest.id,
-			firstName: guest.firstName,
-			lastName: guest.lastName,
-			kind: guest.kind,
-			email: guest.email ?? "",
-			phone: guest.phone ?? "",
-		})),
+		childrenUnder12: invitation.childrenUnder12,
+		guests: invitation.guests
+			.filter((guest) => guest.kind === "ADULT" && !guest.addedByGuest)
+			.map((guest) => ({
+				id: guest.id,
+				firstName: guest.firstName,
+				lastName: guest.lastName,
+				kind: "ADULT" as const,
+				email: guest.email ?? "",
+				phone: guest.phone ?? "",
+			})),
 		eventIds: invitation.eventIds,
 	};
 }
@@ -130,15 +148,25 @@ export function GuestsList({
 	eventSlugs,
 	statusFilter,
 	search,
+	totalInvitations,
+	timeZone,
+	mediaPending,
+	legacyPhotos,
 }: {
 	invitationRows: InvitationRow[];
 	eventRows: { id: string; name: string }[];
 	eventSlugs: string[];
 	statusFilter: StatusFilter;
 	search: string;
+	totalInvitations: number;
+	timeZone: string;
+	mediaPending: boolean;
+	legacyPhotos: boolean;
 }) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const [detailId, setDetailId] = useState<string | null>(null);
+	const detail = invitationRows.find((row) => row.id === detailId) ?? null;
 	const [dialogTarget, setDialogTarget] = useState<InvitationDialogTarget | null>(null);
 
 	// Deep links (`/admin/invitations/new` and `/admin/invitations/[id]`) redirect here with
@@ -181,7 +209,12 @@ export function GuestsList({
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h1 className="text-2xl font-medium">Guests</h1>
+				<div>
+					<h1 className="text-2xl font-medium">Guests</h1>
+					<p className="text-sm text-muted-foreground">
+						{invitationRows.length} of {totalInvitations} households
+					</p>
+				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<ImportDialog eventSlugs={eventSlugs} />
 					<ExportDialog />
@@ -192,6 +225,27 @@ export function GuestsList({
 				</div>
 			</div>
 
+			{(mediaPending || legacyPhotos) && (
+				<div
+					role="status"
+					className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+				>
+					{mediaPending && (
+						<p>
+							Invitation removed. Some photo files are awaiting storage cleanup.{" "}
+							<a className="underline underline-offset-4" href="/admin/memories">
+								Review pending cleanup in Memories
+							</a>
+							.
+						</p>
+					)}
+					{legacyPhotos && (
+						<p>
+							Older photo files were kept in storage because their ownership cannot be verified.
+						</p>
+					)}
+				</div>
+			)}
 			<div className="flex flex-wrap items-center gap-3">
 				<Tabs
 					value={statusFilter}
@@ -206,7 +260,13 @@ export function GuestsList({
 				</Tabs>
 				<form method="get" className="flex items-center gap-2">
 					{statusFilter !== "all" && <input type="hidden" name="status" value={statusFilter} />}
-					<Input name="q" defaultValue={search} placeholder="Search email or guest name" />
+					<Input
+						name="q"
+						aria-label="Search email or guest name"
+						key={search}
+						defaultValue={search}
+						placeholder="Search email or guest name"
+					/>
 					<Button type="submit" variant="secondary">
 						Search
 					</Button>
@@ -220,22 +280,47 @@ export function GuestsList({
 							<TableHead>Email</TableHead>
 							<TableHead>Status</TableHead>
 							<TableHead>Guests</TableHead>
-							<TableHead>Emails sent</TableHead>
+							<TableHead>Email delivery</TableHead>
 							<TableHead className="text-right">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
+						{invitationRows.length === 0 && (
+							<TableRow>
+								<TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+									{totalInvitations === 0 ? (
+										"No invitations yet. Add a household or import your guest list to get started."
+									) : (
+										<>
+											No households match these filters.{" "}
+											<a href="/admin/guests" className="underline underline-offset-4">
+												Clear filters
+											</a>
+										</>
+									)}
+								</TableCell>
+							</TableRow>
+						)}
 						{invitationRows.map((invitation) => (
 							<InvitationRowItem
 								key={invitation.id}
 								invitation={invitation}
 								onEdit={() => setDialogTarget(toEditTarget(invitation))}
+								onDetails={() => setDetailId(invitation.id)}
 							/>
 						))}
 					</TableBody>
 				</Table>
 			</Card>
 
+			<ResponseDetail
+				invitation={detail}
+				events={eventRows}
+				timeZone={timeZone}
+				onOpenChange={(open) => {
+					if (!open) setDetailId(null);
+				}}
+			/>
 			<InvitationDialog target={dialogTarget} events={eventRows} onOpenChange={closeDialog} />
 		</div>
 	);
@@ -257,9 +342,10 @@ function ImportDialog({ eventSlugs }: { eventSlugs: string[] }) {
 				<DialogHeader>
 					<DialogTitle>Import guests</DialogTitle>
 					<DialogDescription>
-						Download the template, fill one row per guest, then upload it or paste it below. Rows
-						sharing an email become one invitation, and re-importing an existing email replaces that
-						invitation&apos;s guests.
+						Download the template, fill one row per adult, then upload it or paste it below. Rows
+						sharing an invitation email become one household. Re-importing adds or updates matched
+						adults and preserves existing guests, companions, and responses. Children under 12 are a
+						household count; they do not need names or contact details.
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex flex-wrap items-center gap-3">
@@ -280,7 +366,7 @@ function ImportDialog({ eventSlugs }: { eventSlugs: string[] }) {
 								</code>
 							))
 						) : (
-							<span>none yet, add events under Website first</span>
+							<span>none yet, add events under Settings first</span>
 						)}
 					</p>
 				</div>
@@ -309,9 +395,10 @@ function ExportDialog() {
 				<DialogHeader>
 					<DialogTitle>Export guests</DialogTitle>
 					<DialogDescription>
-						Downloads every guest as CSV: invitationEmail, status, firstName, lastName, kind,
-						dietary, and one column per event slug with each guest&apos;s attendance. An empty event
-						cell means the guest was not invited to it.
+						Downloads one row per adult, including companions, and an aggregate children-under-12
+						row per household. Includes contacts, dietary needs, household notes, song requests,
+						response time, and per-event replies or child counts. An empty event cell means the
+						person or household was not invited to that event.
 					</DialogDescription>
 				</DialogHeader>
 				<Button asChild className="self-start">
@@ -328,78 +415,119 @@ function ExportDialog() {
 function InvitationRowItem({
 	invitation,
 	onEdit,
+	onDetails,
 }: {
 	invitation: InvitationRow;
 	onEdit: () => void;
+	onDetails: () => void;
 }) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-	function copyLink() {
-		navigator.clipboard.writeText(invitation.link);
-		toast.success("Link copied");
+	async function copyLink() {
+		try {
+			await navigator.clipboard.writeText(invitation.link);
+			toast.success("Link copied");
+		} catch {
+			toast.error("Could not copy the link. Open the response details to select it manually.");
+		}
 	}
 
-	function sendInvite() {
+	function send(kind: "invite" | "reminder") {
 		startTransition(async () => {
-			await sendInviteToOne(invitation.id);
-			toast.success(`Invite sent to ${invitation.email}`);
-			router.refresh();
-		});
-	}
-
-	function sendReminder() {
-		startTransition(async () => {
-			await sendReminderToOne(invitation.id);
-			toast.success(`Reminder sent to ${invitation.email}`);
-			router.refresh();
+			try {
+				const result = await (kind === "invite" ? sendInviteToOne : sendReminderToOne)(
+					invitation.id
+				);
+				if (result.ok)
+					toast.success(
+						`${kind === "invite" ? "Invite" : "Reminder"} accepted by the email provider for ${invitation.email}`
+					);
+				else toast.error(result.error);
+			} catch {
+				toast.error("Could not confirm the email send. Review delivery history before retrying.");
+			} finally {
+				router.refresh();
+			}
 		});
 	}
 
 	return (
 		<TableRow>
-			<TableCell>{invitation.email}</TableCell>
+			<TableCell>
+				<button
+					type="button"
+					onClick={onDetails}
+					className="text-left underline decoration-muted-foreground/40 underline-offset-4 hover:decoration-foreground"
+				>
+					{invitation.email}
+				</button>
+			</TableCell>
 			<TableCell>
 				<Badge variant="secondary" className={STATUS_BADGE_CLASS[invitation.status]}>
 					{STATUS_LABELS[invitation.status]}
 				</Badge>
 			</TableCell>
 			<TableCell>
-				{invitation.guests.map((guest) => `${guest.firstName} ${guest.lastName}`).join(", ")}
+				<p>
+					{invitation.guests
+						.map(
+							(guest) => `${guest.firstName} ${guest.lastName}${guest.addedByGuest ? " (+1)" : ""}`
+						)
+						.join(", ") || "No named adults"}
+				</p>
+				<p className="text-xs text-muted-foreground">
+					{invitation.guests.length} adult(s) · {invitation.childrenUnder12} under 12
+				</p>
 			</TableCell>
 			<TableCell>
 				{invitation.emailKinds.length === 0 ? (
-					<span className="text-muted-foreground">None</span>
+					<span className="text-muted-foreground">None accepted</span>
 				) : (
 					<div className="flex flex-wrap gap-1">
 						{invitation.emailKinds.map((kind) => (
 							<Badge key={kind} variant="secondary">
-								{kind}
+								{kind} accepted
 							</Badge>
 						))}
 					</div>
+				)}
+				{invitation.emailHistory[0] && invitation.emailHistory[0].status !== "accepted" && (
+					<p className="mt-1 text-xs text-amber-700">
+						Latest {invitation.emailHistory[0].kind.toLowerCase()}:{" "}
+						{invitation.emailHistory[0].status}
+					</p>
 				)}
 			</TableCell>
 			<TableCell className="text-right">
 				<AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" disabled={isPending} aria-label="Row actions">
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={isPending}
+								aria-label={`Actions for ${invitation.email}`}
+							>
 								<EllipsisIcon />
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-auto min-w-44">
+							<DropdownMenuItem onSelect={onDetails}>
+								<EyeIcon />
+								View response
+							</DropdownMenuItem>
 							<DropdownMenuItem onSelect={copyLink}>
 								<CopyIcon />
 								Copy link
 							</DropdownMenuItem>
-							<DropdownMenuItem onSelect={sendInvite}>
+							<DropdownMenuItem onSelect={() => send("invite")}>
 								<SendIcon />
 								Send invite
 							</DropdownMenuItem>
 							{invitation.status === "pending" && (
-								<DropdownMenuItem onSelect={sendReminder}>
+								<DropdownMenuItem onSelect={() => send("reminder")}>
 									<MailIcon />
 									Send reminder
 								</DropdownMenuItem>
@@ -430,14 +558,21 @@ function InvitationRowItem({
 						<AlertDialogFooter>
 							<AlertDialogCancel>Cancel</AlertDialogCancel>
 							<form action={deleteInvitation.bind(null, invitation.id)}>
-								<AlertDialogAction asChild>
-									<button type="submit">Yes, delete</button>
-								</AlertDialogAction>
+								<DeleteInvitationSubmit />
 							</form>
 						</AlertDialogFooter>
 					</AlertDialogContent>
 				</AlertDialog>
 			</TableCell>
 		</TableRow>
+	);
+}
+
+function DeleteInvitationSubmit() {
+	const { pending } = useFormStatus();
+	return (
+		<Button type="submit" variant="destructive" disabled={pending}>
+			{pending ? "Deleting…" : "Yes, delete"}
+		</Button>
 	);
 }

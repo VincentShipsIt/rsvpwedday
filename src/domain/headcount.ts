@@ -1,3 +1,4 @@
+import { childAttendanceCounts } from "@/domain/children";
 import { getInvitationStatus, type InvitationStatusInput } from "@/domain/invitation";
 import { Attendance, GuestKind } from "@/generated/prisma/enums";
 
@@ -8,6 +9,7 @@ export type HeadcountGuestInput = {
 
 export type HeadcountInvitationInput = InvitationStatusInput & {
 	guests: HeadcountGuestInput[];
+	childAttendance?: { eventId: string; count: number }[];
 };
 
 export type AgeGroupCounts = {
@@ -47,6 +49,7 @@ export function computeHeadcount(
 		headcount.invitations[getInvitationStatus(invitation)] += 1;
 
 		for (const guest of invitation.guests) {
+			if (guest.kind === GuestKind.CHILD) continue;
 			const overallBucket = guest.kind === GuestKind.ADULT ? "adults" : "children";
 			const isAttendingAnyEvent = guest.attendance.some(
 				(attendance) => attendance.status === Attendance.ACCEPTED
@@ -64,6 +67,19 @@ export function computeHeadcount(
 				}
 				headcount.byEvent[attendance.eventId][overallBucket] += 1;
 			}
+		}
+		const children = childAttendanceCounts(invitation);
+		headcount.attendingOverall.children +=
+			invitation.childrenUnder12 == null
+				? invitation.guests.filter(
+						(guest) =>
+							guest.kind === GuestKind.CHILD &&
+							guest.attendance.some((row) => row.status === Attendance.ACCEPTED)
+					).length
+				: Math.max(0, ...Object.values(children));
+		for (const [eventId, count] of Object.entries(children)) {
+			headcount.byEvent[eventId] ??= emptyAgeGroupCounts();
+			headcount.byEvent[eventId].children += count;
 		}
 	}
 

@@ -29,6 +29,7 @@ import {
 
 export type ClaimRow = {
 	giftId: string;
+	claimVersion: string | null;
 	giftTitle: string;
 	price: string;
 	guestName: string;
@@ -88,12 +89,13 @@ function ClaimRowItem({ claim }: { claim: ClaimRow }) {
 
 	function handleRelease() {
 		startTransition(async () => {
-			const result = await releaseClaim(claim.giftId);
+			const result = await releaseClaim(claim.giftId, claim.claimVersion);
 			if (result.ok) {
 				toast.success(`${claim.giftTitle} is back on the list.`);
 				router.refresh();
 			} else {
 				toast.error(result.error);
+				router.refresh();
 			}
 		});
 	}

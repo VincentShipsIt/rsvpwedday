@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditInvitationPage({ params }: { params: Promise<{ id: string }> }) {
+	await requireAdmin();
 	const { id } = await params;
 
 	const invitation = await db.invitation.findUnique({ where: { id }, select: { id: true } });

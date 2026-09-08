@@ -2,6 +2,7 @@ import { type HandleUploadBody, handleUpload } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { isBlobConfigured } from "@/lib/blob";
 import { env } from "@/lib/env";
+import { requireAdmin } from "@/lib/require-admin";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 // Issues short-lived client tokens so the browser uploads straight to Blob. Files never pass
@@ -23,11 +24,14 @@ export async function POST(request: Request): Promise<NextResponse> {
 			body,
 			request,
 			token: env.BLOB_READ_WRITE_TOKEN,
-			onBeforeGenerateToken: async (_pathname, clientPayload) => ({
-				allowedContentTypes: clientPayload === "audio" ? ["audio/*"] : ["image/*"],
-				maximumSizeInBytes: MAX_UPLOAD_BYTES,
-				addRandomSuffix: true,
-			}),
+			onBeforeGenerateToken: async (_pathname, clientPayload) => {
+				await requireAdmin();
+				return {
+					allowedContentTypes: clientPayload === "audio" ? ["audio/*"] : ["image/*"],
+					maximumSizeInBytes: MAX_UPLOAD_BYTES,
+					addRandomSuffix: true,
+				};
+			},
 			onUploadCompleted: async () => {},
 		});
 		return NextResponse.json(result);

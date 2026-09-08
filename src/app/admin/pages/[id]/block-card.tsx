@@ -233,8 +233,8 @@ export function BlockCard({
 
 				{fields.body && (
 					<div className="flex flex-col gap-1.5">
-						<Label>{definition.bodyLabel ?? "Text"}</Label>
 						<RichTextEditor
+							label={definition.bodyLabel ?? "Text"}
 							value={translation.body}
 							onChange={(html) => updateTranslation({ body: html })}
 						/>
@@ -488,12 +488,15 @@ function ItemRow({
 				>
 					<GripVerticalIcon />
 				</Button>
-				<Input
-					id={`${fieldId}-title`}
-					value={translation.title}
-					placeholder={isFaq ? "Question" : "Title"}
-					onChange={(event) => onTranslationChange(item.key, { title: event.target.value })}
-				/>
+				<div className="flex min-w-0 flex-1 flex-col gap-1.5">
+					<Label htmlFor={`${fieldId}-title`}>{isFaq ? "Question" : "Title"}</Label>
+					<Input
+						id={`${fieldId}-title`}
+						value={translation.title}
+						placeholder={isFaq ? "Question" : "Title"}
+						onChange={(event) => onTranslationChange(item.key, { title: event.target.value })}
+					/>
+				</div>
 				<Button
 					type="button"
 					variant="ghost"
@@ -506,6 +509,7 @@ function ItemRow({
 				</Button>
 			</div>
 			<RichTextEditor
+				label={isFaq ? "Answer" : "Text"}
 				value={translation.body}
 				placeholder={isFaq ? "Answer" : "Text"}
 				onChange={(html) => onTranslationChange(item.key, { body: html })}

@@ -10,21 +10,33 @@ export type SaveStatusProps = {
 };
 
 // Quiet autosave indicator rendered next to the "Save now" fallback button on every
-// autosaving admin form. Idle and pending render nothing — there is nothing worth reporting
-// until a save is actually in flight.
+// autosaving admin form. Pending changes stay visible until the current draft is durable.
 export function SaveStatus({ status, error, onRetry }: SaveStatusProps) {
-	if (status === "idle" || status === "pending") {
+	if (status === "idle") {
 		return null;
 	}
 
+	if (status === "pending")
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				Unsaved changes…
+			</p>
+		);
+
 	if (status === "saving") {
-		return <p className="text-sm text-muted-foreground">Saving…</p>;
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				Saving…
+			</p>
+		);
 	}
 
 	if (status === "error") {
 		return (
 			<div className="flex items-center gap-2">
-				<p className="text-sm text-destructive">{error ?? "Couldn't save."}</p>
+				<p role="alert" className="text-sm text-destructive">
+					{error ?? "Couldn't save."}
+				</p>
 				<Button type="button" variant="ghost" size="sm" onClick={onRetry}>
 					Retry
 				</Button>
@@ -32,5 +44,9 @@ export function SaveStatus({ status, error, onRetry }: SaveStatusProps) {
 		);
 	}
 
-	return <p className="text-sm text-muted-foreground">Saved</p>;
+	return (
+		<p role="status" className="text-sm text-muted-foreground">
+			Saved
+		</p>
+	);
 }

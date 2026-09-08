@@ -185,12 +185,12 @@ function MidnightMilestones({ milestones }: { milestones: StoryMilestoneView[] }
 						<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 						{/* `max-w-*` keeps caption lines readable on a 360px-wide image instead of
 						    running edge-to-edge. */}
-						<div className="absolute inset-x-0 bottom-0 flex max-w-sm flex-col gap-1 px-5 pb-5 text-ivory">
+						<div className="absolute inset-x-3 bottom-3 flex max-w-sm flex-col gap-1 rounded-lg bg-black/80 p-4 text-ink">
 							<span className="text-xs font-medium uppercase tracking-widest text-green">
 								{milestone.dateLabel}
 							</span>
 							<h3 className="text-2xl">{milestone.title}</h3>
-							<RichText html={milestone.body} className="text-ivory/80" />
+							<RichText html={milestone.body} className="text-ink/80" />
 						</div>
 					</Reveal>
 				) : (

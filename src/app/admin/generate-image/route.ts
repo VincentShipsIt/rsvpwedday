@@ -9,6 +9,7 @@ import { SiteTheme } from "@/generated/prisma/enums";
 import { copyImageToBlob, isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import { generateImage, isImageGenerationConfigured } from "@/lib/replicate";
+import { requireAdmin } from "@/lib/require-admin";
 
 // A prediction usually settles in a few seconds, but the model is a shared queue; this is the
 // ceiling `src/lib/replicate.ts` works inside.
@@ -35,6 +36,11 @@ function uniquePlaces(events: { venue: string; address: string | null }[]): stri
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+	try {
+		await requireAdmin();
+	} catch {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
 	if (!isImageGenerationConfigured()) {
 		return NextResponse.json(
 			{ error: "Image generation needs a Replicate token (REPLICATE_API_TOKEN)." },

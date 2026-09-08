@@ -19,6 +19,7 @@ import { type BlockView, blockHeading } from "@/lib/page-content";
 export type BlockContext = {
 	coupleNames: string;
 	locale: Locale;
+	timeZone?: string;
 	dictionary: Dictionary;
 	theme: SiteTheme;
 	events: EventView[];
@@ -57,6 +58,7 @@ function BlockContent({
 	const {
 		coupleNames,
 		locale,
+		timeZone = "UTC",
 		dictionary,
 		theme,
 		events,
@@ -71,6 +73,7 @@ function BlockContent({
 		case BlockType.HERO:
 			return (
 				<Hero
+					timeZone={timeZone}
 					coupleNames={coupleNames}
 					heroImageUrl={block.imageUrl}
 					tagline={block.title}
@@ -93,6 +96,7 @@ function BlockContent({
 		case BlockType.EVENTS:
 			return (
 				<Events
+					timeZone={timeZone}
 					anchor={block.anchor}
 					heading={heading}
 					events={events}
@@ -125,6 +129,7 @@ function BlockContent({
 		case BlockType.RSVP:
 			return settings ? (
 				<RsvpSection
+					timeZone={timeZone}
 					anchor={block.anchor}
 					heading={heading}
 					note={block.body}

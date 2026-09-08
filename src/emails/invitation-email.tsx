@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/format";
 export function InvitationEmail({
 	kind,
 	locale,
+	timeZone = "UTC",
 	theme: themeKey,
 	copy,
 	coupleNames,
@@ -70,7 +71,7 @@ export function InvitationEmail({
 							</strong>
 							<br />
 							<span style={{ color: theme.muted }}>
-								{formatDate(event.startsAt, locale)} · {event.venue}
+								{formatDate(event.startsAt, locale, timeZone)} · {event.venue}
 							</span>
 						</Text>
 					))}

@@ -52,6 +52,8 @@ enum OpeningAnimation {
 }
 
 model Settings {
+  /// Existing instants stay unchanged; UTC preserves the previous production display.
+  timeZone     String   @default("UTC")
   id           Int      @id @default(1)
   coupleNames  String
   rsvpDeadline DateTime
@@ -86,6 +88,7 @@ model Event {
 
   translations EventTranslation[]
   attendance   EventAttendance[]
+  childAttendance InvitationChildAttendance[]
 }
 
 model EventTranslation {
@@ -104,6 +107,10 @@ model Invitation {
   email              String     @unique
   locale             Locale     @default(en)
   companionAllowance Int        @default(0)
+  /// Null preserves the legacy named-child responses until this household edits its count.
+  childrenUnder12    Int?
+  childrenDietary    String?
+  childAttendance    InvitationChildAttendance[]
   respondedAt        DateTime?
   note               String?
   songRequest        String?
@@ -139,6 +146,16 @@ model EventAttendance {
   @@id([guestId, eventId])
 }
 
+model InvitationChildAttendance {
+  invitationId String
+  eventId      String
+  count        Int        @default(0)
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([invitationId, eventId])
+}
+
 // Per-kind, per-locale overrides for the transactional emails. An empty string keeps the
 // dictionary's default for that field, so a fresh database sends the built-in copy.
 model EmailTemplate {
@@ -167,14 +184,16 @@ model EmailLog {
 /// it, which is what the admin moderates by. `hiddenAt` takes a photo out of the book without
 /// destroying it — deleting is a separate, deliberate action.
 model Photo {
-  id           String     @id @default(cuid())
-  invitationId String
-  url          String
-  uploaderName String     @default("")
-  caption      String     @default("")
-  hiddenAt     DateTime?
-  createdAt    DateTime   @default(now())
-  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  id              String              @id @default(cuid())
+  invitationId    String
+  url             String
+  uploaderName    String              @default("")
+  caption         String              @default("")
+  hiddenAt        DateTime?
+  createdAt       DateTime            @default(now())
+  invitation      Invitation          @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  uploadReceiptId String?             @unique
+  uploadReceipt   PhotoUploadReceipt? @relation(fields: [uploadReceiptId], references: [id])
 
   @@index([createdAt])
   @@index([invitationId])
@@ -357,6 +376,7 @@ model GiftTranslation {
 /// reserver picked from their own household, denormalised the way a photo's uploader is, so the
 /// couple's overview still reads correctly after that guest row is renamed or removed.
 model GiftClaim {
+  version      String?  @default(cuid())
   giftId       String   @id
   invitationId String
   guestName    String   @default("")
@@ -463,4 +483,37 @@ model BlockItemTranslation {
   item   BlockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([itemId, locale])
+}
+
+// Receipts outlive households so a late upload callback cannot lose its cleanup reference.
+model PhotoUploadReceipt {
+  id           String        @id
+  invitationId String
+  pathname     String        @unique
+  url          String?       @unique
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  photo        Photo?
+  cleanup      MediaCleanup?
+
+  @@index([invitationId])
+  @@index([expiresAt])
+}
+
+model MediaCleanup {
+  id          String             @id @default(cuid())
+  receiptId   String             @unique
+  receipt     PhotoUploadReceipt @relation(fields: [receiptId], references: [id])
+  readyAt     DateTime
+  attempts    Int                @default(0)
+  lastError   String?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+
+  @@index([completedAt, readyAt])
+}
+
+model BootstrapState {
+  id          String   @id
+  completedAt DateTime @default(now())
 }

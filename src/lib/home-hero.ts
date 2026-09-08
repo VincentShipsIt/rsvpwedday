@@ -1,4 +1,5 @@
 import { HOME_PAGE_SLUG } from "@/domain/blocks";
+import { populatedTranslation } from "@/domain/translations";
 import { BlockType, type Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 
@@ -16,7 +17,6 @@ export async function getHomeHero(locale: Locale): Promise<HomeHero> {
 	if (!block) {
 		return { imageUrl: null, tagline: "" };
 	}
-	const translation =
-		block.translations.find((candidate) => candidate.locale === locale) ?? block.translations[0];
+	const translation = populatedTranslation(block.translations, locale, ["title", "body"]);
 	return { imageUrl: block.imageUrl, tagline: translation?.title ?? "" };
 }
