@@ -55,6 +55,11 @@ export type IllustrationSubject = {
 	body?: string;
 	/** Story milestones only ("Summer 2019"). */
 	dateLabel?: string;
+	/**
+	 * A line the couple typed for this one image in the admin's generate box. Optional, and the
+	 * only part of the prompt they write themselves.
+	 */
+	instructions?: string;
 };
 
 export type IllustrationContext = {
@@ -125,18 +130,36 @@ export function illustrationAspectRatio(placement: IllustrationPlacement): strin
 }
 
 const MAX_SUBJECT_CHARS = 600;
+const MAX_INSTRUCTION_CHARS = 600;
 
+/*
+ * The block's own copy says what the section is *about*, which is not always what the picture
+ * should be — a wish-list entry called "Pomeranian Puppy" describes a gift, not a scene. So the
+ * couple's own line, when they typed one, outranks the copy for the subject and only the subject:
+ * STYLE and RULES are appended after this and are not negotiable from here.
+ */
 function describeSubject(subject: IllustrationSubject): string {
 	const body = subject.body ? richTextToPlainText(subject.body).replaceAll("\n", " ") : "";
 	const parts = [subject.dateLabel, subject.title, body]
 		.map((part) => part?.trim())
 		.filter((part): part is string => Boolean(part));
 
-	if (parts.length === 0) {
-		return placementBriefs[subject.placement];
+	const brief =
+		parts.length === 0
+			? placementBriefs[subject.placement]
+			: `${placementBriefs[subject.placement]} It illustrates: ${parts.join(" — ").slice(0, MAX_SUBJECT_CHARS)}`;
+
+	const instructions = subject.instructions?.trim().slice(0, MAX_INSTRUCTION_CHARS) ?? "";
+	if (instructions === "") {
+		return brief;
 	}
 
-	return `${placementBriefs[subject.placement]} It illustrates: ${parts.join(" — ").slice(0, MAX_SUBJECT_CHARS)}`;
+	return [
+		brief,
+		"",
+		`Draw specifically: ${instructions}`,
+		"Where that line and the copy above disagree, follow the line — but keep the STYLE and RULES exactly.",
+	].join("\n");
 }
 
 function describeSetting(context: IllustrationContext): string {

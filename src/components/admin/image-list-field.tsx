@@ -18,8 +18,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "cn";
-import { GripVerticalIcon, LinkIcon, SparklesIcon, XIcon } from "lucide-react";
+import { GripVerticalIcon, LinkIcon, MaximizeIcon, XIcon } from "lucide-react";
 import { useId, useRef, useState } from "react";
+import { GenerateIllustrationButton } from "@/components/admin/generate-illustration-button";
+import { ImageLightbox } from "@/components/admin/image-lightbox";
 import { MediaDropZone } from "@/components/admin/media-drop-zone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,14 +123,14 @@ export function ImageListField({
 
 	// Appended rather than replacing anything: the gallery is a list, and the couple's own
 	// photographs are the point of it.
-	async function handleGenerate() {
+	async function handleGenerate(instructions: string) {
 		if (!illustrate) {
 			return;
 		}
 		setUploadError(null);
 		setBusyLabel("Generating…");
 		try {
-			const result = await generateIllustration(illustrate);
+			const result = await generateIllustration({ ...illustrate, instructions });
 			if (result.ok) {
 				change([...currentValues.current, result.url]);
 			} else {
@@ -228,16 +230,12 @@ export function ImageListField({
 						Add by link
 					</Button>
 					{illustrate && aiConfigured && blobConfigured && (
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
+						<GenerateIllustrationButton
+							label="Generate illustration"
 							disabled={disabled || Boolean(busyLabel)}
-							onClick={handleGenerate}
-						>
-							<SparklesIcon aria-hidden="true" />
-							{busyLabel === "Generating…" ? "Generating…" : "Generate illustration"}
-						</Button>
+							busy={busyLabel === "Generating…"}
+							onGenerate={handleGenerate}
+						/>
 					)}
 				</div>
 			)}
@@ -283,17 +281,34 @@ function GalleryTile({ id, url, position, disabled, onRemove }: GalleryTileProps
 					<GripVerticalIcon className="size-3.5" aria-hidden="true" />
 				</span>
 			</Button>
-			<Button
-				type="button"
-				variant="secondary"
-				size="icon-xs"
-				aria-label={`Remove photo ${position}`}
-				disabled={disabled}
-				className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-				onClick={onRemove}
-			>
-				<XIcon className="size-3.5" />
-			</Button>
+			{/* The tile's whole surface is the drag handle, so viewing the photo full size needs a
+			    control of its own rather than a click on the picture. */}
+			<div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+				<ImageLightbox
+					url={url}
+					title={`Photo ${position}`}
+					trigger={
+						<Button
+							type="button"
+							variant="secondary"
+							size="icon-xs"
+							aria-label={`View photo ${position} full size`}
+						>
+							<MaximizeIcon className="size-3.5" />
+						</Button>
+					}
+				/>
+				<Button
+					type="button"
+					variant="secondary"
+					size="icon-xs"
+					aria-label={`Remove photo ${position}`}
+					disabled={disabled}
+					onClick={onRemove}
+				>
+					<XIcon className="size-3.5" />
+				</Button>
+			</div>
 		</li>
 	);
 }

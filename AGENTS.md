@@ -163,7 +163,11 @@ redirects each old path to whichever page now owns it. Every image field (hero, 
 `media-drop-zone.tsx`. Empty, a field is a drop zone uploading via `src/lib/blob-upload.ts` when
 `BLOB_READ_WRITE_TOKEN` is set (a browser-to-Blob client upload authorised by the token route
 `src/app/admin/upload/route.ts`, so files never pass through a Server Action and its 4.5 MB Vercel
-body cap); filled, it shows the picture (or a player and file name) with Replace and Remove. The
+body cap); filled, it shows a square thumbnail beside the Replace and Remove actions (or a player
+and file name), never a full-width banner — one preview shape for a 16:9 hero, a 4:3 gift and a
+portrait photograph alike. Clicking the thumbnail opens `image-lightbox.tsx`, which is the only
+place in the admin a picture is shown whole and uncropped; a gallery tile gets there from its own
+expand button, because the tile's surface already belongs to dnd-kit. The
 URL is never displayed: "Use a link" / "Add by link" reveals a paste box, which is also the whole
 field when Blob is not configured. The gallery grid reorders by drag and drop. Before either field
 calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
@@ -173,10 +177,15 @@ pass through untouched. It never throws — a decode or canvas failure just retu
 file, so a browser without canvas support still uploads, it just skips the shrink.
 
 Every image field also offers "Generate illustration" when `REPLICATE_API_TOKEN` is set — both
-fields on a block, each card inside one, and each story milestone. The browser posts only the
-block's type and its own English copy to `src/app/admin/generate-image/route.ts`; the route reads
+fields on a block, each card inside one, and each story milestone. The button opens
+`generate-illustration-button.tsx`, a prompt box for one optional line about this picture; the
+browser posts that line plus the block's type and its own English copy to
+`src/app/admin/generate-image/route.ts`. The route reads
 the theme, couple names and event venues from the database and builds the prompt with
-`src/domain/illustration-prompt.ts`, so the art direction cannot be steered from the client. That
+`src/domain/illustration-prompt.ts`, so the *art direction* still cannot be steered from the
+client even though the subject now can — a typed line outranks the block's copy for the subject
+and nothing else, which is what makes a gift called "Pomeranian Puppy" drawable as the picture
+anybody wanted rather than as its title. That
 module holds one art direction per `SiteTheme` — palette copied from the `[data-theme]` blocks the
 same way `src/emails/theme.ts` copies it for mail clients — plus a brief and aspect ratio per
 `BlockType` and a fixed rules block. The rules are what make a set of images look like a set, and

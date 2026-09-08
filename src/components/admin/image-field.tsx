@@ -1,7 +1,9 @@
 "use client";
 
-import { LinkIcon, RefreshCwIcon, SparklesIcon, Trash2Icon } from "lucide-react";
+import { LinkIcon, Trash2Icon } from "lucide-react";
 import { useId, useState } from "react";
+import { GenerateIllustrationButton } from "@/components/admin/generate-illustration-button";
+import { ImageLightbox, ImageThumbnail } from "@/components/admin/image-lightbox";
 import { MediaDropZone } from "@/components/admin/media-drop-zone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +30,11 @@ export type ImageFieldProps = {
 };
 
 // Shared by the hero image, each story milestone, and the guide sections and cards. Empty, it is
-// a drop zone; filled, it shows the picture itself with Replace and Remove. The URL never shows —
-// "Use a link" reveals a paste box for the no-Blob fallback or an external picture.
+// a drop zone; filled, it is a square thumbnail on the right of a compact row of actions, which
+// clicks through to `ImageLightbox` for the whole picture. A full-width banner preview was the
+// wrong shape for every image the site actually holds — a 16:9 hero, a 4:3 gift and a portrait
+// photograph all came out as the same letterbox crop, and each field took a screenful. The URL
+// never shows — "Use a link" reveals a paste box for the no-Blob fallback or an external picture.
 export function ImageField({
 	label,
 	value,
@@ -66,14 +71,14 @@ export function ImageField({
 		}
 	}
 
-	async function handleGenerate() {
+	async function handleGenerate(instructions: string) {
 		if (!illustrate) {
 			return;
 		}
 		setUploadError(null);
 		setBusyLabel("Generating…");
 		try {
-			const result = await generateIllustration(illustrate);
+			const result = await generateIllustration({ ...illustrate, instructions });
 			if (result.ok) {
 				onChange(result.url);
 				setLinkOpen(false);
@@ -103,62 +108,58 @@ export function ImageField({
 		<div className="flex flex-col gap-1.5">
 			<Label htmlFor={inputId}>{label}</Label>
 			{value ? (
-				<div className="overflow-hidden rounded-lg border bg-muted">
-					{/* biome-ignore lint/performance/noImgElement: admin-only preview of an arbitrary, unconfigured external URL, not a next/image candidate. */}
-					<img src={value} alt="" className="max-h-64 w-full object-cover" />
-					<div className="flex flex-wrap items-center gap-1 border-t bg-background p-1.5">
+				<div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-2">
+					<div className="flex min-w-0 flex-1 flex-col gap-1">
 						{blobConfigured && (
 							<MediaDropZone
 								accept="image/*"
 								disabled={disabled}
 								busyLabel={busyLabel}
 								onFiles={handleFiles}
-								label={
-									<span className="inline-flex items-center gap-1.5">
-										<RefreshCwIcon className="size-3.5" aria-hidden="true" />
-										Replace
-									</span>
-								}
-								className="min-h-8 flex-row border-0 px-2 py-1 text-xs [&>svg:first-child]:hidden"
+								label="Drop a new photo here, or click to browse"
+								className="min-h-14 py-2"
 							/>
 						)}
-						{canGenerate && (
+						<div className="flex flex-wrap items-center gap-1">
+							{canGenerate && (
+								<GenerateIllustrationButton
+									label="Regenerate"
+									disabled={disabled || busy}
+									busy={busyLabel === "Generating…"}
+									onGenerate={handleGenerate}
+								/>
+							)}
 							<Button
 								type="button"
 								variant="ghost"
 								size="sm"
 								disabled={disabled || busy}
-								onClick={handleGenerate}
+								onClick={() => {
+									setDraftUrl(value);
+									setLinkOpen((open) => !open);
+								}}
 							>
-								<SparklesIcon aria-hidden="true" />
-								Regenerate
+								<LinkIcon aria-hidden="true" />
+								Use a link
 							</Button>
-						)}
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							disabled={disabled || busy}
-							onClick={() => {
-								setDraftUrl(value);
-								setLinkOpen((open) => !open);
-							}}
-						>
-							<LinkIcon aria-hidden="true" />
-							Use a link
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="ml-auto text-destructive hover:text-destructive"
-							disabled={disabled || busy}
-							onClick={() => onChange("")}
-						>
-							<Trash2Icon aria-hidden="true" />
-							Remove
-						</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="ml-auto text-destructive hover:text-destructive"
+								disabled={disabled || busy}
+								onClick={() => onChange("")}
+							>
+								<Trash2Icon aria-hidden="true" />
+								Remove
+							</Button>
+						</div>
 					</div>
+					<ImageLightbox
+						url={value}
+						title={label}
+						trigger={<ImageThumbnail url={value} label={label} />}
+					/>
 				</div>
 			) : (
 				blobConfigured && (
@@ -174,16 +175,13 @@ export function ImageField({
 			)}
 			{canGenerate && !value && (
 				<div className="flex flex-wrap items-center gap-2">
-					<Button
-						type="button"
+					<GenerateIllustrationButton
+						label="Generate illustration"
 						variant="secondary"
-						size="sm"
 						disabled={disabled || busy}
-						onClick={handleGenerate}
-					>
-						<SparklesIcon aria-hidden="true" />
-						{busyLabel === "Generating…" ? "Generating…" : "Generate illustration"}
-					</Button>
+						busy={busyLabel === "Generating…"}
+						onGenerate={handleGenerate}
+					/>
 					<span className="text-xs text-muted-foreground">
 						{busyLabel === "Generating…"
 							? "This takes a few seconds."
