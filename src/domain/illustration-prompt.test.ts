@@ -53,6 +53,30 @@ describe("buildIllustrationPrompt", () => {
 		expect(prompt).not.toContain("It illustrates:");
 	});
 
+	it("carries the couple's own line, and still lets the block's copy stand as context", () => {
+		const prompt = buildIllustrationPrompt(
+			{
+				placement: "GIFT",
+				title: "Pomeranian Puppy",
+				instructions: "  a small fluffy dog asleep in a wicker basket  ",
+			},
+			context
+		);
+
+		expect(prompt).toContain("Draw specifically: a small fluffy dog asleep in a wicker basket");
+		expect(prompt).toContain("Pomeranian Puppy");
+		expect(prompt).toContain("#fdf9ec");
+	});
+
+	it("says nothing extra when no line was typed", () => {
+		const blank = buildIllustrationPrompt(
+			{ placement: "GIFT", title: "Espresso machine", instructions: "   " },
+			context
+		);
+
+		expect(blank).not.toContain("Draw specifically");
+	});
+
 	it("refuses to invent a landmark when no venue is recorded", () => {
 		const prompt = buildIllustrationPrompt({ placement: "HERO" }, { ...context, places: [] });
 

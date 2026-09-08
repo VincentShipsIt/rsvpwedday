@@ -574,28 +574,29 @@ main[data-theme="mediterranean"],
 }
 
 /*
- * Hover lift for event cards and gallery tiles, and the zoom-in-frame treatment for gallery
- * photos. `.hover-zoom-img` goes on the overflow-hidden frame; the `img`/Image inside it scales
- * up, so the crop always stays inside the frame.
+ * Hover lift for event and guide cards, and the zoom-in-frame treatment for photos. Neither
+ * carries a shadow: a card rises by 4px and a photo only zooms *within* its own frame, so
+ * nothing under the pointer grows a halo or shifts the tile it sits in.
+ *
+ * `.hover-zoom-img` goes on the overflow-hidden frame and the `img`/Image inside it scales up, so
+ * the crop always stays inside the frame — which is why this composes with `Parallax`: the two
+ * transforms sit on different elements and never overwrite each other.
  */
 @media (prefers-reduced-motion: no-preference) {
 	.hover-lift {
-		transition:
-			transform 0.25s ease,
-			box-shadow 0.25s ease;
+		transition: transform 0.25s ease;
 	}
 
 	.hover-lift:hover {
 		transform: translateY(-4px);
-		box-shadow: 0 16px 32px -20px rgb(0 0 0 / 0.4);
 	}
 
 	.hover-zoom-img img {
-		transition: transform 0.25s ease;
+		transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	.hover-zoom-img:hover img {
-		transform: scale(1.03);
+		transform: scale(1.06);
 	}
 }
 
@@ -641,6 +642,50 @@ main[data-theme="mediterranean"],
 		inset: auto;
 		height: 100%;
 		width: 100%;
+	}
+}
+
+/*
+ * `Parallax fit="flow"`: the same drift for a photo that keeps its natural aspect ratio and so
+ * has no fixed frame to overflow. The headroom is this zoom rather than an oversized absolute
+ * box, which is exactly what makes the effect read as movement *inside* the picture while the
+ * tile itself stays put. The scale lives here, not in the JS, so it is there on the first paint
+ * instead of popping in at hydration — and the media query below matches the component's own
+ * bail-out condition, so the two can never disagree about whether the headroom exists.
+ */
+.parallax-inner-flow {
+	width: 100%;
+	transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+	.parallax-inner-flow {
+		transform: scale(1.12);
+	}
+}
+
+/*
+ * FAQ accordion. `FaqItem` keeps the native `<details>` and only takes the toggle over to run a
+ * height animation, holding the element `open` for the whole close so the browser cannot pull the
+ * answer out of the DOM mid-transition. `.faq-closing` is what tells the chevron to turn back at
+ * the *start* of that close rather than at the end of it; it wins over the `[open]` rule on source
+ * order, both selectors having the same specificity.
+ */
+.faq-chevron {
+	transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+details[open] .faq-chevron {
+	transform: rotate(180deg);
+}
+
+details.faq-closing .faq-chevron {
+	transform: rotate(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.faq-chevron {
+		transition: none;
 	}
 }
 
