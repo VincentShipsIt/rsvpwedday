@@ -64,7 +64,16 @@ attendance, else `declined`. Recompute it, never store it.
 ## Admin UI
 
 `/admin` is built on shadcn/ui; components live in `src/components/ui` (`components.json` pins the
-Nova preset, radix base, neutral colour). shadcn's tokens live on `:root` in `globals.css` (they
+Nova preset, radix base, neutral colour). The shell fills the screen it is given and only stops at
+`96rem` — wider than any laptop, so a guest list is not read through a letterbox while a table
+still does not stretch across an ultra-wide display; `main` carries `min-w-0` so a wide child
+scrolls inside its column rather than pushing the page sideways. The sidebar collapses to icons
+from the button beside its title, remembered per browser in `localStorage`; it renders expanded on
+the server and narrows only after that value is read, so the markup cannot mismatch on hydration.
+
+Every list the couple orders — page blocks, gifts, events, a block's own cards — reorders by
+dragging a handle (dnd-kit), never by typing a number, and `sortOrder` is saved as the row's index
+so two rows can never claim the same position. shadcn's tokens live on `:root` in `globals.css` (they
 don't collide with the public site's own `--wed-*`/`--color-*` names) so Radix's portalled content
 (Select, Dialog, AlertDialog, DropdownMenu, the Toaster — all rendered on `document.body`, outside
 `.admin-root`) resolves them too; only the base-layer rules that paint `.admin-root`'s own
