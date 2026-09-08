@@ -33,9 +33,9 @@ type CoverAnimation = Exclude<OpeningAnimation, typeof OpeningAnimation.NONE>;
 
 // How long each open transition runs, at 100% speed, before the cover unmounts. Must cover the
 // longest chain in that variant's `[data-phase="opening"]` CSS: its own art animation, then the
-// shared split (`--opening-reveal-delay` + 0.9s).
+// shared split (delay + 0.9s), or the seal’s dissolve (2.45s + 0.8s).
 const revealMs: Record<CoverAnimation, number> = {
-	[OpeningAnimation.SEAL]: 1800,
+	[OpeningAnimation.SEAL]: 3300,
 	[OpeningAnimation.MONOGRAM]: 1300,
 	[OpeningAnimation.BLOOM]: 1600,
 };
@@ -140,7 +140,9 @@ export function InvitationOpening({
 			// Private browsing or storage disabled: opening still proceeds, it just won't be
 			// remembered as "already seen" for the rest of the session.
 		}
-		const art = artRef.current?.querySelector("svg")?.getBoundingClientRect();
+		const art = (
+			artRef.current?.querySelector("[data-opening-origin]") ?? artRef.current?.querySelector("svg")
+		)?.getBoundingClientRect();
 		const detail: InvitationOpenedDetail = art
 			? { x: art.left + art.width / 2, y: art.top + art.height / 2 }
 			: undefined;
@@ -256,7 +258,15 @@ export function InvitationOpening({
 				ref={artRef}
 				className="opening-content absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center"
 			>
-				{isSeal && <SealArt initials={initials} />}
+				{isSeal && (
+					<SealArt
+						initials={initials}
+						coupleNames={coupleNames}
+						openLabel={labels.open}
+						ready={phase === "ready"}
+						onOpen={handleOpen}
+					/>
+				)}
 				{animation === OpeningAnimation.MONOGRAM && <MonogramArt initials={initials} />}
 				{isBloom ? (
 					<div className="relative flex items-center justify-center">
