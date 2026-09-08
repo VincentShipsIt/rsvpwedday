@@ -1,160 +1,142 @@
 "use server";
-
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+import { MAX_CHILDREN_UNDER_12 } from "@/domain/children";
 import { newToken } from "@/domain/token";
-import type { Prisma } from "@/generated/prisma/client";
-import type { GuestKind, Locale } from "@/generated/prisma/enums";
+import { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
+import { syncHouseholdAttendance } from "@/lib/household-attendance";
+import { requireAdmin } from "@/lib/require-admin";
 
-export type InvitationGuestInput = {
-	id?: string;
-	firstName: string;
-	lastName: string;
-	kind: GuestKind;
-	email: string;
-	phone: string;
-};
+const guestSchema = z.object({
+	id: z.string().min(1).optional(),
+	firstName: z.string().trim().min(1).max(100),
+	lastName: z.string().trim().min(1).max(100),
+	kind: z.literal(GuestKind.ADULT).default(GuestKind.ADULT),
+	email: z.union([z.email(), z.literal("")]),
+	phone: z.string().trim().max(30),
+});
+const invitationSchema = z
+	.object({
+		email: z.email().transform((value) => value.toLowerCase()),
+		locale: z.enum(Locale),
+		companionAllowance: z.number().int().min(0).max(20),
+		childrenUnder12: z.number().int().min(0).max(MAX_CHILDREN_UNDER_12).default(0),
+		guests: z.array(guestSchema).min(1).max(100),
+		eventIds: z.array(z.string().min(1)).min(1).max(100),
+	})
+	.refine((value) => new Set(value.eventIds).size === value.eventIds.length, {
+		message: "Duplicate event",
+	});
+export type InvitationGuestInput = z.infer<typeof guestSchema>;
+export type InvitationInput = z.infer<typeof invitationSchema>;
 
-export type InvitationInput = {
-	email: string;
-	locale: Locale;
-	companionAllowance: number;
-	guests: InvitationGuestInput[];
-	// Events this household is invited to; every guest gets an attendance row per event.
-	eventIds: string[];
-};
-
-// Brings one guest's attendance rows in line with the household's event list: rows for events
-// no longer on the list go (with whatever answer they held), missing ones are created pending.
-async function syncGuestAttendance(
-	tx: Prisma.TransactionClient,
-	guestId: string,
-	eventIds: string[]
-) {
-	await tx.eventAttendance.deleteMany({ where: { guestId, eventId: { notIn: eventIds } } });
-	for (const eventId of eventIds) {
-		await tx.eventAttendance.upsert({
-			where: { guestId_eventId: { guestId, eventId } },
-			create: { guestId, eventId },
-			update: {},
-		});
-	}
-}
-
-async function validEventIds(eventIds: string[]): Promise<string[] | null> {
-	const events = await db.event.findMany({ select: { id: true } });
-	const known = new Set(events.map((event) => event.id));
-	const selected = eventIds.filter((id) => known.has(id));
-	return selected.length > 0 ? selected : null;
-}
-
-function toGuestData(guest: InvitationGuestInput) {
+function guestData(guest: InvitationGuestInput) {
 	return {
 		firstName: guest.firstName,
 		lastName: guest.lastName,
-		kind: guest.kind,
+		kind: GuestKind.ADULT,
 		email: guest.email || null,
 		phone: guest.phone || null,
 	};
 }
-
+async function validEvents(ids: string[]) {
+	const events = await db.event.findMany({ where: { id: { in: ids } }, select: { id: true } });
+	return events.length === ids.length;
+}
+function saved() {
+	revalidatePath("/admin", "layout");
+	revalidatePath("/rsvp/[token]", "page");
+}
+function failure(error: unknown): FormActionResult {
+	if (typeof error === "object" && error && "code" in error && error.code === "P2002")
+		return { ok: false, error: "An invitation already uses this email." };
+	console.error("Invitation save failed", error);
+	return { ok: false, error: "Could not save the invitation. Reload and try again." };
+}
 export async function createInvitation(input: InvitationInput): Promise<FormActionResult> {
-	if (!input.email || input.guests.length === 0) {
-		return { ok: false, error: "Email and at least one guest are required" };
-	}
-
-	const eventIds = await validEventIds(input.eventIds);
-	if (!eventIds) {
-		return { ok: false, error: "Pick at least one event" };
-	}
-
-	await db.invitation.create({
-		data: {
-			email: input.email,
-			locale: input.locale,
-			companionAllowance: input.companionAllowance,
-			token: newToken(),
-			guests: {
-				create: input.guests.map((guest) => ({
-					...toGuestData(guest),
-					attendance: { create: eventIds.map((eventId) => ({ eventId })) },
-				})),
+	await requireAdmin();
+	const result = invitationSchema.safeParse(input);
+	if (!result.success)
+		return { ok: false, error: result.error.issues[0]?.message ?? "Check the invitation fields." };
+	const value = result.data;
+	if (!(await validEvents(value.eventIds))) return { ok: false, error: "Pick existing events." };
+	try {
+		await db.invitation.create({
+			data: {
+				email: value.email,
+				locale: value.locale,
+				companionAllowance: value.companionAllowance,
+				childrenUnder12: value.childrenUnder12,
+				token: newToken(),
+				guests: {
+					create: value.guests.map((guest) => ({
+						...guestData(guest),
+						attendance: { create: value.eventIds.map((eventId) => ({ eventId })) },
+					})),
+				},
+				childAttendance: { create: value.eventIds.map((eventId) => ({ eventId, count: 0 })) },
 			},
-		},
-	});
-
-	revalidatePath("/admin");
+		});
+	} catch (error) {
+		return failure(error);
+	}
+	saved();
 	return { ok: true };
 }
-
 export async function updateInvitation(
 	invitationId: string,
 	input: InvitationInput
 ): Promise<FormActionResult> {
-	if (!input.email || input.guests.length === 0) {
-		return { ok: false, error: "Email and at least one guest are required" };
-	}
-
-	const eventIds = await validEventIds(input.eventIds);
-	if (!eventIds) {
-		return { ok: false, error: "Pick at least one event" };
-	}
-	const existingGuests = await db.guest.findMany({
-		where: { invitationId, addedByGuest: false },
-	});
-	const existingGuestIds = new Set(existingGuests.map((guest) => guest.id));
-	const submittedGuestIds = new Set(
-		input.guests.filter((guest) => guest.id).map((guest) => guest.id)
-	);
-
-	await db.$transaction(async (tx) => {
-		for (const guestId of existingGuestIds) {
-			if (!submittedGuestIds.has(guestId)) {
-				await tx.guest.delete({ where: { id: guestId } });
-			}
-		}
-
-		for (const guest of input.guests) {
-			if (guest.id && existingGuestIds.has(guest.id)) {
-				await tx.guest.update({ where: { id: guest.id }, data: toGuestData(guest) });
-			} else {
-				await tx.guest.create({
+	await requireAdmin();
+	const result = invitationSchema.safeParse(input);
+	if (!result.success)
+		return { ok: false, error: result.error.issues[0]?.message ?? "Check the invitation fields." };
+	const value = result.data;
+	if (!(await validEvents(value.eventIds))) return { ok: false, error: "Pick existing events." };
+	try {
+		const valid = await db.$transaction(
+			async (tx) => {
+				const existing = await tx.guest.findMany({
+					where: { invitationId, addedByGuest: false, kind: GuestKind.ADULT },
+				});
+				const existingIds = new Set(existing.map((guest) => guest.id));
+				const ids = value.guests.flatMap((guest) => (guest.id ? [guest.id] : []));
+				if (new Set(ids).size !== ids.length || ids.some((id) => !existingIds.has(id)))
+					return false;
+				await tx.guest.deleteMany({
+					where: { invitationId, addedByGuest: false, kind: GuestKind.ADULT, id: { notIn: ids } },
+				});
+				for (const guest of value.guests) {
+					if (guest.id) await tx.guest.update({ where: { id: guest.id }, data: guestData(guest) });
+					else await tx.guest.create({ data: { invitationId, ...guestData(guest) } });
+				}
+				await syncHouseholdAttendance(tx, invitationId, value.eventIds, value.childrenUnder12);
+				await tx.invitation.update({
+					where: { id: invitationId },
 					data: {
-						invitationId,
-						...toGuestData(guest),
-						attendance: { create: eventIds.map((eventId) => ({ eventId })) },
+						email: value.email,
+						locale: value.locale,
+						companionAllowance: value.companionAllowance,
+						childrenUnder12: value.childrenUnder12,
 					},
 				});
-			}
-		}
-
-		// Companions the guest added ride along with the household, so they follow the same list.
-		const householdGuests = await tx.guest.findMany({
-			where: { invitationId },
-			select: { id: true },
-		});
-		for (const guest of householdGuests) {
-			await syncGuestAttendance(tx, guest.id, eventIds);
-		}
-
-		await tx.invitation.update({
-			where: { id: invitationId },
-			data: {
-				email: input.email,
-				locale: input.locale,
-				companionAllowance: input.companionAllowance,
+				return true;
 			},
-		});
-	});
-
-	revalidatePath("/admin");
+			{ isolationLevel: "Serializable" }
+		);
+		if (!valid) return { ok: false, error: "The guest list changed. Reload before saving." };
+	} catch (error) {
+		return failure(error);
+	}
+	saved();
 	return { ok: true };
 }
-
 export async function deleteInvitation(invitationId: string): Promise<void> {
+	await requireAdmin();
 	await db.invitation.delete({ where: { id: invitationId } });
-	revalidatePath("/admin");
-	redirect("/admin");
+	saved();
+	redirect("/admin/guests");
 }

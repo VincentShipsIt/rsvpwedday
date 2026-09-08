@@ -86,6 +86,7 @@ model Event {
 
   translations EventTranslation[]
   attendance   EventAttendance[]
+  childAttendance InvitationChildAttendance[]
 }
 
 model EventTranslation {
@@ -104,6 +105,10 @@ model Invitation {
   email              String     @unique
   locale             Locale     @default(en)
   companionAllowance Int        @default(0)
+  /// Null preserves the legacy named-child responses until this household edits its count.
+  childrenUnder12    Int?
+  childrenDietary    String?
+  childAttendance    InvitationChildAttendance[]
   respondedAt        DateTime?
   note               String?
   songRequest        String?
@@ -137,6 +142,16 @@ model EventAttendance {
   event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([guestId, eventId])
+}
+
+model InvitationChildAttendance {
+  invitationId String
+  eventId      String
+  count        Int        @default(0)
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([invitationId, eventId])
 }
 
 // Per-kind, per-locale overrides for the transactional emails. An empty string keeps the
