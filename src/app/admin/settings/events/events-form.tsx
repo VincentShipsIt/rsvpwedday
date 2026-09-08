@@ -9,6 +9,8 @@ import { useAutosave } from "@/components/admin/use-autosave";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dayOffset, describeDayOffset } from "@/domain/wedding-date";
 import type { Locale } from "@/generated/prisma/enums";
@@ -49,6 +51,7 @@ type EventState = {
 	mapsUrl: string;
 	dressCode: string;
 	sortOrder: number;
+	showPublicly: boolean;
 	translations: TranslationState[];
 };
 
@@ -84,6 +87,7 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 				mapsUrl: "",
 				dressCode: "",
 				sortOrder: current.length,
+				showPublicly: true,
 				translations: emptyTranslations(),
 			},
 		]);
@@ -175,6 +179,22 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 									onChange={(changeEvent) =>
 										updateEvent(event.key, { dressCode: changeEvent.target.value })
 									}
+								/>
+							</div>
+
+							<div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+								<div className="flex flex-col gap-0.5">
+									<Label htmlFor={`${event.key}-public`}>Show on the website</Label>
+									<p className="text-xs text-muted-foreground">
+										{event.showPublicly
+											? "Anyone visiting the site sees this event."
+											: "Hidden from the public site. The guests invited to it still see it on their own invitation page and in their invitation email."}
+									</p>
+								</div>
+								<Switch
+									id={`${event.key}-public`}
+									checked={event.showPublicly}
+									onCheckedChange={(checked) => updateEvent(event.key, { showPublicly: checked })}
 								/>
 							</div>
 

@@ -39,6 +39,7 @@ export default async function EventsPage() {
 					mapsUrl: event.mapsUrl ?? "",
 					dressCode: event.dressCode ?? "",
 					sortOrder: event.sortOrder,
+					showPublicly: event.showPublicly,
 					translations: localeCodes.map((code) => {
 						const translation = event.translations.find((candidate) => candidate.locale === code);
 						return {
