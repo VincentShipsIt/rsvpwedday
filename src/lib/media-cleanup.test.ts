@@ -3,14 +3,25 @@ import type { Prisma } from "@/generated/prisma/client";
 
 const mocks = vi.hoisted(() => ({
 	jobs: vi.fn(),
+	find: vi.fn(),
+	lock: vi.fn(),
 	update: vi.fn(),
 	count: vi.fn(),
 	head: vi.fn(),
 	del: vi.fn(),
 }));
-vi.mock("@/lib/db", () => ({
-	db: { mediaCleanup: { findMany: mocks.jobs, update: mocks.update, count: mocks.count } },
-}));
+vi.mock("@/lib/db", () => {
+	const tx = {
+		$queryRaw: mocks.lock,
+		mediaCleanup: { findUnique: mocks.find, update: mocks.update },
+	};
+	return {
+		db: {
+			$transaction: async (operation: (client: typeof tx) => unknown) => operation(tx),
+			mediaCleanup: { findMany: mocks.jobs, update: mocks.update, count: mocks.count },
+		},
+	};
+});
 vi.mock("@/lib/env", () => ({ env: { BLOB_READ_WRITE_TOKEN: "test" } }));
 vi.mock("@vercel/blob", () => ({
 	head: mocks.head,
@@ -25,6 +36,7 @@ describe("durable media deletion", () => {
 	it("retains cleanup work after storage failure and completes it on retry", async () => {
 		const job = { id: "job", receipt: { pathname: "guest-media/invitation/receipt" } };
 		mocks.jobs.mockResolvedValue([job]);
+		mocks.find.mockResolvedValue({ ...job, readyAt: new Date(0), completedAt: null });
 		mocks.head.mockResolvedValue({
 			pathname: job.receipt.pathname,
 			url: "https://verified-store/photo",

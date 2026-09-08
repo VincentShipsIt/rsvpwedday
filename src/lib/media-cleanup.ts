@@ -55,23 +55,38 @@ export async function processMediaCleanup(limit = 50) {
 	let completed = 0;
 	for (const job of jobs) {
 		try {
-			if (!env.BLOB_READ_WRITE_TOKEN) throw new Error("Blob storage is not configured");
-			try {
-				const blob = await head(job.receipt.pathname, { token: env.BLOB_READ_WRITE_TOKEN });
-				if (blob.pathname !== job.receipt.pathname) throw new Error("Storage pathname mismatch");
-				await del(blob.url, { token: env.BLOB_READ_WRITE_TOKEN });
-			} catch (error) {
-				if (!(error instanceof BlobNotFoundError)) throw error;
-			}
-			await db.mediaCleanup.update({
-				where: { id: job.id },
-				data: {
-					completedAt: new Date(),
-					lastError: null,
-					attempts: { increment: 1 },
+			const removed = await db.$transaction(
+				async (tx) => {
+					// Serialize deletion with the signed completion callback: a late callback must requeue
+					// after this transaction, never have its retry overwritten by our completion update.
+					await tx.$queryRaw`SELECT id FROM "MediaCleanup" WHERE id = ${job.id} FOR UPDATE`;
+					const current = await tx.mediaCleanup.findUnique({
+						where: { id: job.id },
+						include: { receipt: true },
+					});
+					if (!current || current.completedAt || current.readyAt > new Date()) return false;
+					if (!env.BLOB_READ_WRITE_TOKEN) throw new Error("Blob storage is not configured");
+					try {
+						const blob = await head(current.receipt.pathname, { token: env.BLOB_READ_WRITE_TOKEN });
+						if (blob.pathname !== current.receipt.pathname)
+							throw new Error("Storage pathname mismatch");
+						await del(blob.url, { token: env.BLOB_READ_WRITE_TOKEN });
+					} catch (error) {
+						if (!(error instanceof BlobNotFoundError)) throw error;
+					}
+					await tx.mediaCleanup.update({
+						where: { id: job.id },
+						data: {
+							completedAt: new Date(),
+							lastError: null,
+							attempts: { increment: 1 },
+						},
+					});
+					return true;
 				},
-			});
-			completed += 1;
+				{ timeout: 30_000 }
+			);
+			if (removed) completed += 1;
 		} catch {
 			await db.mediaCleanup.update({
 				where: { id: job.id },

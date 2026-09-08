@@ -34,7 +34,7 @@ type Stage =
  * its camera, while the plain input opens the camera roll for photos already taken — on a laptop
  * both are just a file picker. Files are shrunk in the browser first (`downscaleImage`, which also
  * turns an iPhone's HEIC into a JPEG other browsers can display), then uploaded straight to Blob,
- * and only the resulting URLs go through a Server Action.
+ * and only their verified receipt IDs go through a Server Action.
  */
 export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: PhotoUploadProps) {
 	const router = useRouter();
@@ -48,15 +48,21 @@ export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: Phot
 
 	// Several people share one household link, so remember which of them is holding the phone.
 	useEffect(() => {
-		const stored = window.localStorage.getItem(`${NAME_STORAGE_PREFIX}${token}`);
-		if (stored && guestNames.includes(stored)) {
-			setUploaderName(stored);
+		try {
+			const stored = window.localStorage.getItem(`${NAME_STORAGE_PREFIX}${token}`);
+			if (stored && guestNames.includes(stored)) setUploaderName(stored);
+		} catch {
+			// Remembering a name is optional when browser storage is unavailable.
 		}
 	}, [token, guestNames]);
 
 	function chooseName(name: string) {
 		setUploaderName(name);
-		window.localStorage.setItem(`${NAME_STORAGE_PREFIX}${token}`, name);
+		try {
+			window.localStorage.setItem(`${NAME_STORAGE_PREFIX}${token}`, name);
+		} catch {
+			// The selected name still works for this visit.
+		}
 	}
 
 	async function resumeBatch() {
