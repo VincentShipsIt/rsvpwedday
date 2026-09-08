@@ -1105,11 +1105,10 @@ main[data-theme="mediterranean"],
 }
 
 /* ---- Shared reveal ----
-   Every variant plays its own art animation first, then the same exit: the paper scrim fades so
-   the ghosted hero photo comes into focus behind the art, and the four ground quadrants slide
-   out to their corners along a vertical and a horizontal seam. Each variant only sets when the
-   split starts (`--opening-reveal-delay`) and when its content fades (`--opening-content-delay`)
-   so the exit follows its own art. `InvitationOpening`'s `revealMs` must cover delay + 0.9s. */
+   Monogram and bloom sharpen the photo and slide the four ground quadrants apart. The seal
+   keeps the ground aligned and dissolves it after the letter opens (overrides below).
+   Each variant sets its reveal and content delays; InvitationOpening's revealMs must cover
+   the last transition: delay + 0.9s for the split, or delay + 0.8s for the seal dissolve. */
 
 .opening-cover[data-opening="seal"] {
 	--opening-reveal-delay: 2.45s;
