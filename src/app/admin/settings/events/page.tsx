@@ -10,8 +10,11 @@ export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
 	const [events, settings] = await Promise.all([
-		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
-		db.settings.findUnique({ where: { id: 1 }, select: { weddingDate: true } }),
+		db.event.findMany({
+			orderBy: { sortOrder: "asc" },
+			include: { translations: true, _count: { select: { attendance: true } } },
+		}),
+		db.settings.findUnique({ where: { id: 1 }, select: { weddingDate: true, timeZone: true } }),
 	]);
 	const wedding = resolveWeddingDate(settings?.weddingDate, events);
 
@@ -28,12 +31,14 @@ export default async function EventsPage() {
 				.
 			</p>
 			<EventsForm
-				weddingDate={toWireDateOrEmpty(wedding.date)}
+				timeZone={settings?.timeZone ?? "UTC"}
+				weddingDate={toWireDateOrEmpty(wedding.date, settings?.timeZone)}
 				initialEvents={events.map((event) => ({
 					id: event.id,
+					attendanceCount: event._count.attendance,
 					slug: event.slug,
-					startsAt: toWireDateOrEmpty(event.startsAt),
-					endsAt: toWireDateOrEmpty(event.endsAt),
+					startsAt: toWireDateOrEmpty(event.startsAt, settings?.timeZone),
+					endsAt: toWireDateOrEmpty(event.endsAt, settings?.timeZone),
 					venue: event.venue,
 					address: event.address,
 					mapsUrl: event.mapsUrl ?? "",

@@ -1,5 +1,6 @@
 import { BLOCK_DEFINITIONS, pagePath } from "@/domain/blocks";
 import { isRichTextEmpty } from "@/domain/rich-text";
+import { populatedTranslation } from "@/domain/translations";
 import { BlockType, type Locale } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
 import type { SiteLink } from "@/lib/site-links";
@@ -68,14 +69,8 @@ export const pageInclude = {
 	},
 } as const;
 
-// Same fallback rule as events and milestones: the requested locale, else the first translation
-// that exists, so a block typed in one language still renders in the others.
-function pick<T extends { locale: Locale }>(translations: T[], locale: Locale): T | undefined {
-	return translations.find((candidate) => candidate.locale === locale) ?? translations[0];
-}
-
 export function localizePage(page: PageRecord, locale: Locale): PageView {
-	const translation = pick(page.translations, locale);
+	const translation = populatedTranslation(page.translations, locale, ["title", "intro"]);
 	return {
 		id: page.id,
 		slug: page.slug,
@@ -83,7 +78,7 @@ export function localizePage(page: PageRecord, locale: Locale): PageView {
 		title: translation?.title ?? "",
 		intro: translation?.intro ?? "",
 		blocks: page.blocks.map((block) => {
-			const blockTranslation = pick(block.translations, locale);
+			const blockTranslation = populatedTranslation(block.translations, locale, ["title", "body"]);
 			return {
 				id: block.id,
 				type: block.type,
@@ -94,7 +89,10 @@ export function localizePage(page: PageRecord, locale: Locale): PageView {
 				title: blockTranslation?.title ?? "",
 				body: blockTranslation?.body ?? "",
 				items: block.items.map((item) => {
-					const itemTranslation = pick(item.translations, locale);
+					const itemTranslation = populatedTranslation(item.translations, locale, [
+						"title",
+						"body",
+					]);
 					return {
 						id: item.id,
 						url: item.url,
@@ -118,6 +116,14 @@ export type SiteData = {
 
 // A block with nothing in it renders nothing and gets no nav link, so an unfilled block never
 // leaves a heading over an empty section or a dead anchor.
+export function cardHasContent(item: BlockItemView): boolean {
+	return (
+		!isRichTextEmpty(item.title) ||
+		!isRichTextEmpty(item.body) ||
+		Boolean(item.imageUrl || item.url)
+	);
+}
+
 export function blockHasContent(block: BlockView, site: SiteData): boolean {
 	switch (block.type) {
 		case BlockType.HERO:
@@ -140,7 +146,8 @@ export function blockHasContent(block: BlockView, site: SiteData): boolean {
 			return (
 				block.title.trim() !== "" ||
 				!isRichTextEmpty(block.body) ||
-				block.items.some((item) => item.title.trim() !== "")
+				Boolean(block.imageUrl) ||
+				block.items.some(cardHasContent)
 			);
 		case BlockType.IMAGE:
 			return Boolean(block.imageUrl);

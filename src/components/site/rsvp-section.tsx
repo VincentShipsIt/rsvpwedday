@@ -11,6 +11,7 @@ export function RsvpSection({
 	deadline,
 	replyTo,
 	locale,
+	timeZone = "UTC",
 	deadlineTemplate,
 	questionsTemplate,
 }: {
@@ -20,6 +21,7 @@ export function RsvpSection({
 	deadline: Date;
 	replyTo: string | null;
 	locale: Locale;
+	timeZone?: string;
 	deadlineTemplate: string;
 	questionsTemplate: string;
 }) {
@@ -32,7 +34,7 @@ export function RsvpSection({
 				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
 				<RichText html={note} className="text-ink/70" />
 				<p className="text-sm text-ink/60">
-					{t(deadlineTemplate, { date: formatDate(deadline, locale) })}
+					{t(deadlineTemplate, { date: formatDate(deadline, locale, timeZone) })}
 				</p>
 				{replyTo && (
 					<p className="text-sm text-ink/60">{t(questionsTemplate, { email: replyTo })}</p>

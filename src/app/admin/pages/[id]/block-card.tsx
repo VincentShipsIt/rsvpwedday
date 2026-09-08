@@ -233,8 +233,8 @@ export function BlockCard({
 
 				{fields.body && (
 					<div className="flex flex-col gap-1.5">
-						<Label>{definition.bodyLabel ?? "Text"}</Label>
 						<RichTextEditor
+							label={definition.bodyLabel ?? "Text"}
 							value={translation.body}
 							onChange={(html) => updateTranslation({ body: html })}
 						/>
@@ -506,6 +506,7 @@ function ItemRow({
 				</Button>
 			</div>
 			<RichTextEditor
+				label={isFaq ? "Answer" : "Text"}
 				value={translation.body}
 				placeholder={isFaq ? "Answer" : "Text"}
 				onChange={(html) => onTranslationChange(item.key, { body: html })}

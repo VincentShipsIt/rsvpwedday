@@ -6,6 +6,17 @@ import { DateTimeField } from "@/components/admin/date-time-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SaveStatus } from "@/components/admin/save-status";
 import { useAutosave } from "@/components/admin/use-autosave";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,13 +36,17 @@ function createKey(): string {
  * Where this event sits against the wedding day, written under its start date. A raw timestamp
  * hides a mistyped month or year; "364 days before" does not.
  */
-function relativeToWedding(startsAt: string, weddingDate: string): string | undefined {
-	const start = parseWireDate(startsAt);
-	const wedding = parseWireDate(weddingDate);
+function relativeToWedding(
+	startsAt: string,
+	weddingDate: string,
+	timeZone: string
+): string | undefined {
+	const start = parseWireDate(startsAt, timeZone);
+	const wedding = parseWireDate(weddingDate, timeZone);
 	if (!start || !wedding) {
 		return undefined;
 	}
-	return describeDayOffset(dayOffset(start, wedding));
+	return describeDayOffset(dayOffset(start, wedding, timeZone));
 }
 
 function emptyTranslations(): TranslationState[] {
@@ -42,7 +57,8 @@ type TranslationState = { locale: Locale; name: string; description: string };
 
 type EventState = {
 	key: string;
-	id?: string;
+	id: string;
+	attendanceCount?: number;
 	slug: string;
 	startsAt: string;
 	endsAt: string;
@@ -58,27 +74,32 @@ type EventState = {
 export type EventsFormProps = {
 	/** The wedding day, so each event can say where it falls relative to it. */
 	weddingDate: string;
+	timeZone: string;
 	initialEvents: Omit<EventState, "key">[];
 };
 
-export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
+export function EventsForm({ weddingDate, timeZone, initialEvents }: EventsFormProps) {
 	const [events, setEvents] = useState<EventState[]>(() =>
 		initialEvents.map((event) => ({ ...event, key: event.id ?? createKey() }))
 	);
 
+	const [deletedEventIds, setDeletedEventIds] = useState<string[]>([]);
 	const { status, error, retry } = useAutosave({
-		value: { events },
-		save: ({ events: nextEvents }) =>
+		value: { events, deletedEventIds },
+		save: ({ events: nextEvents, deletedEventIds: removed }) =>
 			updateEvents({
-				events: nextEvents.map(({ key, ...event }) => event),
+				events: nextEvents.map(({ key, attendanceCount, ...event }) => event),
+				deletedEventIds: removed,
 			}),
 	});
 
 	function addEvent() {
+		const id = createKey();
 		setEvents((current) => [
 			...current,
 			{
-				key: createKey(),
+				key: id,
+				id,
 				slug: "",
 				startsAt: "",
 				endsAt: "",
@@ -94,6 +115,8 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 	}
 
 	function removeEvent(key: string) {
+		const event = events.find((candidate) => candidate.key === key);
+		if (event) setDeletedEventIds((current) => [...current, event.id]);
 		setEvents((current) => current.filter((event) => event.key !== key));
 	}
 
@@ -144,7 +167,7 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 									label="Starts"
 									value={event.startsAt}
 									onChange={(value) => updateEvent(event.key, { startsAt: value })}
-									description={relativeToWedding(event.startsAt, weddingDate)}
+									description={relativeToWedding(event.startsAt, weddingDate, timeZone)}
 								/>
 								<DateTimeField
 									label="Ends"
@@ -222,6 +245,7 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 											}
 										/>
 										<RichTextEditor
+											label="Description"
 											placeholder="Description"
 											value={translation.description}
 											onChange={(html) =>
@@ -234,15 +258,38 @@ export function EventsForm({ weddingDate, initialEvents }: EventsFormProps) {
 								))}
 							</Tabs>
 
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className="self-start"
-								onClick={() => removeEvent(event.key)}
-							>
-								Remove event
-							</Button>
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button type="button" variant="ghost" size="sm" className="self-start">
+										Remove event
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>
+											Remove{" "}
+											{event.translations.find((row) => row.name.trim())?.name ||
+												event.slug ||
+												"this event"}
+											?
+										</AlertDialogTitle>
+										<AlertDialogDescription>
+											This permanently removes the event and all its guest invitations and
+											attendance responses
+											{event.attendanceCount !== undefined
+												? ` (${event.attendanceCount} guest records when this page loaded)`
+												: ""}
+											. Other events are kept.
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Cancel</AlertDialogCancel>
+										<AlertDialogAction onClick={() => removeEvent(event.key)}>
+											Remove event
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
 						</CardContent>
 					</Card>
 				))}

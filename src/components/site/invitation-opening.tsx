@@ -124,6 +124,7 @@ export function InvitationOpening({
 	const [isVisible, setIsVisible] = useState(true);
 	const hasOpenedRef = useRef(false);
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	const coverRef = useRef<HTMLDivElement>(null);
 	const artRef = useRef<HTMLDivElement>(null);
 	// 200% speed → every reveal duration and delay is halved, in CSS (`--opening-scale`) and here.
 	const scale = 100 / Math.max(speed, 1);
@@ -192,22 +193,68 @@ export function InvitationOpening({
 	}, [shouldShow, holdSeconds]);
 
 	useEffect(() => {
-		if (!shouldShow || phase === "opening") {
-			return;
+		if (!shouldShow || !isVisible || !coverRef.current) return;
+		const cover = coverRef.current;
+		const previousFocus = document.activeElement;
+		const previousOverflow = document.body.style.overflow;
+		const previousRootOverflow = document.documentElement.style.overflow;
+		const background: { element: HTMLElement; inert: boolean }[] = [];
+		let branch: HTMLElement = cover;
+		while (branch.parentElement) {
+			for (const sibling of branch.parentElement.children) {
+				if (sibling instanceof HTMLElement && sibling !== branch) {
+					background.push({ element: sibling, inert: sibling.inert });
+					sibling.inert = true;
+				}
+			}
+			branch = branch.parentElement;
+			if (branch === document.body) break;
 		}
-		if (phase === "ready") {
-			buttonRef.current?.focus();
+		document.body.style.overflow = "hidden";
+		document.documentElement.style.overflow = "hidden";
+		cover.focus();
+		function containFocus(event: FocusEvent) {
+			if (!cover.contains(event.target as Node)) cover.focus();
 		}
+		document.addEventListener("focusin", containFocus);
+		return () => {
+			document.removeEventListener("focusin", containFocus);
+			for (const { element, inert } of background) element.inert = inert;
+			document.body.style.overflow = previousOverflow;
+			document.documentElement.style.overflow = previousRootOverflow;
+			if (
+				previousFocus instanceof HTMLElement &&
+				previousFocus !== document.body &&
+				previousFocus.isConnected
+			)
+				previousFocus.focus();
+			else {
+				const main = document.querySelector("main");
+				if (main) {
+					main.tabIndex = -1;
+					main.focus({ preventScroll: true });
+				}
+			}
+		};
+	}, [shouldShow, isVisible]);
 
+	useEffect(() => {
+		if (!shouldShow || !isVisible) return;
+		const target = phase === "ready" ? buttonRef.current : coverRef.current;
+		target?.focus();
 		function handleKeyDown(event: KeyboardEvent) {
 			if (event.key === "Escape") {
+				event.preventDefault();
 				handleOpen();
 			}
+			if (event.key === "Tab") {
+				event.preventDefault();
+				target?.focus();
+			}
 		}
-
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [shouldShow, phase, handleOpen]);
+	}, [shouldShow, isVisible, phase, handleOpen]);
 
 	if (!shouldShow || !isVisible || !coupleNames.trim()) {
 		return null;
@@ -223,6 +270,8 @@ export function InvitationOpening({
 			data-opening={dataOpening[animation]}
 			data-phase={phase}
 			data-photo={heroImageUrl ? "" : undefined}
+			ref={coverRef}
+			tabIndex={-1}
 			role="dialog"
 			aria-modal="true"
 			aria-label={coupleNames}

@@ -326,6 +326,7 @@ function GiftRow({
 							}
 						/>
 						<RichTextEditor
+							label="Description"
 							placeholder="What it is, and why you'd love it"
 							value={translation.body}
 							onChange={(html) => onTranslationChange(gift.id, translation.locale, { body: html })}

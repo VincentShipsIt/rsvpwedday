@@ -14,6 +14,7 @@ type HeroProps = {
 	tagline: string;
 	countdownTarget: Date | null;
 	locale: Locale;
+	timeZone?: string;
 	dictionary: Dictionary;
 	theme: SiteTheme;
 };
@@ -67,6 +68,7 @@ function EditorialHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -112,7 +114,7 @@ function EditorialHero({
 						className="hero-entrance-item text-lg tracking-wide text-ivory/90"
 						style={heroDelayStyle(1)}
 					>
-						{formatDate(countdownTarget, locale)}
+						{formatDate(countdownTarget, locale, timeZone)}
 					</p>
 				)}
 				{tagline && (
@@ -126,6 +128,7 @@ function EditorialHero({
 				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(3)}>
 						<Countdown
+							timeZone={timeZone}
 							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 						/>
@@ -142,6 +145,7 @@ function ModernHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -160,9 +164,10 @@ function ModernHero({
 						className="hero-entrance-item flex flex-wrap items-center gap-6 border-t border-ink/15 pt-6 text-xs uppercase tracking-[0.2em] text-ink/70"
 						style={heroDelayStyle(1)}
 					>
-						{countdownTarget && <span>{formatDate(countdownTarget, locale)}</span>}
+						{countdownTarget && <span>{formatDate(countdownTarget, locale, timeZone)}</span>}
 						{countdownTarget && (
 							<Countdown
+								timeZone={timeZone}
 								targetDate={countdownTarget.toISOString()}
 								labels={countdownLabels(dictionary)}
 							/>
@@ -202,6 +207,7 @@ function GardenHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -230,7 +236,7 @@ function GardenHero({
 						className="hero-entrance-item text-lg tracking-wide text-ink/70"
 						style={heroDelayStyle(0)}
 					>
-						{formatDate(countdownTarget, locale)}
+						{formatDate(countdownTarget, locale, timeZone)}
 					</p>
 				)}
 				{tagline && (
@@ -244,6 +250,7 @@ function GardenHero({
 				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(2)}>
 						<Countdown
+							timeZone={timeZone}
 							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 							variant="pills"
@@ -261,6 +268,7 @@ function MidnightHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -302,7 +310,7 @@ function MidnightHero({
 							className="hero-entrance-item text-xs uppercase tracking-[0.3em] text-ink/70"
 							style={heroDelayStyle(0)}
 						>
-							{formatDate(countdownTarget, locale)}
+							{formatDate(countdownTarget, locale, timeZone)}
 						</p>
 					)}
 					<h1
@@ -326,9 +334,10 @@ function MidnightHero({
 						style={heroDelayStyle(3)}
 					>
 						<span className="text-xs uppercase tracking-[0.25em]">
-							{formatDate(countdownTarget, locale)}
+							{formatDate(countdownTarget, locale, timeZone)}
 						</span>
 						<Countdown
+							timeZone={timeZone}
 							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 						/>
@@ -345,6 +354,7 @@ function BohoHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -364,7 +374,7 @@ function BohoHero({
 							className="hero-entrance-item inline-flex w-fit items-center rounded-full bg-ivory px-5 py-2 text-sm font-medium tracking-wide text-ink"
 							style={heroDelayStyle(1)}
 						>
-							{formatDate(countdownTarget, locale)}
+							{formatDate(countdownTarget, locale, timeZone)}
 						</span>
 					)}
 					{tagline && (
@@ -378,6 +388,7 @@ function BohoHero({
 					{countdownTarget && (
 						<div className="hero-entrance-item" style={heroDelayStyle(3)}>
 							<Countdown
+								timeZone={timeZone}
 								targetDate={countdownTarget.toISOString()}
 								labels={countdownLabels(dictionary)}
 								variant="pills"
@@ -414,6 +425,7 @@ function VintageHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -465,7 +477,7 @@ function VintageHero({
 						className="hero-entrance-item text-lg tracking-wide text-ink/70"
 						style={heroDelayStyle(0)}
 					>
-						{formatDate(countdownTarget, locale)}
+						{formatDate(countdownTarget, locale, timeZone)}
 					</p>
 				)}
 				{tagline && (
@@ -479,6 +491,7 @@ function VintageHero({
 				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(2)}>
 						<Countdown
+							timeZone={timeZone}
 							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 							variant="pills"
@@ -496,6 +509,7 @@ function MediterraneanHero({
 	tagline,
 	countdownTarget,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: HeroProps) {
 	return (
@@ -512,7 +526,7 @@ function MediterraneanHero({
 						className="hero-entrance-item text-xs uppercase tracking-[0.35em] text-green"
 						style={heroDelayStyle(0)}
 					>
-						{formatDate(countdownTarget, locale)}
+						{formatDate(countdownTarget, locale, timeZone)}
 					</p>
 				)}
 				<h1
@@ -566,6 +580,7 @@ function MediterraneanHero({
 				{countdownTarget && (
 					<div className="hero-entrance-item" style={heroDelayStyle(4)}>
 						<Countdown
+							timeZone={timeZone}
 							targetDate={countdownTarget.toISOString()}
 							labels={countdownLabels(dictionary)}
 							variant="pills"

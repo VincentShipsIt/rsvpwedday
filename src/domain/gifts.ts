@@ -8,6 +8,7 @@
  * words. What turns a gift registry into a honeymoon registry is the copy on the block above it.
  */
 
+import { populatedTranslation } from "@/domain/translations";
 import type { Locale } from "@/generated/prisma/enums";
 
 /** Long enough for "Grandma and the whole Berlin side of the family". */
@@ -80,8 +81,7 @@ type GiftRecord = {
 };
 
 export function localizeGift(gift: GiftRecord, locale: Locale): GiftView {
-	const translation =
-		gift.translations.find((candidate) => candidate.locale === locale) ?? gift.translations[0];
+	const translation = populatedTranslation(gift.translations, locale, ["title", "body"]);
 	return {
 		id: gift.id,
 		imageUrl: gift.imageUrl,
