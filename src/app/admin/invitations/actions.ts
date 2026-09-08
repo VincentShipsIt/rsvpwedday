@@ -3,12 +3,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { MAX_CHILDREN_UNDER_12 } from "@/domain/children";
+import { retireUniqueValue } from "@/domain/soft-delete";
 import { newToken } from "@/domain/token";
 import { GuestKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
 import { syncHouseholdAttendance } from "@/lib/household-attendance";
-import { processMediaCleanup, queueInvitationMediaCleanup } from "@/lib/media-cleanup";
 import { requireAdmin } from "@/lib/require-admin";
 
 const guestSchema = z.object({
@@ -107,8 +107,9 @@ export async function updateInvitation(
 				const ids = value.guests.flatMap((guest) => (guest.id ? [guest.id] : []));
 				if (new Set(ids).size !== ids.length || ids.some((id) => !existingIds.has(id)))
 					return false;
-				await tx.guest.deleteMany({
+				await tx.guest.updateMany({
 					where: { invitationId, addedByGuest: false, kind: GuestKind.ADULT, id: { notIn: ids } },
+					data: { deletedAt: new Date() },
 				});
 				for (const guest of value.guests) {
 					if (guest.id) await tx.guest.update({ where: { id: guest.id }, data: guestData(guest) });
@@ -135,14 +136,42 @@ export async function updateInvitation(
 	saved();
 	return { ok: true };
 }
+/*
+ * Removes a household without destroying it. `onDelete: Cascade` no longer fires, so the guests
+ * and the photos they added are marked by hand — otherwise they would outlive the invitation and
+ * the photo book would still show them.
+ *
+ * The email and the token are unique, so they leave the live namespace too: without that,
+ * re-importing this household's CSV row would look the email up, not find it (reads hide deleted
+ * rows), try to create it, and collide.
+ *
+ * Their uploaded files are deliberately *not* queued for storage cleanup. That pipeline exists to
+ * sweep abandoned upload batches nobody ever registered, and it still does; destroying the files
+ * of a household somebody deleted on purpose would make this the one delete that cannot be undone,
+ * since a restored photo row pointing at a deleted object is not a photo. Whatever eventually
+ * purges tombstones is what should take the files with them.
+ */
 export async function deleteInvitation(invitationId: string): Promise<void> {
 	await requireAdmin();
-	const cleanup = await db.$transaction(async (tx) => {
-		const result = await queueInvitationMediaCleanup(tx, invitationId);
-		await tx.invitation.delete({ where: { id: invitationId } });
-		return result;
+	const invitation = await db.invitation.findUnique({
+		where: { id: invitationId },
+		select: { email: true, token: true },
 	});
-	const { pending } = await processMediaCleanup();
+	if (invitation) {
+		const now = new Date();
+		await db.$transaction(async (tx) => {
+			await tx.guest.updateMany({ where: { invitationId }, data: { deletedAt: now } });
+			await tx.photo.updateMany({ where: { invitationId }, data: { deletedAt: now } });
+			await tx.invitation.update({
+				where: { id: invitationId },
+				data: {
+					deletedAt: now,
+					email: retireUniqueValue(invitation.email, now),
+					token: retireUniqueValue(invitation.token, now),
+				},
+			});
+		});
+	}
 	saved();
-	redirect(`/admin/guests?mediaPending=${pending}&legacyPhotos=${cleanup.legacyCount}`);
+	redirect("/admin/guests");
 }

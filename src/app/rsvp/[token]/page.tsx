@@ -11,6 +11,7 @@ import { localizeGift, publishableGifts } from "@/domain/gifts";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { resolvePhotoBookAccess } from "@/domain/photo-book";
+import { notDeleted } from "@/domain/soft-delete";
 import { populatedTranslation } from "@/domain/translations";
 import { Attendance, GuestKind } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
@@ -32,7 +33,10 @@ export default async function RsvpPage({
 
 	const invitation = await db.invitation.findUnique({
 		where: { token },
-		include: { guests: { include: { attendance: true } }, childAttendance: true },
+		include: {
+			guests: { where: notDeleted, include: { attendance: true } },
+			childAttendance: true,
+		},
 	});
 
 	if (!invitation) {

@@ -138,7 +138,7 @@ describe("family RSVP transaction", () => {
 		});
 		expect(mocks.findInvitation).toHaveBeenCalledWith({
 			where: { token: "valid-token" },
-			include: { guests: { include: { attendance: true } } },
+			include: { guests: { where: { deletedAt: null }, include: { attendance: true } } },
 		});
 		expect(mocks.attendanceUpdate).toHaveBeenCalledWith({
 			where: { guestId_eventId: { guestId: "adult-b", eventId: "ceremony" } },

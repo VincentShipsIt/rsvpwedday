@@ -3,6 +3,7 @@ import { childAttendanceCounts, childrenUnder12 } from "@/domain/children";
 import { emailDeliveryStatus } from "@/domain/email-delivery";
 import { getInvitationStatus } from "@/domain/invitation";
 import { invitedEventIds } from "@/domain/invitation-events";
+import { notDeleted } from "@/domain/soft-delete";
 import { populatedTranslation } from "@/domain/translations";
 import { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
@@ -31,7 +32,7 @@ export default async function GuestsPage({
 	const [invitations, events, settings] = await Promise.all([
 		db.invitation.findMany({
 			include: {
-				guests: { include: { attendance: true } },
+				guests: { where: notDeleted, include: { attendance: true } },
 				childAttendance: true,
 				emails: { orderBy: { sentAt: "desc" } },
 			},

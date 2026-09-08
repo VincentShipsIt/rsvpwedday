@@ -36,6 +36,44 @@ slugs separated by `;`, empty = every event; the Guests page serves a filled-in 
 the household, companions included. The RSVP page, the invite/reminder emails and the export all
 read the derived list, so nothing else needs to know.
 
+## Nothing is hard deleted
+
+Every row the couple can lose by mis-clicking carries `deletedAt`, and removing it sets that
+column instead of issuing a DELETE. `deletedAt` rather than `isDeleted` because it answers "when",
+which a restore list and any purge policy both need; "is it deleted" is `deletedAt !== null`.
+
+`src/lib/db.ts` hides tombstones from every top-level read through a Prisma client extension, so
+no query has to remember — the one that forgot would show a deleted event to guests. Two things
+about it are load-bearing. It matches the model name **case-insensitively**, because an extension
+is handed the schema's spelling (`"Gift"`) while the client's delegates are camel-case (`db.gift`),
+and matching only one silently switches the whole filter off. And it cannot reach inside an
+`include`, so a nested relation carries its own `where: notDeleted` — `pageInclude`, and every
+`guests` include. Grep `notDeleted` to find them. `dbIncludingDeleted` is the unfiltered client,
+for restoring and for whatever eventually purges; never render a page from it.
+
+`src/domain/soft-delete.ts` lists the nine models this covers and, more importantly, why five
+deletes are **not** in it: releasing a gift reservation, re-syncing a household's invited events,
+and replacing guest-added companions are mechanical, and tombstoning them breaks the feature —
+`GiftClaim`'s primary key *is* `giftId`, so a tombstone would make that gift unreservable forever.
+Translation rows are rewritten on every save and stay hard deletes too.
+
+`onDelete: Cascade` no longer fires, so parents cascade by hand: deleting an invitation marks its
+guests and photos, a page marks its blocks and their items, a block marks its items. Deleting a
+gift also drops its claim outright, since a gift nobody can see is not one anybody is bringing.
+
+Unique values leave the live namespace on delete (`retireUniqueValue`), because Postgres does not
+care that a row is tombstoned: a deleted `welcome-dinner` would make that slug unusable forever,
+and — silently, which is worse — re-importing a deleted household's CSV row would look its email
+up, not find it, try to create it, and collide. `restoreUniqueValue` strips the marker back off.
+
+Deleting a photo or a household no longer queues their files for storage cleanup. That pipeline
+(`src/lib/media-cleanup.ts`) still sweeps abandoned upload batches nobody ever registered, which is
+what it is for; destroying the files behind a deliberate delete would make it the one delete that
+cannot be undone, since a restored row pointing at a deleted object is not a photo. Whatever purges
+tombstones is what should take the files with them.
+
+There is no restore UI yet — putting something back is a database operation today.
+
 ## Two filters on the event list
 
 They are independent and must not be confused, which is why each lives in its own module:

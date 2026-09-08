@@ -11,6 +11,9 @@ const fixture = vi.hoisted(() => {
 			delete: vi.fn(),
 		},
 		pageTranslation: { upsert: vi.fn() },
+		// Deleting a page now tombstones its blocks and their items by hand, since the database
+		// cascade no longer fires.
+		blockItem: { updateMany: vi.fn() },
 		block: {
 			updateMany: vi.fn(
 				async ({
@@ -63,6 +66,12 @@ describe("page teaser references", () => {
 	it("clears incoming teasers when the page is deleted", async () => {
 		await deletePage("travel");
 		expect(fixture.links.get("teaser")?.url).toBeNull();
-		expect(fixture.tx.page.delete).toHaveBeenCalledWith({ where: { id: "travel" } });
+		// The page is tombstoned rather than destroyed, and its slug leaves the live namespace so
+		// the couple can create a page at that path again.
+		expect(fixture.tx.page.delete).not.toHaveBeenCalled();
+		expect(fixture.tx.page.update).toHaveBeenCalledWith(
+			expect.objectContaining({ where: { id: "travel" } })
+		);
+		expect(fixture.page.slug).not.toBe("guide");
 	});
 });
