@@ -70,29 +70,31 @@ export function Gallery({
 			<div className={wrapperClassNames[theme]}>
 				{imageUrls.map((url, index) => (
 					<Reveal key={url} delay={Math.min(index * 80, 400)} variant="scale">
-						{/* Only Modern's tiles are a fixed aspect-square frame with `object-cover`;
-						    the other themes deliberately keep each image's natural aspect ratio
-						    (masonry columns), which has no fixed frame for `Parallax`'s oversized
-						    `fill` image to overflow within, so parallax is scoped to Modern here. */}
-						{isModern ? (
-							<Parallax
-								factor={0.12}
-								className={`aspect-square ${imageWrapperClassNames[theme]} hover-lift hover-zoom-img`}
-							>
-								<Image src={url} alt="" fill sizes={imageSizes[theme]} className="object-cover" />
-							</Parallax>
-						) : (
-							<div className={`${imageWrapperClassNames[theme]} hover-lift hover-zoom-img`}>
-								<Image
-									src={url}
-									alt=""
-									width={640}
-									height={800}
-									sizes={imageSizes[theme]}
-									className="h-auto w-full"
-								/>
-							</div>
-						)}
+						{/* The tile itself never moves: both the scroll drift and the hover zoom happen to
+						    the photo inside the frame, which clips them. Modern's tiles are a fixed
+						    aspect-square crop, so they take `Parallax`'s `fill` fit; every other theme is a
+						    masonry column keeping each photo's natural ratio, which has no fixed frame to
+						    overflow and so takes the `flow` fit instead. The frame sits *inside*
+						    `imageWrapperClassNames`, so Vintage's paper mat stays outside the clip and the
+						    zoom never spills over its border. */}
+						<div className={imageWrapperClassNames[theme]}>
+							{isModern ? (
+								<Parallax factor={0.12} className="hover-zoom-img aspect-square">
+									<Image src={url} alt="" fill sizes={imageSizes[theme]} className="object-cover" />
+								</Parallax>
+							) : (
+								<Parallax factor={0.08} fit="flow" className="hover-zoom-img">
+									<Image
+										src={url}
+										alt=""
+										width={640}
+										height={800}
+										sizes={imageSizes[theme]}
+										className="h-auto w-full"
+									/>
+								</Parallax>
+							)}
+						</div>
 					</Reveal>
 				))}
 			</div>

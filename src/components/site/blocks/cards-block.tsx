@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Card } from "@/components/card";
 import { Reveal } from "@/components/site/reveal";
 import { RichText } from "@/components/site/rich-text";
-import type { BlockItemView } from "@/lib/page-content";
+import { type BlockItemView, cardHasContent } from "@/lib/page-content";
 
 function staggerDelay(index: number): number {
 	return Math.min(index * 80, 400);
@@ -29,6 +29,7 @@ export function CardsBlock({
 	/** The first block's photo is the page's LCP, so it loads eagerly like the hero. */
 	isFirst: boolean;
 }) {
+	const visibleItems = items.filter(cardHasContent);
 	return (
 		<section
 			id={anchor || undefined}
@@ -52,9 +53,9 @@ export function CardsBlock({
 					<RichText html={body} className="max-w-3xl text-ink/70" />
 				</Reveal>
 			)}
-			{items.length > 0 && (
+			{visibleItems.length > 0 && (
 				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-					{items.map((item, index) => (
+					{visibleItems.map((item, index) => (
 						<Reveal key={item.id} delay={staggerDelay(index)}>
 							<Card className="hover-lift flex h-full flex-col gap-3">
 								{item.imageUrl && (

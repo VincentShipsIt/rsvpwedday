@@ -4,10 +4,12 @@ import { localeCodes } from "@/i18n/locales";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import { isImageGenerationConfigured } from "@/lib/replicate";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function StoryPage() {
+	await requireAdmin();
 	const milestones = await db.storyMilestone.findMany({
 		orderBy: { sortOrder: "asc" },
 		include: { translations: true },

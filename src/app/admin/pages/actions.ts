@@ -12,10 +12,12 @@ import {
 } from "@/domain/blocks";
 import { isAllowedImageUrl } from "@/domain/image-url";
 import { sanitizeRichText } from "@/domain/rich-text";
+import { notDeleted, retireUniqueValue } from "@/domain/soft-delete";
 import type { BlockType, Locale } from "@/generated/prisma/enums";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
+import { requireAdmin } from "@/lib/require-admin";
 
 const imageUrlSchema = z.string().refine((value) => value === "" || isAllowedImageUrl(value), {
 	message: "must be a valid https image URL",
@@ -44,6 +46,7 @@ export type PageTranslationInput = { locale: Locale; title: string; intro: strin
 export async function createPage(input: {
 	slug: string;
 }): Promise<FormActionResult & { id?: string }> {
+	await requireAdmin();
 	const slug = slugify(input.slug);
 	if (!slug) {
 		return { ok: false, error: "Enter a name for the page." };
@@ -74,6 +77,7 @@ export async function updatePageSettings(input: {
 	showInNav: boolean;
 	translations: PageTranslationInput[];
 }): Promise<FormActionResult> {
+	await requireAdmin();
 	const page = await db.page.findUnique({ where: { id: input.id } });
 	if (!page) {
 		return { ok: false, error: "That page no longer exists." };
@@ -95,6 +99,12 @@ export async function updatePageSettings(input: {
 	}
 
 	await db.$transaction(async (tx) => {
+		if (slug !== page.slug) {
+			await tx.block.updateMany({
+				where: { type: "PAGE_LINK", url: pagePath(page.slug) },
+				data: { url: pagePath(slug) },
+			});
+		}
 		await tx.page.update({
 			where: { id: page.id },
 			data: { slug, showInNav: input.showInNav },
@@ -119,6 +129,7 @@ export async function updatePageSettings(input: {
 }
 
 export async function deletePage(id: string): Promise<FormActionResult> {
+	await requireAdmin();
 	const page = await db.page.findUnique({ where: { id } });
 	if (!page) {
 		return { ok: true };
@@ -126,12 +137,27 @@ export async function deletePage(id: string): Promise<FormActionResult> {
 	if (page.slug === HOME_PAGE_SLUG) {
 		return { ok: false, error: "The home page can't be deleted." };
 	}
-	await db.page.delete({ where: { id } });
+	// The blocks go with it by hand, since `onDelete: Cascade` no longer fires, and the slug leaves
+	// the live namespace so the couple can create a page at that path again.
+	const now = new Date();
+	await db.$transaction(async (tx) => {
+		await tx.block.updateMany({
+			where: { type: "PAGE_LINK", url: pagePath(page.slug) },
+			data: { url: null },
+		});
+		await tx.blockItem.updateMany({ where: { block: { pageId: id } }, data: { deletedAt: now } });
+		await tx.block.updateMany({ where: { pageId: id }, data: { deletedAt: now } });
+		await tx.page.update({
+			where: { id },
+			data: { deletedAt: now, slug: retireUniqueValue(page.slug, now) },
+		});
+	});
 	revalidateSite(page.slug);
 	return { ok: true };
 }
 
 export async function reorderPages(ids: string[]): Promise<FormActionResult> {
+	await requireAdmin();
 	await db.$transaction(
 		ids.map((id, sortOrder) => db.page.update({ where: { id }, data: { sortOrder } }))
 	);
@@ -167,9 +193,16 @@ export async function createBlock(input: {
 	/** Insert directly below this block; omitted appends to the end. */
 	afterBlockId?: string;
 }): Promise<FormActionResult & { block?: BlockState; position?: number }> {
+	await requireAdmin();
 	const page = await db.page.findUnique({
 		where: { id: input.pageId },
-		include: { blocks: { orderBy: { sortOrder: "asc" }, select: { id: true, type: true } } },
+		include: {
+			blocks: {
+				where: notDeleted,
+				orderBy: { sortOrder: "asc" },
+				select: { id: true, type: true },
+			},
+		},
 	});
 	if (!page) {
 		return { ok: false, error: "That page no longer exists." };
@@ -227,9 +260,13 @@ export async function createBlock(input: {
 // Saves one block and nothing else. Every field the block's type does not declare is ignored, so
 // a stale client can never blank a column that its editor never showed.
 export async function updateBlock(input: BlockInput): Promise<FormActionResult> {
+	await requireAdmin();
 	const block = await db.block.findUnique({
 		where: { id: input.id },
-		include: { page: { select: { slug: true, id: true } }, items: { select: { id: true } } },
+		include: {
+			page: { select: { slug: true, id: true } },
+			items: { where: notDeleted, select: { id: true } },
+		},
 	});
 	if (!block) {
 		return { ok: false, error: "That block no longer exists." };
@@ -249,6 +286,13 @@ export async function updateBlock(input: BlockInput): Promise<FormActionResult> 
 	}
 	if (fields.pageLink && !pageLinkSchema.safeParse(input.url).success) {
 		return { ok: false, error: "Pick a page for this teaser to link to." };
+	}
+	if (fields.pageLink && input.url) {
+		const target = await db.page.findUnique({
+			where: { slug: input.url === "/" ? HOME_PAGE_SLUG : input.url.slice(1) },
+		});
+		if (!target)
+			return { ok: false, error: "That page no longer exists. Pick another page for the teaser." };
 	}
 	if (fields.items) {
 		for (const [index, item] of input.items.entries()) {
@@ -310,7 +354,7 @@ export async function updateBlock(input: BlockInput): Promise<FormActionResult> 
 
 		for (const itemId of existingItemIds) {
 			if (!submittedItemIds.has(itemId)) {
-				await tx.blockItem.delete({ where: { id: itemId } });
+				await tx.blockItem.update({ where: { id: itemId }, data: { deletedAt: new Date() } });
 			}
 		}
 
@@ -359,6 +403,7 @@ export async function updateBlock(input: BlockInput): Promise<FormActionResult> 
 }
 
 export async function deleteBlock(id: string): Promise<FormActionResult> {
+	await requireAdmin();
 	const block = await db.block.findUnique({
 		where: { id },
 		include: { page: { select: { slug: true } } },
@@ -366,7 +411,11 @@ export async function deleteBlock(id: string): Promise<FormActionResult> {
 	if (!block) {
 		return { ok: true };
 	}
-	await db.block.delete({ where: { id } });
+	const now = new Date();
+	await db.$transaction(async (tx) => {
+		await tx.blockItem.updateMany({ where: { blockId: id }, data: { deletedAt: now } });
+		await tx.block.update({ where: { id }, data: { deletedAt: now } });
+	});
 	revalidateSite(block.page.slug);
 	return { ok: true };
 }
@@ -375,6 +424,7 @@ export async function reorderBlocks(input: {
 	pageId: string;
 	ids: string[];
 }): Promise<FormActionResult> {
+	await requireAdmin();
 	const page = await db.page.findUnique({ where: { id: input.pageId } });
 	if (!page) {
 		return { ok: false, error: "That page no longer exists." };

@@ -4,10 +4,12 @@ import { clampEffectsSettings } from "@/domain/effects-settings";
 import { OpeningAnimation } from "@/generated/prisma/enums";
 import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function EffectsPage() {
+	await requireAdmin();
 	const siteContent = await db.siteContent.findUnique({ where: { id: 1 } });
 
 	return (

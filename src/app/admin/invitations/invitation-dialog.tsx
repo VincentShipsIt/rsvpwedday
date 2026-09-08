@@ -52,6 +52,7 @@ export type InvitationDialogTarget =
 			email: string;
 			locale: Locale;
 			companionAllowance: number;
+			childrenUnder12: number;
 			guests: InvitationGuestInput[];
 			eventIds: string[];
 	  };
@@ -71,6 +72,7 @@ export function InvitationDialog({
 	const [email, setEmail] = useState("");
 	const [locale, setLocale] = useState<Locale>("en");
 	const [companionAllowance, setCompanionAllowance] = useState(0);
+	const [childrenUnder12, setChildrenUnder12] = useState(0);
 	const [guests, setGuests] = useState<GuestRow[]>([]);
 	const [eventIds, setEventIds] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -87,13 +89,15 @@ export function InvitationDialog({
 			setEmail(target.email);
 			setLocale(target.locale);
 			setCompanionAllowance(target.companionAllowance);
+			setChildrenUnder12(target.childrenUnder12);
 			setGuests(target.guests.map((guest) => ({ ...guest, key: createGuestKey() })));
 			setEventIds(target.eventIds);
 		} else {
 			setEmail("");
 			setLocale("en");
 			setCompanionAllowance(0);
-			setGuests([]);
+			setChildrenUnder12(0);
+			setGuests([emptyGuestRow()]);
 			// A new household is invited to everything until the couple unticks something.
 			setEventIds(events.map((event) => event.id));
 		}
@@ -129,24 +133,29 @@ export function InvitationDialog({
 			email,
 			locale,
 			companionAllowance,
+			childrenUnder12,
 			guests: guests.map(({ key, ...guest }) => guest),
 			eventIds,
 		};
 
 		startTransition(async () => {
-			const result =
-				target.mode === "edit"
-					? await updateInvitation(target.invitationId, payload)
-					: await createInvitation(payload);
+			try {
+				const result =
+					target.mode === "edit"
+						? await updateInvitation(target.invitationId, payload)
+						: await createInvitation(payload);
 
-			if (!result.ok) {
-				setError(result.error);
-				return;
+				if (!result.ok) {
+					setError(result.error);
+					return;
+				}
+
+				toast.success(target.mode === "edit" ? "Invitation updated" : "Invitation created");
+				onOpenChange(false);
+				router.refresh();
+			} catch {
+				setError("The invitation could not be saved. Please try again.");
 			}
-
-			toast.success(target.mode === "edit" ? "Invitation updated" : "Invitation created");
-			onOpenChange(false);
-			router.refresh();
 		});
 	}
 
@@ -158,7 +167,7 @@ export function InvitationDialog({
 						{target?.mode === "edit" ? "Edit invitation" : "New invitation"}
 					</DialogTitle>
 					<DialogDescription>
-						An invitation covers one email and every named guest it's addressed to.
+						One household email, named guests aged 12 and over, and a count of younger children.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -198,7 +207,9 @@ export function InvitationDialog({
 					</div>
 
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="companionAllowance">Companion allowance</Label>
+						<Label htmlFor="companionAllowance">
+							Additional guests aged 12 and over (+1 allowance)
+						</Label>
 						<Input
 							id="companionAllowance"
 							type="number"
@@ -208,6 +219,21 @@ export function InvitationDialog({
 						/>
 					</div>
 
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="childrenUnder12">Children under 12</Label>
+						<Input
+							id="childrenUnder12"
+							type="number"
+							min={0}
+							max={20}
+							step={1}
+							value={childrenUnder12}
+							onChange={(event) => setChildrenUnder12(Number(event.target.value))}
+						/>
+						<p className="text-xs text-muted-foreground">
+							Counted separately from the +1 allowance. No names or contact details needed.
+						</p>
+					</div>
 					<fieldset className="flex flex-col gap-2 rounded-lg border p-4">
 						<legend className="px-1 text-sm font-medium">Invited to</legend>
 						{events.length === 0 && (
@@ -236,58 +262,55 @@ export function InvitationDialog({
 					</fieldset>
 
 					<fieldset className="flex flex-col gap-4 rounded-lg border p-4">
-						<legend className="px-1 text-sm font-medium">Guests</legend>
-						{guests.map((guest) => (
-							<div key={guest.key} className="grid gap-2 sm:grid-cols-2">
-								<Input
-									placeholder="First name"
-									value={guest.firstName}
-									onChange={(event) => updateGuest(guest.key, { firstName: event.target.value })}
-								/>
-								<Input
-									placeholder="Last name"
-									value={guest.lastName}
-									onChange={(event) => updateGuest(guest.key, { lastName: event.target.value })}
-								/>
-								<Select
-									value={guest.kind}
-									onValueChange={(value) =>
-										updateGuest(guest.key, {
-											kind: value === GuestKind.CHILD ? GuestKind.CHILD : GuestKind.ADULT,
-										})
-									}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={GuestKind.ADULT}>Adult</SelectItem>
-										<SelectItem value={GuestKind.CHILD}>Child</SelectItem>
-									</SelectContent>
-								</Select>
-								<div className="flex items-center gap-2">
+						<legend className="px-1 text-sm font-medium">Named guests (12 and over)</legend>
+						{guests.map((guest, index) => (
+							<fieldset key={guest.key} className="grid gap-3 sm:grid-cols-2">
+								<legend className="mb-2 text-sm font-medium">Guest {index + 1}</legend>
+								<label className="grid gap-1 text-sm" htmlFor={`guest-${guest.key}-firstName`}>
+									First name
 									<Input
+										id={`guest-${guest.key}-firstName`}
+										value={guest.firstName}
+										required
+										onChange={(event) => updateGuest(guest.key, { firstName: event.target.value })}
+									/>
+								</label>
+								<label className="grid gap-1 text-sm" htmlFor={`guest-${guest.key}-lastName`}>
+									Last name
+									<Input
+										id={`guest-${guest.key}-lastName`}
+										value={guest.lastName}
+										required
+										onChange={(event) => updateGuest(guest.key, { lastName: event.target.value })}
+									/>
+								</label>
+								<label className="grid gap-1 text-sm" htmlFor={`guest-${guest.key}-email`}>
+									Email (optional)
+									<Input
+										id={`guest-${guest.key}-email`}
 										type="email"
-										placeholder="Email"
 										value={guest.email}
 										onChange={(event) => updateGuest(guest.key, { email: event.target.value })}
 									/>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => removeGuest(guest.key)}
-									>
-										Remove
-									</Button>
-								</div>
-								<Input
-									type="tel"
-									placeholder="Phone"
-									value={guest.phone}
-									onChange={(event) => updateGuest(guest.key, { phone: event.target.value })}
-								/>
-							</div>
+								</label>
+								<label className="grid gap-1 text-sm" htmlFor={`guest-${guest.key}-phone`}>
+									Phone (optional)
+									<Input
+										id={`guest-${guest.key}-phone`}
+										type="tel"
+										value={guest.phone}
+										onChange={(event) => updateGuest(guest.key, { phone: event.target.value })}
+									/>
+								</label>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => removeGuest(guest.key)}
+								>
+									Remove guest
+								</Button>
+							</fieldset>
 						))}
 						<Button type="button" variant="secondary" size="sm" onClick={addGuest}>
 							Add guest

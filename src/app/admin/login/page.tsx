@@ -2,6 +2,7 @@ import { login } from "@/app/admin/login/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,20 @@ export default async function AdminLoginPage({
 				</CardHeader>
 				<CardContent>
 					<form action={login} className="flex flex-col gap-4">
-						<Input type="password" name="password" placeholder="Password" required />
-						{error && <p className="text-sm text-destructive">Incorrect password</p>}
+						<Label htmlFor="admin-password">Password</Label>
+						<Input
+							id="admin-password"
+							type="password"
+							name="password"
+							autoComplete="current-password"
+							required
+							aria-describedby={error ? "login-error" : undefined}
+						/>
+						{error && (
+							<p id="login-error" role="alert" className="text-sm text-destructive">
+								Incorrect password
+							</p>
+						)}
 						<Button type="submit">Sign in</Button>
 					</form>
 				</CardContent>

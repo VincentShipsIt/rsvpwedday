@@ -134,6 +134,7 @@ export function InvitationOpening({
 	const skipRef = useRef<HTMLButtonElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const timerRef = useRef<number | null>(null);
+	const coverRef = useRef<HTMLDivElement>(null);
 	const artRef = useRef<HTMLDivElement>(null);
 	const isFilm = animation === OpeningAnimation.MEDITERRANEAN_BLOOM;
 	// 200% speed → every reveal duration and delay is halved, in CSS (`--opening-scale`) and here.
@@ -247,24 +248,86 @@ export function InvitationOpening({
 	}, [shouldShow, holdSeconds]);
 
 	useEffect(() => {
-		if (!shouldShow || (phase === "opening" && !isFilm)) {
-			return;
+		if (!shouldShow || !isVisible || !coverRef.current) return;
+		const cover = coverRef.current;
+		const previousFocus = document.activeElement;
+		const previousOverflow = document.body.style.overflow;
+		const previousRootOverflow = document.documentElement.style.overflow;
+		const background: { element: HTMLElement; inert: boolean }[] = [];
+		let branch: HTMLElement = cover;
+		while (branch.parentElement) {
+			for (const sibling of branch.parentElement.children) {
+				if (sibling instanceof HTMLElement && sibling !== branch) {
+					background.push({ element: sibling, inert: sibling.inert });
+					sibling.inert = true;
+				}
+			}
+			branch = branch.parentElement;
+			if (branch === document.body) break;
 		}
-		if (phase === "ready") {
-			buttonRef.current?.focus();
-		} else if (phase === "opening") {
-			skipRef.current?.focus();
+		document.body.style.overflow = "hidden";
+		document.documentElement.style.overflow = "hidden";
+		cover.focus();
+		function containFocus(event: FocusEvent) {
+			if (!cover.contains(event.target as Node)) cover.focus();
 		}
+		document.addEventListener("focusin", containFocus);
+		return () => {
+			document.removeEventListener("focusin", containFocus);
+			for (const { element, inert } of background) element.inert = inert;
+			document.body.style.overflow = previousOverflow;
+			document.documentElement.style.overflow = previousRootOverflow;
+			if (
+				previousFocus instanceof HTMLElement &&
+				previousFocus !== document.body &&
+				previousFocus.isConnected
+			)
+				previousFocus.focus();
+			else {
+				const main = document.querySelector("main");
+				if (main) {
+					main.tabIndex = -1;
+					main.focus({ preventScroll: true });
+				}
+			}
+		};
+	}, [shouldShow, isVisible]);
 
+	useEffect(() => {
+		if (!shouldShow || !isVisible) return;
+		const target =
+			phase === "ready"
+				? buttonRef.current
+				: isFilm && phase === "opening"
+					? skipRef.current
+					: coverRef.current;
+		target?.focus();
 		function handleKeyDown(event: KeyboardEvent) {
 			if (event.key === "Escape") {
+				event.preventDefault();
 				handleOpen(true);
 			}
+			if (event.key === "Tab") {
+				event.preventDefault();
+				const buttons = Array.from(
+					coverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []
+				).filter((button) => button.tabIndex >= 0 && button.getAttribute("aria-hidden") !== "true");
+				if (buttons.length === 0) {
+					coverRef.current?.focus();
+					return;
+				}
+				const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+				const next = event.shiftKey
+					? current <= 0
+						? buttons.length - 1
+						: current - 1
+					: (current + 1) % buttons.length;
+				buttons[next]?.focus();
+			}
 		}
-
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [shouldShow, phase, handleOpen, isFilm]);
+	}, [shouldShow, isVisible, phase, handleOpen, isFilm]);
 
 	if (!shouldShow || !isVisible || !coupleNames.trim()) {
 		return null;
@@ -281,6 +344,8 @@ export function InvitationOpening({
 			data-phase={phase}
 			data-revealing={isRevealing ? "" : undefined}
 			data-photo={heroImageUrl ? "" : undefined}
+			ref={coverRef}
+			tabIndex={-1}
 			role="dialog"
 			aria-modal="true"
 			aria-label={coupleNames}

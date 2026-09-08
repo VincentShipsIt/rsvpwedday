@@ -4,11 +4,16 @@ import { updateInvitationLocale } from "@/app/rsvp/[token]/actions";
 import { RsvpForm } from "@/app/rsvp/[token]/rsvp-form";
 import { Card } from "@/components/card";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { giftCountLine } from "@/components/site/gifts";
 import { StatusBadge } from "@/components/status-badge";
+import { childAttendanceCounts, childrenUnder12 } from "@/domain/children";
+import { localizeGift, publishableGifts } from "@/domain/gifts";
 import { canRespond, getInvitationStatus, type InvitationStatus } from "@/domain/invitation";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
 import { resolvePhotoBookAccess } from "@/domain/photo-book";
-import { Attendance } from "@/generated/prisma/enums";
+import { notDeleted } from "@/domain/soft-delete";
+import { populatedTranslation } from "@/domain/translations";
+import { Attendance, GuestKind } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
 import { db } from "@/lib/db";
@@ -28,19 +33,27 @@ export default async function RsvpPage({
 
 	const invitation = await db.invitation.findUnique({
 		where: { token },
-		include: { guests: { include: { attendance: true } } },
+		include: {
+			guests: { where: notDeleted, include: { attendance: true } },
+			childAttendance: true,
+		},
 	});
 
 	if (!invitation) {
 		notFound();
 	}
 
-	const [settings, allEvents, siteContent] = await Promise.all([
+	const [settings, allEvents, siteContent, giftRecords] = await Promise.all([
 		db.settings.findUniqueOrThrow({ where: { id: 1 } }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 		db.siteContent.findUnique({
 			where: { id: 1 },
 			select: { photosEnabled: true, photosOpenAt: true, photosTestMode: true },
+		}),
+		// The card below only needs a count, but it is counted from the same rows and the same rule
+		// the list itself uses, so the two can never disagree about how much is left.
+		db.gift.findMany({
+			include: { translations: true, claim: { select: { invitationId: true, guestName: true } } },
 		}),
 	]);
 	// Only the events this household was invited to; the rest never appear on their page.
@@ -54,6 +67,7 @@ export default async function RsvpPage({
 	const showForm = canRespondNow && (!hasResponded || edit === "1");
 	// The photo book only shows up here once it is actually open; before the day, the guest's
 	// invitation says nothing about it.
+	const gifts = publishableGifts(giftRecords.map((gift) => localizeGift(gift, invitation.locale)));
 	const photoBook = resolvePhotoBookAccess(
 		{
 			enabled: siteContent?.photosEnabled ?? false,
@@ -64,13 +78,14 @@ export default async function RsvpPage({
 	);
 
 	const localizedEvents = events.map((event) => {
-		const translation =
-			event.translations.find((candidate) => candidate.locale === invitation.locale) ??
-			event.translations[0];
+		const translation = populatedTranslation(event.translations, invitation.locale, [
+			"name",
+			"description",
+		]);
 		return {
 			id: event.id,
 			slug: event.slug,
-			name: translation?.name ?? event.slug,
+			name: translation.name || event.slug,
 			description: translation?.description ?? null,
 			startsAt: event.startsAt,
 			venue: event.venue,
@@ -80,8 +95,20 @@ export default async function RsvpPage({
 		};
 	});
 
-	const namedGuests = invitation.guests.filter((guest) => !guest.addedByGuest);
-	const companionGuests = invitation.guests.filter((guest) => guest.addedByGuest);
+	const namedGuests = invitation.guests.filter(
+		(guest) => !guest.addedByGuest && guest.kind === GuestKind.ADULT
+	);
+	const childCounts = childAttendanceCounts(invitation);
+	const childTotal = childrenUnder12(invitation);
+	const childDietary =
+		invitation.childrenDietary ??
+		invitation.guests
+			.filter((guest) => guest.kind === GuestKind.CHILD)
+			.flatMap((guest) => (guest.dietary ? [guest.dietary] : []))
+			.join("; ");
+	const companionGuests = invitation.guests.filter(
+		(guest) => guest.addedByGuest && guest.kind === GuestKind.ADULT
+	);
 
 	const statusLabel: Record<InvitationStatus, string> = {
 		pending: dictionary.rsvp.statusPending,
@@ -111,6 +138,19 @@ export default async function RsvpPage({
 				</div>
 			</header>
 
+			{gifts.length > 0 && (
+				<Card className="flex flex-col gap-2">
+					<h2 className="text-xl">{dictionary.gifts.title}</h2>
+					<p className="text-sm text-ink/70">{giftCountLine(gifts, dictionary.gifts)}</p>
+					<Link
+						href={`/rsvp/${token}/gifts`}
+						className="text-sm text-green underline underline-offset-4"
+					>
+						{dictionary.gifts.openListLabel}
+					</Link>
+				</Card>
+			)}
+
 			{photoBook.state === "open" && (
 				<Card className="flex flex-col gap-2">
 					<h2 className="text-xl">{dictionary.photos.title}</h2>
@@ -128,7 +168,9 @@ export default async function RsvpPage({
 				{localizedEvents.map((event) => (
 					<Card key={event.id} className="flex flex-col gap-1">
 						<h2 className="text-xl">{event.name}</h2>
-						<p className="text-sm text-ink/70">{formatDate(event.startsAt, invitation.locale)}</p>
+						<p className="text-sm text-ink/70">
+							{formatDate(event.startsAt, invitation.locale, settings?.timeZone)}
+						</p>
 						<p className="text-sm">
 							{dictionary.rsvp.eventVenueLabel}: {event.venue}
 						</p>
@@ -169,6 +211,9 @@ export default async function RsvpPage({
 					dictionary={dictionary}
 					companionAllowance={invitation.companionAllowance}
 					events={localizedEvents.map((event) => ({ id: event.id, name: event.name }))}
+					initialChildrenUnder12={childTotal}
+					initialChildrenDietary={childDietary}
+					initialChildAttendance={childCounts}
 					initialNote={invitation.note ?? ""}
 					initialSongRequest={invitation.songRequest ?? ""}
 					guests={namedGuests.map((guest) => ({
@@ -176,14 +221,23 @@ export default async function RsvpPage({
 						firstName: guest.firstName,
 						lastName: guest.lastName,
 						dietary: guest.dietary ?? "",
-						attendance: localizedEvents.map((event) => ({
-							eventId: event.id,
-							attending:
-								guest.attendance.find((attendance) => attendance.eventId === event.id)?.status ===
-								Attendance.ACCEPTED,
-						})),
+						attendance: localizedEvents
+							.filter((event) => guest.attendance.some((row) => row.eventId === event.id))
+							.map((event) => ({
+								eventId: event.id,
+								attending:
+									guest.attendance.find((attendance) => attendance.eventId === event.id)?.status ===
+									Attendance.ACCEPTED,
+							})),
 					}))}
 					companions={companionGuests.map((guest) => ({
+						id: guest.id,
+						attendance: localizedEvents.map((event) => ({
+							eventId: event.id,
+							attending: guest.attendance.some(
+								(row) => row.eventId === event.id && row.status === Attendance.ACCEPTED
+							),
+						})),
 						firstName: guest.firstName,
 						lastName: guest.lastName,
 						kind: guest.kind,
@@ -193,7 +247,7 @@ export default async function RsvpPage({
 				/>
 			)}
 
-			{!showForm && canRespondNow && hasResponded && (
+			{!showForm && hasResponded && (
 				<Card className="flex flex-col gap-4">
 					<h2 className="text-xl">{dictionary.rsvp.summaryHeading}</h2>
 					{namedGuests.map((guest) => (
@@ -228,9 +282,36 @@ export default async function RsvpPage({
 							</ul>
 						</div>
 					)}
-					<Link href="?edit=1" className="text-sm text-green underline underline-offset-4">
-						{dictionary.rsvp.editButton}
-					</Link>
+					{childTotal > 0 && (
+						<div className="text-sm">
+							<p className="font-medium">
+								{dictionary.rsvp.childrenHeading}: {childTotal}
+							</p>
+							<ul className="list-inside list-disc">
+								{localizedEvents.map((event) => (
+									<li key={event.id}>
+										{event.name}: {childCounts[event.id] ?? 0}
+									</li>
+								))}
+							</ul>
+							{childDietary && <p>{childDietary}</p>}
+						</div>
+					)}
+					{invitation.note && (
+						<p className="whitespace-pre-wrap text-sm">
+							{dictionary.rsvp.noteLabel}: {invitation.note}
+						</p>
+					)}
+					{invitation.songRequest && (
+						<p className="text-sm">
+							{dictionary.rsvp.songRequestLabel}: {invitation.songRequest}
+						</p>
+					)}
+					{canRespondNow && (
+						<Link href="?edit=1" className="text-sm text-green underline underline-offset-4">
+							{dictionary.rsvp.editButton}
+						</Link>
+					)}
 				</Card>
 			)}
 		</main>

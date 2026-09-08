@@ -11,6 +11,7 @@ export type EmailEvent = {
 export type EmailTemplateProps = {
 	kind: EmailKind;
 	locale: Locale;
+	timeZone?: string;
 	theme: SiteTheme;
 	copy: EmailCopy;
 	coupleNames: string;

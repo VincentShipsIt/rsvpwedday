@@ -9,22 +9,26 @@ import { SiteTheme } from "@/generated/prisma/enums";
 import { copyImageToBlob, isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import { generateImage, isImageGenerationConfigured } from "@/lib/replicate";
+import { requireAdmin } from "@/lib/require-admin";
 
 // A prediction usually settles in a few seconds, but the model is a shared queue; this is the
 // ceiling `src/lib/replicate.ts` works inside.
 export const maxDuration = 60;
 
 /*
- * The admin's "Generate illustration" buttons. The browser sends only which block it is standing
- * in and that block's own copy — the theme, the couple's names and the venues come from the
- * database here, so the art direction cannot be steered from the client. `src/proxy.ts` already
- * gates every `/admin/*` path behind the session cookie.
+ * The admin's "Generate illustration" buttons. The browser sends which block it is standing in,
+ * that block's own copy, and whatever the couple typed in the generate box — the theme, the
+ * couple's names and the venues come from the database here, so the *art direction* still cannot
+ * be steered from the client even though the subject now can. `src/proxy.ts` already gates every
+ * `/admin/*` path behind the session cookie.
  */
 const requestSchema = z.object({
 	placement: z.enum(ILLUSTRATION_PLACEMENTS),
 	title: z.string().max(300).optional(),
 	body: z.string().max(8000).optional(),
 	dateLabel: z.string().max(200).optional(),
+	/** The couple's own line about this one picture, typed in the generate box. */
+	instructions: z.string().max(600).optional(),
 });
 
 function uniquePlaces(events: { venue: string; address: string | null }[]): string[] {
@@ -35,6 +39,11 @@ function uniquePlaces(events: { venue: string; address: string | null }[]): stri
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+	try {
+		await requireAdmin();
+	} catch {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
 	if (!isImageGenerationConfigured()) {
 		return NextResponse.json(
 			{ error: "Image generation needs a Replicate token (REPLICATE_API_TOKEN)." },

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+	EDITABLE_IMPORT_CSV_HEADER,
 	IMPORT_CSV_HEADER,
 	parseCsvRows,
 	parseImportCsv,
 	serializeCsvRow,
 	serializeExportCsv,
 	serializeImportTemplateCsv,
+	serializeSpreadsheetCsvRow,
 } from "@/domain/csv";
 import { GuestKind, Locale } from "@/generated/prisma/enums";
 
@@ -132,8 +134,121 @@ describe("serializeExportCsv", () => {
 		);
 
 		expect(csv).toBe(
-			"invitationEmail,status,firstName,lastName,kind,dietary,wedding,brunch\n" +
-				"a@example.com,accepted,Jane,Doe,ADULT,vegetarian,ACCEPTED,"
+			"invitationEmail,status,firstName,lastName,kind,dietary,guestId,guestEmail,guestPhone,addedByGuest,childrenUnder12,note,songRequest,respondedAt,wedding,brunch\n" +
+				"a@example.com,accepted,Jane,Doe,ADULT,vegetarian,,,,false,0,,,,ACCEPTED,"
 		);
+	});
+});
+
+describe("extended import columns", () => {
+	it("accepts a stable ID and a household child count while normalizing the email", () => {
+		const csv = [
+			EDITABLE_IMPORT_CSV_HEADER.join(","),
+			"A@Example.com,en,2,Jane,Doe,ADULT,,,ceremony,guest-1,2",
+		].join("\n");
+		const result = parseImportCsv(csv);
+		expect(result.errors).toEqual([]);
+		expect(result.invitations[0]).toMatchObject({
+			email: "a@example.com",
+			childrenUnder12: 2,
+			guests: [{ id: "guest-1" }],
+		});
+	});
+	it("keeps omitted or blank child counts unspecified", () => {
+		const csv = [
+			EDITABLE_IMPORT_CSV_HEADER.join(","),
+			"a@example.com,en,2,Jane,Doe,ADULT,,,ceremony,guest-1,",
+		].join("\n");
+		expect(parseImportCsv(csv).invitations[0].childrenUnder12).toBeUndefined();
+	});
+	it("rejects conflicting household metadata and mixed child representations", () => {
+		const header = EDITABLE_IMPORT_CSV_HEADER.join(",");
+		expect(
+			parseImportCsv(
+				[
+					header,
+					"a@example.com,en,2,Jane,Doe,ADULT,,,,,2",
+					"a@example.com,de,2,Sam,Doe,ADULT,,,,,2",
+				].join("\n")
+			).errors[0]
+		).toContain("conflicting locale");
+		expect(
+			parseImportCsv(
+				[
+					header,
+					"a@example.com,en,2,Jane,Doe,ADULT,,,,,2",
+					"a@example.com,en,2,Sam,Doe,CHILD,,,,,",
+				].join("\n")
+			).errors[0]
+		).toContain("either childrenUnder12");
+	});
+	it("accepts a UTF-8 BOM from spreadsheet downloads", () => {
+		expect(
+			parseImportCsv(`\uFEFF${IMPORT_CSV_HEADER.join(",")}\na@example.com,en,0,Jane,Doe,ADULT,,,`)
+				.errors
+		).toEqual([]);
+	});
+});
+
+describe("spreadsheet export safety", () => {
+	it("round-trips CR, LF, CRLF, commas, quotes and Unicode within a single row", () => {
+		const fields = [
+			"one\rtwo",
+			"one\ntwo",
+			"one\r\ntwo",
+			"Doe, Jane",
+			'A "quote"',
+			"Şêrîn — Grüezi",
+		];
+		expect(parseCsvRows(serializeCsvRow(fields))).toEqual([fields]);
+	});
+	it("keeps formula-like text and international phone numbers literal, without changing machine CSV", () => {
+		const fields = ["=1+1", "+41 79 123 45 67", "-12", "@name", " \t=1+1", "plain"];
+		expect(parseCsvRows(serializeSpreadsheetCsvRow(fields))[0]).toEqual([
+			"'=1+1",
+			"'+41 79 123 45 67",
+			"'-12",
+			"'@name",
+			"' \t=1+1",
+			"plain",
+		]);
+		expect(parseCsvRows(serializeCsvRow(fields))[0]).toEqual(fields);
+	});
+	it("exports reply details, companion contacts and child counts in stable columns", () => {
+		const rows = parseCsvRows(
+			serializeExportCsv(
+				[
+					{
+						invitationEmail: "family@example.com",
+						status: "accepted",
+						firstName: "Sam",
+						lastName: "Doe",
+						kind: GuestKind.ADULT,
+						dietary: "No nuts\rNo dairy",
+						guestId: "guest-2",
+						guestEmail: "sam@example.com",
+						guestPhone: "+41 79",
+						addedByGuest: true,
+						childrenUnder12: 2,
+						note: "=1+1",
+						songRequest: "Şêrîn",
+						respondedAt: "2026-09-08T12:00:00Z",
+						attendanceByEventSlug: { ceremony: "ACCEPTED" },
+					},
+				],
+				["ceremony"]
+			)
+		);
+		expect(rows).toHaveLength(2);
+		const record = Object.fromEntries(rows[0].map((key, index) => [key, rows[1][index]]));
+		expect(record).toMatchObject({
+			guestId: "guest-2",
+			guestPhone: "'+41 79",
+			childrenUnder12: "2",
+			addedByGuest: "true",
+			note: "'=1+1",
+			dietary: "No nuts\rNo dairy",
+			ceremony: "ACCEPTED",
+		});
 	});
 });

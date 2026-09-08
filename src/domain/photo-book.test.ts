@@ -3,7 +3,10 @@ import {
 	type BookPhoto,
 	buildBookPages,
 	buildLeaves,
+	lastBookPosition,
+	positionForPage,
 	resolvePhotoBookAccess,
+	visibleBookPage,
 } from "@/domain/photo-book";
 
 const now = new Date("2026-09-07T12:00:00Z");
@@ -95,5 +98,46 @@ describe("buildLeaves", () => {
 			[pages[0], pages[1]],
 			[pages[2], null],
 		]);
+	});
+});
+
+describe("book reading positions", () => {
+	it("makes all front and back pages reachable for both layouts and every book shape", () => {
+		for (const hasIntro of [false, true]) {
+			for (let count = 0; count < 8; count += 1) {
+				const pages = buildBookPages(
+					Array.from({ length: count }, (_, index) => photo(`${index}`)),
+					hasIntro
+				);
+				for (const perLeaf of [1, 2] as const) {
+					const last = lastBookPosition(pages.length, perLeaf);
+					for (let page = 0; page < pages.length; page += 1) {
+						const position = positionForPage(page, perLeaf);
+						expect(position).toBeLessThanOrEqual(last);
+						expect(
+							perLeaf === 1 ? position === page : position * 2 === page || position * 2 - 1 === page
+						).toBe(true);
+					}
+				}
+			}
+		}
+	});
+
+	it("lets a cover/end-only desktop book open to its closing back face", () => {
+		expect(lastBookPosition(2, 2)).toBe(1);
+		expect(visibleBookPage(1, 2, 2)).toBe(1);
+	});
+
+	it("locates the newest photo instead of the closing page on a phone", () => {
+		const pages = buildBookPages([photo("old"), photo("new")], true);
+		const newest = pages.findLastIndex((page) => page.kind === "photo");
+		expect(positionForPage(newest, 1)).toBe(3);
+		expect(pages[positionForPage(newest, 1)]).toEqual({ kind: "photo", photo: photo("new") });
+	});
+
+	it("preserves the final visible page when resizing a desktop book to mobile", () => {
+		const page = visibleBookPage(3, 2, 6);
+		expect(positionForPage(page, 1)).toBe(5);
+		expect(positionForPage(page, 2)).toBe(3);
 	});
 });

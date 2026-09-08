@@ -16,6 +16,7 @@ import type { Locale } from "@/generated/prisma/enums";
 import { localeCodes, locales } from "@/i18n/locales";
 
 export type MemoriesFormProps = {
+	timeZone: string;
 	initialEnabled: boolean;
 	initialOpenAt: string;
 	initialTestMode: boolean;
@@ -25,6 +26,7 @@ export type MemoriesFormProps = {
 };
 
 export function MemoriesForm({
+	timeZone,
 	initialEnabled,
 	initialOpenAt,
 	initialTestMode,
@@ -32,6 +34,7 @@ export function MemoriesForm({
 	initialTranslations,
 }: MemoriesFormProps) {
 	const enabledId = useId();
+	const translationId = useId();
 	const testModeId = useId();
 	const [photosEnabled, setPhotosEnabled] = useState(initialEnabled);
 	const [photosOpenAt, setPhotosOpenAt] = useState(initialOpenAt);
@@ -79,7 +82,7 @@ export function MemoriesForm({
 							value={photosOpenAt}
 							onChange={setPhotosOpenAt}
 							clearable
-							description="Before this moment guests see the date instead of the camera. Leave it empty to open the book as soon as it is switched on."
+							description={`Time zone: ${timeZone}. Before this moment guests see the date instead of the camera. Leave it empty to open the book as soon as it is switched on.`}
 						/>
 						{weddingDate && photosOpenAt !== weddingDate && (
 							<Button
@@ -127,8 +130,11 @@ export function MemoriesForm({
 								className="flex flex-col gap-4 pt-4"
 							>
 								<div className="grid gap-2">
-									<Label>Title on the cover</Label>
+									<Label htmlFor={`${translationId}-${translation.locale}-title`}>
+										Title on the cover
+									</Label>
 									<Input
+										id={`${translationId}-${translation.locale}-title`}
 										placeholder="The memories book"
 										value={translation.photosTitle}
 										onChange={(event) =>
@@ -137,8 +143,11 @@ export function MemoriesForm({
 									/>
 								</div>
 								<div className="grid gap-2">
-									<Label>Opening note</Label>
+									<Label htmlFor={`${translationId}-${translation.locale}-intro`}>
+										Opening note
+									</Label>
 									<Textarea
+										id={`${translationId}-${translation.locale}-intro`}
 										rows={4}
 										placeholder="Left empty, the book goes straight from the cover to the photos."
 										value={translation.photosIntro}

@@ -2,7 +2,10 @@ import { render } from "@react-email/components";
 import { createElement } from "react";
 import { Resend } from "resend";
 import { type EmailCopyOverride, resolveEmailCopy } from "@/domain/email-copy";
+import type { EmailDeliveryStatus } from "@/domain/email-delivery";
 import { filterToInvited, invitedEventIds } from "@/domain/invitation-events";
+import { notDeleted } from "@/domain/soft-delete";
+import { populatedTranslation } from "@/domain/translations";
 import { InvitationEmail } from "@/emails/invitation-email";
 import type { EmailEvent, EmailTemplateProps } from "@/emails/types";
 import { EmailKind, type Locale } from "@/generated/prisma/enums";
@@ -26,11 +29,10 @@ async function loadEmailContext(kind: EmailKind, locale: Locale) {
 	]);
 
 	const emailEvents: EmailEvent[] = events.map((event) => {
-		const translation =
-			event.translations.find((candidate) => candidate.locale === locale) ?? event.translations[0];
+		const translation = populatedTranslation(event.translations, locale, ["name"]);
 		return {
 			id: event.id,
-			name: translation?.name ?? event.slug,
+			name: translation.name || event.slug,
 			startsAt: event.startsAt,
 			venue: event.venue,
 		};
@@ -56,12 +58,13 @@ export async function renderEmail(
 	const copy = resolveEmailCopy(kind, getDictionary(locale), copyOverride ?? template, {
 		name: guestFirstName,
 		coupleNames: settings.coupleNames,
-		deadline: formatDate(settings.rsvpDeadline, locale),
+		deadline: formatDate(settings.rsvpDeadline, locale, settings.timeZone),
 	});
 
 	const props: EmailTemplateProps = {
 		kind,
 		locale,
+		timeZone: settings.timeZone,
 		theme: siteContent?.theme ?? "EDITORIAL",
 		copy,
 		coupleNames: settings.coupleNames,
@@ -73,7 +76,11 @@ export async function renderEmail(
 	return { subject: copy.subject, html: await render(createElement(InvitationEmail, props)) };
 }
 
-type DeliveryResult = { resendId: string | null; error: string | null };
+export type DeliveryResult = {
+	status: EmailDeliveryStatus;
+	resendId: string | null;
+	error: string | null;
+};
 
 async function deliver(
 	kind: EmailKind,
@@ -84,25 +91,47 @@ async function deliver(
 ): Promise<DeliveryResult> {
 	if (!env.RESEND_API_KEY) {
 		console.info(`[email:${kind}] ${email.subject} -> ${link}`);
-		return { resendId: null, error: null };
+		return { status: "simulated", resendId: null, error: null };
 	}
 	const resend = new Resend(env.RESEND_API_KEY);
-	const { data, error } = await resend.emails.send({
-		from: env.EMAIL_FROM,
-		to,
-		subject: email.subject,
-		html: email.html,
-		replyTo: replyTo ?? undefined,
-	});
-	return error
-		? { resendId: null, error: error.message }
-		: { resendId: data?.id ?? null, error: null };
+	try {
+		const { data, error } = await resend.emails.send({
+			from: env.EMAIL_FROM,
+			to,
+			subject: email.subject,
+			html: email.html,
+			replyTo: replyTo ?? undefined,
+		});
+		return error
+			? { status: "failed", resendId: null, error: error.message }
+			: data?.id
+				? { status: "accepted", resendId: data.id, error: null }
+				: {
+						status: "failed",
+						resendId: null,
+						error: "The email provider did not accept the message.",
+					};
+	} catch {
+		return {
+			status: "failed",
+			resendId: null,
+			error: "Could not reach the email provider. Please retry.",
+		};
+	}
 }
 
-export async function sendInvitationEmail(kind: EmailKind, invitationId: string): Promise<void> {
+export async function sendInvitationEmail(
+	kind: EmailKind,
+	invitationId: string
+): Promise<DeliveryResult> {
 	const invitation = await db.invitation.findUniqueOrThrow({
 		where: { id: invitationId },
-		include: { guests: { where: { addedByGuest: false }, include: { attendance: true } } },
+		include: {
+			guests: {
+				where: { ...notDeleted, addedByGuest: false },
+				include: { attendance: true },
+			},
+		},
 	});
 	const settings = await db.settings.findUniqueOrThrow({ where: { id: 1 } });
 	// Every kind but the photo-day nudge sends the guest to their RSVP form; that one sends them
@@ -112,16 +141,28 @@ export async function sendInvitationEmail(kind: EmailKind, invitationId: string)
 			? `${env.APP_URL}/rsvp/${invitation.token}/memories`
 			: `${env.APP_URL}/rsvp/${invitation.token}`;
 
-	const email = await renderEmail(
-		kind,
-		invitation.locale,
-		invitation.guests[0]?.firstName ?? "",
-		link,
-		invitedEventIds(invitation.guests)
-	);
-	const { resendId, error } = await deliver(kind, invitation.email, email, settings.replyTo, link);
-
-	await db.emailLog.create({ data: { invitationId, kind, resendId, error } });
+	const attempt = await db.emailLog.create({
+		data: { invitationId, kind, error: "Delivery attempt in progress" },
+	});
+	try {
+		const email = await renderEmail(
+			kind,
+			invitation.locale,
+			invitation.guests[0]?.firstName ?? "",
+			link,
+			invitedEventIds(invitation.guests)
+		);
+		const result = await deliver(kind, invitation.email, email, settings.replyTo, link);
+		await db.emailLog.update({
+			where: { id: attempt.id },
+			data: { resendId: result.resendId, error: result.error },
+		});
+		return result;
+	} catch {
+		const error = "Could not prepare or record the email. Review the attempt before retrying.";
+		await db.emailLog.update({ where: { id: attempt.id }, data: { error } });
+		return { status: "failed", resendId: null, error };
+	}
 }
 
 // A test send from the admin: real template, real settings, a stand-in guest and a link to the
@@ -130,10 +171,11 @@ export async function sendInvitationEmail(kind: EmailKind, invitationId: string)
 export async function sendTestEmail(
 	kind: EmailKind,
 	locale: Locale,
-	to: string
+	to: string,
+	copyOverride?: EmailCopyOverride
 ): Promise<DeliveryResult> {
 	const settings = await db.settings.findUniqueOrThrow({ where: { id: 1 } });
 	const link = `${env.APP_URL}/`;
-	const email = await renderEmail(kind, locale, "Sam", link);
+	const email = await renderEmail(kind, locale, "Sam", link, null, copyOverride);
 	return deliver(kind, to, email, settings.replyTo, link);
 }

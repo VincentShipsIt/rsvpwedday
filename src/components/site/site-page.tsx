@@ -13,6 +13,9 @@ import type { StoryMilestoneView } from "@/components/site/story";
 import { ThemePicker } from "@/components/site/theme-picker";
 import { isHomePage } from "@/domain/blocks";
 import { clampEffectsSettings } from "@/domain/effects-settings";
+import { publicEvents } from "@/domain/event-visibility";
+import { localizeGift, publishableGifts, sortByAvailability } from "@/domain/gifts";
+import { populatedTranslation } from "@/domain/translations";
 import { resolveWeddingDate } from "@/domain/wedding-date";
 import { BlockType, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
@@ -52,12 +55,20 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 	const dictionary = getDictionary(locale);
 	const localeDefinition = locales[locale];
 
-	const [settings, siteContent, pageRecords, events, milestones] = await Promise.all([
+	const [settings, siteContent, pageRecords, events, milestones, giftRecords] = await Promise.all([
 		db.settings.findUnique({ where: { id: 1 } }),
 		db.siteContent.findUnique({ where: { id: 1 } }),
 		db.page.findMany({ orderBy: { sortOrder: "asc" }, include: pageInclude }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 		db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
+		db.gift.findMany({
+			orderBy: { sortOrder: "asc" },
+			include: {
+				translations: true,
+				// Only whether it is spoken for; the public page never names who took what.
+				claim: { select: { invitationId: true, guestName: true } },
+			},
+		}),
 	]);
 
 	const pages = pageRecords.map((page) => localizePage(page, locale));
@@ -66,9 +77,11 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 		notFound();
 	}
 
-	const localizedEvents: EventView[] = events.map((event) => {
-		const translation =
-			event.translations.find((candidate) => candidate.locale === locale) ?? event.translations[0];
+	// Anyone can read this page, so it shows only the events the couple marked public. The
+	// countdown below still resolves against `events`, the whole calendar, so hiding the welcome
+	// dinner cannot move the date the site counts to.
+	const localizedEvents: EventView[] = publicEvents(events).map((event) => {
+		const translation = populatedTranslation(event.translations, locale, ["name", "description"]);
 		return {
 			id: event.id,
 			slug: event.slug,
@@ -83,9 +96,7 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 	});
 
 	const localizedMilestones: StoryMilestoneView[] = milestones.map((milestone) => {
-		const translation =
-			milestone.translations.find((candidate) => candidate.locale === locale) ??
-			milestone.translations[0];
+		const translation = populatedTranslation(milestone.translations, locale, ["title", "body"]);
 		return {
 			id: milestone.id,
 			dateLabel: milestone.dateLabel,
@@ -95,9 +106,14 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 		};
 	});
 
+	const gifts = sortByAvailability(
+		publishableGifts(giftRecords.map((gift) => localizeGift(gift, locale)))
+	);
+
 	const site: SiteData = {
 		eventCount: localizedEvents.length,
 		milestoneCount: localizedMilestones.length,
+		giftCount: gifts.length,
 		hasSettings: Boolean(settings),
 	};
 
@@ -134,7 +150,7 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 	const effects = clampEffectsSettings(siteContent ?? {});
 
 	return (
-		<>
+		<div lang={locale} dir={localeDefinition.dir}>
 			<HashScrollFix />
 			{openingAnimation !== OpeningAnimation.NONE && (
 				<InvitationOpening
@@ -189,10 +205,12 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 					context={{
 						coupleNames,
 						locale,
+						timeZone: settings?.timeZone ?? "UTC",
 						dictionary,
 						theme,
 						events: localizedEvents,
 						milestones: localizedMilestones,
+						gifts,
 						weddingDate: resolveWeddingDate(settings?.weddingDate, events).date,
 						settings: settings
 							? { rsvpDeadline: settings.rsvpDeadline, replyTo: settings.replyTo }
@@ -218,6 +236,6 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 				/>
 			)}
 			{showThemePicker && <ThemePicker currentTheme={theme} />}
-		</>
+		</div>
 	);
 }

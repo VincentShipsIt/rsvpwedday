@@ -2,8 +2,9 @@
 
 Family wedding RSVP site. Guests get a personal link by email (`/rsvp/<token>`) and confirm
 attendance per named guest per event. The couple manages everything in a password-protected
-`/admin`. There are no anonymous plus-ones: every attendee, including a guest-added companion,
-is a named person with contact details.
+`/admin`. Guests aged 12 and over are named people; guest-added companions need an email or phone.
+Children under 12 are a household count, separate from the adult companion allowance, with
+per-event counts and optional shared dietary notes. They never need names or contact details.
 
 ## Stack
 
@@ -35,6 +36,64 @@ slugs separated by `;`, empty = every event; the Guests page serves a filled-in 
 the household, companions included. The RSVP page, the invite/reminder emails and the export all
 read the derived list, so nothing else needs to know.
 
+## Nothing is hard deleted
+
+Every row the couple can lose by mis-clicking carries `deletedAt`, and removing it sets that
+column instead of issuing a DELETE. `deletedAt` rather than `isDeleted` because it answers "when",
+which a restore list and any purge policy both need; "is it deleted" is `deletedAt !== null`.
+
+`src/lib/db.ts` hides tombstones from every top-level read through a Prisma client extension, so
+no query has to remember — the one that forgot would show a deleted event to guests. Two things
+about it are load-bearing. It matches the model name **case-insensitively**, because an extension
+is handed the schema's spelling (`"Gift"`) while the client's delegates are camel-case (`db.gift`),
+and matching only one silently switches the whole filter off. And it cannot reach inside an
+`include`, so a nested relation carries its own `where: notDeleted` — `pageInclude`, and every
+`guests` include. Grep `notDeleted` to find them. `dbIncludingDeleted` is the unfiltered client,
+for restoring and for whatever eventually purges; never render a page from it.
+
+`src/domain/soft-delete.ts` lists the nine models this covers and, more importantly, why five
+deletes are **not** in it: releasing a gift reservation, re-syncing a household's invited events,
+and replacing guest-added companions are mechanical, and tombstoning them breaks the feature —
+`GiftClaim`'s primary key *is* `giftId`, so a tombstone would make that gift unreservable forever.
+Translation rows are rewritten on every save and stay hard deletes too.
+
+`onDelete: Cascade` no longer fires, so parents cascade by hand: deleting an invitation marks its
+guests and photos, a page marks its blocks and their items, a block marks its items. Deleting a
+gift also drops its claim outright, since a gift nobody can see is not one anybody is bringing.
+
+Unique values leave the live namespace on delete (`retireUniqueValue`), because Postgres does not
+care that a row is tombstoned: a deleted `welcome-dinner` would make that slug unusable forever,
+and — silently, which is worse — re-importing a deleted household's CSV row would look its email
+up, not find it, try to create it, and collide. `restoreUniqueValue` strips the marker back off.
+
+Deleting a photo or a household no longer queues their files for storage cleanup. That pipeline
+(`src/lib/media-cleanup.ts`) still sweeps abandoned upload batches nobody ever registered, which is
+what it is for; destroying the files behind a deliberate delete would make it the one delete that
+cannot be undone, since a restored row pointing at a deleted object is not a photo. Whatever purges
+tombstones is what should take the files with them.
+
+There is no restore UI yet — putting something back is a database operation today.
+
+## Two filters on the event list
+
+They are independent and must not be confused, which is why each lives in its own module:
+
+- **Was this household invited?** `src/domain/invitation-events.ts#filterToInvited`, used by the
+  RSVP page, the invitation emails and the headcount.
+- **May anybody see this at all?** `src/domain/event-visibility.ts#publicEvents`, reading
+  `Event.showPublicly` and used only by `site-page.tsx` for the public `EVENTS` block.
+
+Turning `showPublicly` off takes a family-only welcome dinner off the public site while the guests
+actually invited to it still get it on their own RSVP page and in their invitation email, because
+those two filter by attendance rows and never by this flag. It defaults to on, so every event that
+already exists behaves exactly as before. The toggle is per event on `/admin/settings/events`.
+
+Two things it deliberately does **not** touch. The countdown's fallback (`resolveWeddingDate`) and
+the admin's day-offset labels read the whole calendar, so hiding an event never moves the date the
+site counts to — if the countdown points at a welcome dinner, the fix is to set
+`Settings.weddingDate`, not to hide the event. And `/calendar/<slug>.ics` stays reachable by slug,
+because the guests who *were* invited to a hidden event still need "Add to calendar" to work.
+
 ## Derived status
 
 `Invitation` has no stored status column. `src/domain/invitation.ts#getInvitationStatus` derives
@@ -44,7 +103,16 @@ attendance, else `declined`. Recompute it, never store it.
 ## Admin UI
 
 `/admin` is built on shadcn/ui; components live in `src/components/ui` (`components.json` pins the
-Nova preset, radix base, neutral colour). shadcn's tokens live on `:root` in `globals.css` (they
+Nova preset, radix base, neutral colour). The shell fills the screen it is given and only stops at
+`96rem` — wider than any laptop, so a guest list is not read through a letterbox while a table
+still does not stretch across an ultra-wide display; `main` carries `min-w-0` so a wide child
+scrolls inside its column rather than pushing the page sideways. The sidebar collapses to icons
+from the button beside its title, remembered per browser in `localStorage`; it renders expanded on
+the server and narrows only after that value is read, so the markup cannot mismatch on hydration.
+
+Every list the couple orders — page blocks, gifts, events, a block's own cards — reorders by
+dragging a handle (dnd-kit), never by typing a number, and `sortOrder` is saved as the row's index
+so two rows can never claim the same position. shadcn's tokens live on `:root` in `globals.css` (they
 don't collide with the public site's own `--wed-*`/`--color-*` names) so Radix's portalled content
 (Select, Dialog, AlertDialog, DropdownMenu, the Toaster — all rendered on `document.body`, outside
 `.admin-root`) resolves them too; only the base-layer rules that paint `.admin-root`'s own
@@ -67,10 +135,11 @@ the editor shows and the renderer reads, whether the type is built-in (one per p
 heading key and its default anchor. Adding a type means a `BlockType` value, a definition there, an
 editor case and a case in `src/components/site/page-blocks.tsx` — nothing else.
 
-Six types are built in and display data owned by other tables: `HERO` (photo and tagline on the
+Seven types are built in and display data owned by other tables: `HERO` (photo and tagline on the
 block, couple names and countdown from settings and events), `STORY` (heading and intro on the
 block, milestones from `StoryMilestone`), `EVENTS`, `GALLERY` (photos on the block), `FAQ`
-(questions as `BlockItem` rows) and `RSVP`. Four are free content the couple adds anywhere: `TEXT`,
+(questions as `BlockItem` rows), `RSVP` and `GIFTS` (heading and intro on the block, entries from
+`Gift`). Four are free content the couple adds anywhere: `TEXT`,
 `CARDS` (what a travel-guide section was — heading, intro, and cards with optional links and
 photos), `IMAGE` and `PAGE_LINK` (a teaser pointing at another page). Every text field is the
 rich-text editor; `anchor` is the block's `#fragment` and is unique within its page, and an empty
@@ -94,7 +163,11 @@ redirects each old path to whichever page now owns it. Every image field (hero, 
 `media-drop-zone.tsx`. Empty, a field is a drop zone uploading via `src/lib/blob-upload.ts` when
 `BLOB_READ_WRITE_TOKEN` is set (a browser-to-Blob client upload authorised by the token route
 `src/app/admin/upload/route.ts`, so files never pass through a Server Action and its 4.5 MB Vercel
-body cap); filled, it shows the picture (or a player and file name) with Replace and Remove. The
+body cap); filled, it shows a square thumbnail beside the Replace and Remove actions (or a player
+and file name), never a full-width banner — one preview shape for a 16:9 hero, a 4:3 gift and a
+portrait photograph alike. Clicking the thumbnail opens `image-lightbox.tsx`, which is the only
+place in the admin a picture is shown whole and uncropped; a gallery tile gets there from its own
+expand button, because the tile's surface already belongs to dnd-kit. The
 URL is never displayed: "Use a link" / "Add by link" reveals a paste box, which is also the whole
 field when Blob is not configured. The gallery grid reorders by drag and drop. Before either field
 calls `uploadImage`, `src/lib/downscale-image.ts#downscaleImage` shrinks a file 1 MB or larger to
@@ -104,10 +177,15 @@ pass through untouched. It never throws — a decode or canvas failure just retu
 file, so a browser without canvas support still uploads, it just skips the shrink.
 
 Every image field also offers "Generate illustration" when `REPLICATE_API_TOKEN` is set — both
-fields on a block, each card inside one, and each story milestone. The browser posts only the
-block's type and its own English copy to `src/app/admin/generate-image/route.ts`; the route reads
+fields on a block, each card inside one, and each story milestone. The button opens
+`generate-illustration-button.tsx`, a prompt box for one optional line about this picture; the
+browser posts that line plus the block's type and its own English copy to
+`src/app/admin/generate-image/route.ts`. The route reads
 the theme, couple names and event venues from the database and builds the prompt with
-`src/domain/illustration-prompt.ts`, so the art direction cannot be steered from the client. That
+`src/domain/illustration-prompt.ts`, so the *art direction* still cannot be steered from the
+client even though the subject now can — a typed line outranks the block's copy for the subject
+and nothing else, which is what makes a gift called "Pomeranian Puppy" drawable as the picture
+anybody wanted rather than as its title. That
 module holds one art direction per `SiteTheme` — palette copied from the `[data-theme]` blocks the
 same way `src/emails/theme.ts` copies it for mail clients — plus a brief and aspect ratio per
 `BlockType` and a fixed rules block. The rules are what make a set of images look like a set, and
@@ -135,7 +213,8 @@ names and hero photo. A test can be sent to any address; test sends are not writ
 Every settings-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
 differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save
-is queued and run once the current save settles), and flushes immediately on `visibilitychange`
+is queued and run once the current save settles), waits for pending saves before internal link navigation, flushes on unmount,
+and flushes immediately on `visibilitychange`
 to hidden and on `beforeunload`. `src/components/admin/save-status.tsx` renders the resulting
 saving/saved/error state next to a secondary "Save now" button, which stays as a manual fallback
 and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,
@@ -161,6 +240,41 @@ time input, exchanging the same `yyyy-MM-ddTHH:mm` string a native `datetime-loc
 server action had to change. Build that string with `src/lib/wire-date.ts` and never with
 `toISOString()` — that is UTC, and an evening in Berlin comes back an hour early, or near midnight
 on the wrong day.
+
+## Wish list
+
+The couple keeps a list of gifts at `/admin/gifts`; guests reserve from their own invitation link
+at `/rsvp/<token>/gifts`, and a `GIFTS` block puts the same list on any public page. One gift has
+one taker, and that is enforced by the schema rather than by the actions: `GiftClaim.giftId` is the
+**primary key**, so two guests reserving in the same second cannot both win — the loser's insert
+fails with `P2002`, which `reserveGift` turns into `already-taken` and the guest reads as "someone
+reserved that one a moment ago" in their own language. Releasing is a `deleteMany` scoped by
+`invitationId` as well as `giftId`, so a household can only ever take back its own reservation.
+
+Nothing in the data says whether it is a gift registry or a honeymoon registry. A `Gift` is a
+picture, an optional link, a **free-text** `price` (`"€120"`, `"about 80 francs"`, `""` — a family
+site has no business modelling currency) and per-locale title and rich-text body; "Two nights in
+the riad" and "Espresso machine" are the same row. What names the section is the block's own
+heading and intro, which is why the block carries `title` and `body` and the dictionary's
+`giftsHeading` is only the fallback.
+
+`src/domain/gifts.ts` holds the decisions all three surfaces share, so they cannot drift:
+`giftStatus` (`available` / `mine` / `taken`, where `mine` is the whole permission model),
+`sortByAvailability` (still-available first, so a guest sees what they can act on),
+`publishableGifts` (an untitled row never reaches a guest) and `localizeGift`. The public page
+passes `viewerInvitationId: null`, which is exactly why a claimed gift reads as "already taken"
+there and never as somebody's name — who gave what is the couple's business, and it is shown only
+in `/admin/gifts`, alongside the household's email, the note the giver left, and a Release action
+for the guest who emails to say they cannot manage it after all.
+
+`src/components/site/gifts.tsx` is one grid serving both surfaces; the difference between reading
+the list and reserving from it is the `renderAction` prop. That function runs on the server and
+returns `GiftActions`, the page's only client component — the cards stay server-rendered so
+`RichText`'s sanitiser never reaches a guest's bundle. `GiftGrid`'s `w-full` is load-bearing: the
+guest page centres its children, and without it the grid collapses to one narrow column.
+
+Deleting a gift cascades its claim, which is why the admin's remove dialog says so when somebody
+has already taken it. Claims also cascade with the invitation, like photos.
 
 ## Memories book
 
@@ -228,9 +342,14 @@ thumbnails) drops all three.
 
 The public site is `/` plus one route per page the couple adds, all sharing `SiteNav`,
 `SiteFooter`, and the theme. `src/lib/site-links.ts#buildSiteLinks` returns two lists from the
-localized pages: `navLinks` (the home page's own block anchors, as absolute `/#story` hrefs so they
-work from any page) and `footerLinks` (those plus a link to every other page that has content and
-`showInNav`). `src/proxy.ts` treats every path that is not `/admin`, `/rsvp`, `/calendar` or `/api`
+localized pages. `navLinks` follows the **home page's own blocks in order**: an anchor for each
+section (absolute `/#story` hrefs, so they work from any page) and, wherever the couple placed a
+`PAGE_LINK` teaser, a link to the page it points at. That is what lets a separate page sit in the
+top bar between two sections — "Our story · Wedding weekend · Discover Malta · Gallery" — and it
+means the bar is ordered by dragging blocks rather than by a second list that could disagree with
+the page. A teaser with no title of its own borrows the target page's label. `footerLinks` is that
+list plus every other page with content and `showInNav`, deduplicated, so a teased page is named
+once. `src/proxy.ts` treats every path that is not `/admin`, `/rsvp`, `/calendar` or `/api`
 as a public page and writes the `?lang=` cookie there, so a new page needs no matcher change.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`
@@ -261,3 +380,45 @@ access, so a build never needs runtime secrets or a database.
 Names, the venue, dates, and every other guest- or couple-specific fact live in the database, not
 in source, so the repository can be made public; a fresh checkout has no wedding details until it is seeded
 or configured.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+
+## Audit fixes and family counts
+
+`Invitation.childrenUnder12` is nullable for legacy compatibility. Null projects the existing
+`GuestKind.CHILD` records into counts; an explicit count uses `InvitationChildAttendance` rows.
+Legacy child records are retained, but never counted twice after conversion. Per-event totals
+count actual child attendance; the anonymous overall child total is the largest event count.
+`src/domain/children.ts` owns this projection. RSVP submissions validate exact guest/event
+membership before writes inside a serializable transaction; companions retain their IDs.
+
+Every privileged admin Server Action calls `requireAdmin` before reading input or data.
+Database-backed admin pages and export/template routes also guard their own data access.
+Upload token generation checks the session in its callback; signed Blob completion is separate.
+
+CSV imports merge identities instead of replacing guests. Optional `guestId` supports explicit
+matching; existing replies, dietary notes, companions, and omitted guests survive re-import.
+Spreadsheet exports include reply details and one aggregate row for children per household;
+its event cells contain counts, while adult event cells contain attendance status.
+
+`Settings.timeZone` is an IANA zone, initially UTC to preserve existing instants. All date forms
+exchange wall time in this zone through `wire-date.ts`, and all public/email date formatting
+uses it. Changing the zone changes display without silently moving stored timestamps.
+
+Photo writes require reserved upload receipts verified against the configured Blob store.
+Removal queues durable cleanup transactionally, waits for token expiry, and supports retries
+from Memories. Files from legacy records without ownership receipts are not automatically
+deleted. Bootstrap markers prevent deleted seeded pages/gifts from returning on deployment.
+
+`bun run db:push` and deployment preparation share `scripts/push-database.ts`. Before Prisma
+syncs the schema, it adds the nullable legacy-photo receipt column and unique index in an
+idempotent transaction. No ownership is inferred, existing rows are unchanged, actual duplicate
+receipts fail, and Prisma's normal data-loss protection remains enabled.

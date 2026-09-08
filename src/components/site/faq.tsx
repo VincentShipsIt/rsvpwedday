@@ -1,3 +1,4 @@
+import { FaqItem } from "@/components/site/faq-item";
 import { Reveal } from "@/components/site/reveal";
 import { RichText } from "@/components/site/rich-text";
 
@@ -7,9 +8,10 @@ function staggerDelay(index: number): number {
 	return Math.min(index * 80, 400);
 }
 
-// Native `<details>` accordion: keyboard- and screen-reader-accessible with no client state, and
-// it degrades to plain open text without JavaScript. Styled from the theme tokens only, so every
-// theme shares this one layout the way `RsvpSection` does.
+// Native `<details>` accordion: keyboard- and screen-reader-accessible, and it degrades to plain
+// open text without JavaScript. `FaqItem` adds the open/close height animation on top of that
+// element rather than replacing it. Styled from the theme tokens only, so every theme shares this
+// one layout the way `RsvpSection` does.
 export function Faq({
 	anchor,
 	heading,
@@ -34,22 +36,9 @@ export function Faq({
 			<div className="divide-y divide-ink/10 border-y border-ink/10">
 				{entries.map((entry, index) => (
 					<Reveal key={entry.id} delay={staggerDelay(index)}>
-						<details className="group py-4">
-							<summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-lg [&::-webkit-details-marker]:hidden">
-								<span>{entry.question}</span>
-								<svg
-									aria-hidden="true"
-									viewBox="0 0 20 20"
-									className="h-4 w-4 shrink-0 text-green transition-transform group-open:rotate-180"
-								>
-									<path
-										fill="currentColor"
-										d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.23 8.29a.75.75 0 0 1 0-1.08Z"
-									/>
-								</svg>
-							</summary>
+						<FaqItem question={entry.question}>
 							<RichText html={entry.answer} className="pt-3 text-ink/70" />
-						</details>
+						</FaqItem>
 					</Reveal>
 				))}
 			</div>

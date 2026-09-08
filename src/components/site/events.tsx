@@ -22,6 +22,7 @@ export type EventView = {
 type EventListProps = {
 	events: EventView[];
 	locale: Locale;
+	timeZone?: string;
 	dictionary: Dictionary;
 };
 
@@ -30,6 +31,7 @@ export function Events({
 	heading,
 	events,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 	theme,
 }: {
@@ -37,6 +39,7 @@ export function Events({
 	heading: string;
 	events: EventView[];
 	locale: Locale;
+	timeZone?: string;
 	dictionary: Dictionary;
 	theme: SiteTheme;
 }) {
@@ -53,25 +56,60 @@ export function Events({
 				<h2 className="text-4xl font-medium sm:text-5xl">{heading}</h2>
 			</Reveal>
 			{theme === SiteTheme.MODERN && (
-				<ModernEventList events={events} locale={locale} dictionary={dictionary} />
+				<ModernEventList
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 			{theme === SiteTheme.GARDEN && (
-				<GardenEventCards events={events} locale={locale} dictionary={dictionary} />
+				<GardenEventCards
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 			{theme === SiteTheme.EDITORIAL && (
-				<EditorialEventCards events={events} locale={locale} dictionary={dictionary} />
+				<EditorialEventCards
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 			{theme === SiteTheme.MIDNIGHT && (
-				<MidnightEventCards events={events} locale={locale} dictionary={dictionary} />
+				<MidnightEventCards
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 			{theme === SiteTheme.BOHO && (
-				<BohoEventCards events={events} locale={locale} dictionary={dictionary} />
+				<BohoEventCards
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 			{theme === SiteTheme.VINTAGE && (
-				<VintageEventCards events={events} locale={locale} dictionary={dictionary} />
+				<VintageEventCards
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 			{theme === SiteTheme.MEDITERRANEAN && (
-				<EventsTimeline events={events} locale={locale} dictionary={dictionary} />
+				<EventsTimeline
+					events={events}
+					locale={locale}
+					timeZone={timeZone}
+					dictionary={dictionary}
+				/>
 			)}
 		</section>
 	);
@@ -80,12 +118,13 @@ export function Events({
 function EventDetails({
 	event,
 	locale,
+	timeZone = "UTC",
 	dictionary,
 }: { event: EventView } & Omit<EventListProps, "events">) {
 	return (
 		<>
 			<h3 className="text-xl">{event.name}</h3>
-			<p className="text-sm text-ink/70">{formatDateTime(event.startsAt, locale)}</p>
+			<p className="text-sm text-ink/70">{formatDateTime(event.startsAt, locale, timeZone)}</p>
 			{event.description && <RichText html={event.description} className="text-sm text-ink/70" />}
 			<p className="text-sm">
 				{dictionary.rsvp.eventVenueLabel}: {event.venue}
@@ -121,13 +160,18 @@ function staggerDelay(index: number): number {
 	return Math.min(index * 80, 400);
 }
 
-function EditorialEventCards({ events, locale, dictionary }: EventListProps) {
+function EditorialEventCards({ events, locale, dictionary, timeZone = "UTC" }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{events.map((event, index) => (
 				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<Card className="hover-lift flex h-full flex-col gap-2">
-						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+						<EventDetails
+							event={event}
+							locale={locale}
+							timeZone={timeZone}
+							dictionary={dictionary}
+						/>
 					</Card>
 				</Reveal>
 			))}
@@ -135,13 +179,18 @@ function EditorialEventCards({ events, locale, dictionary }: EventListProps) {
 	);
 }
 
-function ModernEventList({ events, locale, dictionary }: EventListProps) {
+function ModernEventList({ events, locale, dictionary, timeZone = "UTC" }: EventListProps) {
 	return (
 		<div className="flex flex-col divide-y divide-ink/15 border-y border-ink/15">
 			{events.map((event, index) => (
 				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<div className="flex flex-col gap-2 py-6">
-						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+						<EventDetails
+							event={event}
+							locale={locale}
+							timeZone={timeZone}
+							dictionary={dictionary}
+						/>
 					</div>
 				</Reveal>
 			))}
@@ -149,13 +198,18 @@ function ModernEventList({ events, locale, dictionary }: EventListProps) {
 	);
 }
 
-function GardenEventCards({ events, locale, dictionary }: EventListProps) {
+function GardenEventCards({ events, locale, dictionary, timeZone = "UTC" }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{events.map((event, index) => (
 				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<div className="hover-lift flex h-full flex-col gap-2 rounded-2xl border-t-4 border-[var(--wed-secondary)] bg-white/70 p-6 shadow-sm">
-						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+						<EventDetails
+							event={event}
+							locale={locale}
+							timeZone={timeZone}
+							dictionary={dictionary}
+						/>
 					</div>
 				</Reveal>
 			))}
@@ -163,13 +217,18 @@ function GardenEventCards({ events, locale, dictionary }: EventListProps) {
 	);
 }
 
-function MidnightEventCards({ events, locale, dictionary }: EventListProps) {
+function MidnightEventCards({ events, locale, dictionary, timeZone = "UTC" }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{events.map((event, index) => (
 				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<div className="hover-lift flex h-full flex-col gap-2 rounded-lg border border-green/40 bg-transparent p-6">
-						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+						<EventDetails
+							event={event}
+							locale={locale}
+							timeZone={timeZone}
+							dictionary={dictionary}
+						/>
 					</div>
 				</Reveal>
 			))}
@@ -177,13 +236,18 @@ function MidnightEventCards({ events, locale, dictionary }: EventListProps) {
 	);
 }
 
-function BohoEventCards({ events, locale, dictionary }: EventListProps) {
+function BohoEventCards({ events, locale, dictionary, timeZone = "UTC" }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{events.map((event, index) => (
 				<Reveal key={event.id} delay={staggerDelay(index)}>
 					<div className="hover-lift flex h-full flex-col gap-2 rounded-3xl border-t-4 border-green bg-green-dark p-6 text-ivory [&_a]:text-ivory [&_h3]:text-ivory [&_p]:text-ivory/80">
-						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+						<EventDetails
+							event={event}
+							locale={locale}
+							timeZone={timeZone}
+							dictionary={dictionary}
+						/>
 					</div>
 				</Reveal>
 			))}
@@ -191,7 +255,7 @@ function BohoEventCards({ events, locale, dictionary }: EventListProps) {
 	);
 }
 
-function VintageEventCards({ events, locale, dictionary }: EventListProps) {
+function VintageEventCards({ events, locale, dictionary, timeZone = "UTC" }: EventListProps) {
 	return (
 		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{events.map((event, index) => (
@@ -201,7 +265,12 @@ function VintageEventCards({ events, locale, dictionary }: EventListProps) {
 						<span className="absolute -top-3 right-6 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-[10px] font-semibold text-ink shadow-sm">
 							{String(index + 1).padStart(2, "0")}
 						</span>
-						<EventDetails event={event} locale={locale} dictionary={dictionary} />
+						<EventDetails
+							event={event}
+							locale={locale}
+							timeZone={timeZone}
+							dictionary={dictionary}
+						/>
 					</div>
 				</Reveal>
 			))}

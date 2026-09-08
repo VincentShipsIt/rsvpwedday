@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { InvitationStatus } from "@/domain/invitation";
 import { GuestKind, Locale } from "@/generated/prisma/enums";
 
@@ -51,7 +52,7 @@ export function parseCsvRows(text: string): string[][] {
 }
 
 function serializeCsvField(value: string): string {
-	if (/["\n,]/.test(value)) {
+	if (/["\r\n,]/.test(value)) {
 		return `"${value.replace(/"/g, '""')}"`;
 	}
 	return value;
@@ -77,6 +78,7 @@ export const IMPORT_CSV_HEADER = [
 export const IMPORT_EVENTS_SEPARATOR = ";";
 
 export type ImportGuestRow = {
+	id?: string;
 	firstName: string;
 	lastName: string;
 	kind: GuestKind;
@@ -84,7 +86,14 @@ export type ImportGuestRow = {
 	phone: string | null;
 };
 
+export const EDITABLE_IMPORT_CSV_HEADER = [
+	...IMPORT_CSV_HEADER,
+	"guestId",
+	"childrenUnder12",
+] as const;
+
 export type ImportInvitation = {
+	childrenUnder12?: number;
 	email: string;
 	locale: Locale;
 	companionAllowance: number;
@@ -112,17 +121,29 @@ function isGuestKind(value: string): value is GuestKind {
 }
 
 export function parseImportCsv(text: string, options: ImportCsvOptions = {}): ImportCsvResult {
-	const rows = parseCsvRows(text).filter((row) => row.some((cell) => cell.trim() !== ""));
+	const rows = parseCsvRows(text.replace(/^\uFEFF/, "")).filter((row) =>
+		row.some((cell) => cell.trim() !== "")
+	);
 	if (rows.length === 0) {
 		return { invitations: [], errors: ["CSV is empty"] };
 	}
 
 	const [header, ...dataRows] = rows;
 	const isHeaderValid =
-		header.length === IMPORT_CSV_HEADER.length &&
-		header.every((cell, index) => cell.trim() === IMPORT_CSV_HEADER[index]);
+		header.length >= IMPORT_CSV_HEADER.length &&
+		header.length <= EDITABLE_IMPORT_CSV_HEADER.length &&
+		IMPORT_CSV_HEADER.every((cell, index) => header[index]?.trim() === cell) &&
+		header
+			.slice(IMPORT_CSV_HEADER.length)
+			.every((cell) => ["guestId", "childrenUnder12"].includes(cell.trim())) &&
+		new Set(header.map((cell) => cell.trim())).size === header.length;
 	if (!isHeaderValid) {
-		return { invitations: [], errors: [`Header must be: ${IMPORT_CSV_HEADER.join(",")}`] };
+		return {
+			invitations: [],
+			errors: [
+				`Header must start with: ${IMPORT_CSV_HEADER.join(",")}. Optional columns: guestId, childrenUnder12.`,
+			],
+		};
 	}
 
 	const errors: string[] = [];
@@ -130,10 +151,8 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 
 	dataRows.forEach((row, index) => {
 		const rowNumber = index + 2;
-		if (row.length !== IMPORT_CSV_HEADER.length) {
-			errors.push(
-				`Row ${rowNumber}: expected ${IMPORT_CSV_HEADER.length} columns, got ${row.length}`
-			);
+		if (row.length !== header.length) {
+			errors.push(`Row ${rowNumber}: expected ${header.length} columns, got ${row.length}`);
 			return;
 		}
 
@@ -149,8 +168,8 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 			eventsRaw,
 		] = row.map((cell) => cell.trim());
 
-		if (!email) {
-			errors.push(`Row ${rowNumber}: email is required`);
+		if (!z.email().safeParse(email).success) {
+			errors.push(`Row ${rowNumber}: a valid household email is required`);
 			return;
 		}
 		if (!isLocale(localeRaw)) {
@@ -161,12 +180,20 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 			errors.push(`Row ${rowNumber}: invalid kind "${kindRaw}"`);
 			return;
 		}
+		if (guestEmail && !z.email().safeParse(guestEmail).success) {
+			errors.push(`Row ${rowNumber}: guestEmail must be empty or a valid email`);
+			return;
+		}
 		if (!firstName || !lastName) {
 			errors.push(`Row ${rowNumber}: firstName and lastName are required`);
 			return;
 		}
 		const companionAllowance = Number(allowanceRaw);
-		if (!Number.isInteger(companionAllowance) || companionAllowance < 0) {
+		if (
+			!Number.isInteger(companionAllowance) ||
+			companionAllowance < 0 ||
+			companionAllowance > 20
+		) {
 			errors.push(`Row ${rowNumber}: invalid companionAllowance "${allowanceRaw}"`);
 			return;
 		}
@@ -187,13 +214,44 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 			}
 		}
 
-		const invitation = invitationsByEmail.get(email) ?? {
-			email,
+		const guestIdIndex = header.findIndex((cell) => cell.trim() === "guestId");
+		const childIndex = header.findIndex((cell) => cell.trim() === "childrenUnder12");
+		const childRaw = childIndex >= 0 ? row[childIndex].trim() : "";
+		const childrenUnder12 = childRaw === "" ? undefined : Number(childRaw);
+		if (
+			childrenUnder12 !== undefined &&
+			(!Number.isInteger(childrenUnder12) || childrenUnder12 < 0 || childrenUnder12 > 20)
+		) {
+			errors.push(`Row ${rowNumber}: childrenUnder12 must be a whole number from 0 to 20`);
+			return;
+		}
+		if (childrenUnder12 !== undefined && kindRaw === GuestKind.CHILD) {
+			errors.push(`Row ${rowNumber}: use the child count instead of named CHILD rows`);
+			return;
+		}
+		const householdEmail = email.toLowerCase();
+		const invitation = invitationsByEmail.get(householdEmail) ?? {
+			email: householdEmail,
+			childrenUnder12,
 			locale: localeRaw,
 			companionAllowance,
 			guests: [],
 			eventSlugs,
 		};
+		if (invitation.locale !== localeRaw || invitation.companionAllowance !== companionAllowance) {
+			errors.push(`Row ${rowNumber}: conflicting locale or companionAllowance for the household`);
+			return;
+		}
+		if (childrenUnder12 !== undefined) {
+			if (
+				invitation.childrenUnder12 !== undefined &&
+				invitation.childrenUnder12 !== childrenUnder12
+			) {
+				errors.push(`Row ${rowNumber}: conflicting childrenUnder12 counts for the household`);
+				return;
+			}
+			invitation.childrenUnder12 = childrenUnder12;
+		}
 		// Rows of one household may list events on any row; the union is what the household gets.
 		if (eventSlugs) {
 			invitation.eventSlugs = Array.from(
@@ -201,15 +259,26 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 			);
 		}
 		invitation.guests.push({
+			id: guestIdIndex >= 0 ? row[guestIdIndex].trim() || undefined : undefined,
 			firstName,
 			lastName,
 			kind: kindRaw,
 			email: guestEmail || null,
 			phone: guestPhone || null,
 		});
-		invitationsByEmail.set(email, invitation);
+		invitationsByEmail.set(householdEmail, invitation);
 	});
 
+	for (const invitation of invitationsByEmail.values()) {
+		if (
+			invitation.childrenUnder12 !== undefined &&
+			invitation.guests.some((guest) => guest.kind === GuestKind.CHILD)
+		) {
+			errors.push(
+				`${invitation.email}: use either childrenUnder12 or legacy named CHILD rows, not both`
+			);
+		}
+	}
 	return { invitations: Array.from(invitationsByEmail.values()), errors };
 }
 
@@ -222,7 +291,7 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 export function serializeImportTemplateCsv(eventSlugs: string[]): string {
 	const someEvents = eventSlugs.slice(0, Math.max(1, eventSlugs.length - 1));
 	const lines = [
-		serializeCsvRow([...IMPORT_CSV_HEADER]),
+		serializeCsvRow([...EDITABLE_IMPORT_CSV_HEADER]),
 		serializeCsvRow([
 			"family@example.com",
 			"en",
@@ -233,14 +302,42 @@ export function serializeImportTemplateCsv(eventSlugs: string[]): string {
 			"jane@example.com",
 			"+41 79 000 00 00",
 			someEvents.join(IMPORT_EVENTS_SEPARATOR),
+			"",
+			"2",
 		]),
-		serializeCsvRow(["family@example.com", "en", "0", "Sam", "Doe", "CHILD", "", "", ""]),
-		serializeCsvRow(["friend@example.com", "de", "1", "Max", "Muster", "ADULT", "", "", ""]),
+		serializeCsvRow(["family@example.com", "en", "0", "Sam", "Doe", "ADULT", "", "", "", "", "2"]),
+		serializeCsvRow([
+			"friend@example.com",
+			"de",
+			"1",
+			"Max",
+			"Muster",
+			"ADULT",
+			"",
+			"",
+			"",
+			"",
+			"0",
+		]),
 	];
 	return lines.join("\n");
 }
 
+// Spreadsheet exports prefix formula-like text (including phone numbers starting + or -)
+// with an apostrophe. This display-only escape never changes stored data or machine CSV.
+export function serializeSpreadsheetCsvRow(fields: string[]): string {
+	return serializeCsvRow(fields.map((value) => (/^\s*[=+@-]/.test(value) ? `'${value}` : value)));
+}
+
 export type ExportGuestRow = {
+	guestId?: string;
+	guestEmail?: string | null;
+	guestPhone?: string | null;
+	addedByGuest?: boolean;
+	childrenUnder12?: number;
+	note?: string | null;
+	songRequest?: string | null;
+	respondedAt?: string | null;
 	invitationEmail: string;
 	status: InvitationStatus;
 	firstName: string;
@@ -258,19 +355,35 @@ export function serializeExportCsv(rows: ExportGuestRow[], eventSlugs: string[])
 		"lastName",
 		"kind",
 		"dietary",
+		"guestId",
+		"guestEmail",
+		"guestPhone",
+		"addedByGuest",
+		"childrenUnder12",
+		"note",
+		"songRequest",
+		"respondedAt",
 		...eventSlugs,
 	];
-	const lines = [serializeCsvRow(header)];
+	const lines = [serializeSpreadsheetCsvRow(header)];
 
 	for (const row of rows) {
 		lines.push(
-			serializeCsvRow([
+			serializeSpreadsheetCsvRow([
 				row.invitationEmail,
 				row.status,
 				row.firstName,
 				row.lastName,
 				row.kind,
 				row.dietary ?? "",
+				row.guestId ?? "",
+				row.guestEmail ?? "",
+				row.guestPhone ?? "",
+				String(row.addedByGuest ?? false),
+				String(row.childrenUnder12 ?? 0),
+				row.note ?? "",
+				row.songRequest ?? "",
+				row.respondedAt ?? "",
 				...eventSlugs.map((slug) => row.attendanceByEventSlug[slug] ?? ""),
 			])
 		);

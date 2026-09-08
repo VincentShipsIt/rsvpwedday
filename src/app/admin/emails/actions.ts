@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sanitizeRichText } from "@/domain/rich-text";
-import type { EmailKind, Locale } from "@/generated/prisma/enums";
+import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { renderEmail, sendTestEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import type { FormActionResult } from "@/lib/form-action";
+import { requireAdmin } from "@/lib/require-admin";
 
 export type EmailTemplateInput = {
 	kind: EmailKind;
@@ -19,8 +20,11 @@ export type EmailTemplateInput = {
 export type EmailTemplatesInput = { templates: EmailTemplateInput[] };
 
 export async function updateEmailTemplates(input: EmailTemplatesInput): Promise<FormActionResult> {
+	await requireAdmin();
+	const parsed = z.array(draftSchema).max(12).safeParse(input.templates);
+	if (!parsed.success) return { ok: false, error: "Enter valid email templates." };
 	await db.$transaction(async (tx) => {
-		for (const template of input.templates) {
+		for (const template of parsed.data) {
 			const data = {
 				subject: template.subject.trim(),
 				heading: template.heading.trim(),
@@ -38,18 +42,40 @@ export async function updateEmailTemplates(input: EmailTemplatesInput): Promise<
 	return { ok: true };
 }
 
-const testEmailSchema = z.object({ to: z.email() });
+const draftSchema = z.object({
+	kind: z.enum(EmailKind),
+	locale: z.enum(Locale),
+	subject: z
+		.string()
+		.max(1000)
+		.transform((value) => value.trim()),
+	heading: z
+		.string()
+		.max(2000)
+		.transform((value) => value.trim()),
+	body: z.string().max(100_000).transform(sanitizeRichText),
+});
+const testEmailSchema = draftSchema.extend({ to: z.email() });
 
 export async function sendTestEmailAction(input: {
 	kind: EmailKind;
 	locale: Locale;
 	to: string;
+	subject: string;
+	heading: string;
+	body: string;
 }): Promise<FormActionResult> {
-	const parsed = testEmailSchema.safeParse({ to: input.to.trim() });
+	await requireAdmin();
+	const parsed = testEmailSchema.safeParse({ ...input, to: input.to.trim() });
 	if (!parsed.success) {
-		return { ok: false, error: "Enter a valid email address." };
+		return { ok: false, error: "Enter a valid email address and email draft." };
 	}
-	const { error } = await sendTestEmail(input.kind, input.locale, parsed.data.to);
+	const { error } = await sendTestEmail(
+		parsed.data.kind,
+		parsed.data.locale,
+		parsed.data.to,
+		parsed.data
+	);
 	if (error) {
 		return { ok: false, error };
 	}
@@ -71,10 +97,8 @@ export async function renderEmailPreview(input: {
 	heading: string;
 	body: string;
 }): Promise<{ html: string; subject: string }> {
-	const email = await renderEmail(input.kind, input.locale, "Sam", `${env.APP_URL}/`, null, {
-		subject: input.subject,
-		heading: input.heading,
-		body: sanitizeRichText(input.body),
-	});
+	await requireAdmin();
+	const draft = draftSchema.parse(input);
+	const email = await renderEmail(draft.kind, draft.locale, "Sam", `${env.APP_URL}/`, null, draft);
 	return { html: email.html, subject: email.subject };
 }

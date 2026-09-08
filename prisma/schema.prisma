@@ -53,6 +53,8 @@ enum OpeningAnimation {
 }
 
 model Settings {
+  /// Existing instants stay unchanged; UTC preserves the previous production display.
+  timeZone     String   @default("UTC")
   id           Int      @id @default(1)
   coupleNames  String
   rsvpDeadline DateTime
@@ -64,21 +66,34 @@ model Settings {
   /// evening before and a brunch the morning after are ordinary events, not exceptions. Optional
   /// so an existing database keeps working: until it is set, `src/domain/wedding-date.ts` falls
   /// back to the earliest event by date.
-  weddingDate  DateTime?
+  weddingDate DateTime?
 }
 
 model Event {
-  id           String             @id @default(cuid())
-  slug         String             @unique
-  startsAt     DateTime
-  endsAt       DateTime?
-  venue        String
-  address      String
-  mapsUrl      String?
-  dressCode    String?
-  sortOrder    Int                @default(0)
-  translations EventTranslation[]
-  attendance   EventAttendance[]
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  startsAt  DateTime
+  endsAt    DateTime?
+  venue     String
+  address   String
+  mapsUrl   String?
+  dressCode String?
+  sortOrder Int       @default(0)
+
+  /// Whether the public site lists this event at all. Off, it disappears from the `EVENTS` block
+  /// that anyone can read, while the guests actually invited to it still see it on their own RSVP
+  /// page and in their invitation email — those two filter by attendance rows, never by this. It
+  /// is how a family-only welcome dinner stops being an announcement to everybody else. Default
+  /// on, so every event that already exists keeps behaving exactly as it did.
+  showPublicly Boolean @default(true)
+
+  translations    EventTranslation[]
+  attendance      EventAttendance[]
+  childAttendance InvitationChildAttendance[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model EventTranslation {
@@ -92,19 +107,28 @@ model EventTranslation {
 }
 
 model Invitation {
-  id                 String     @id @default(cuid())
-  token              String     @unique
-  email              String     @unique
-  locale             Locale     @default(en)
-  companionAllowance Int        @default(0)
+  id                 String                      @id @default(cuid())
+  token              String                      @unique
+  email              String                      @unique
+  locale             Locale                      @default(en)
+  companionAllowance Int                         @default(0)
+  /// Null preserves the legacy named-child responses until this household edits its count.
+  childrenUnder12    Int?
+  childrenDietary    String?
+  childAttendance    InvitationChildAttendance[]
   respondedAt        DateTime?
   note               String?
   songRequest        String?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
   guests             Guest[]
   emails             EmailLog[]
   photos             Photo[]
+  giftClaims         GiftClaim[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model Guest {
@@ -119,6 +143,10 @@ model Guest {
   addedByGuest Boolean           @default(false)
   invitation   Invitation        @relation(fields: [invitationId], references: [id], onDelete: Cascade)
   attendance   EventAttendance[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model EventAttendance {
@@ -129,6 +157,16 @@ model EventAttendance {
   event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([guestId, eventId])
+}
+
+model InvitationChildAttendance {
+  invitationId String
+  eventId      String
+  count        Int        @default(0)
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([invitationId, eventId])
 }
 
 // Per-kind, per-locale overrides for the transactional emails. An empty string keeps the
@@ -159,14 +197,20 @@ model EmailLog {
 /// it, which is what the admin moderates by. `hiddenAt` takes a photo out of the book without
 /// destroying it — deleting is a separate, deliberate action.
 model Photo {
-  id           String     @id @default(cuid())
-  invitationId String
-  url          String
-  uploaderName String     @default("")
-  caption      String     @default("")
-  hiddenAt     DateTime?
-  createdAt    DateTime   @default(now())
-  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  id              String              @id @default(cuid())
+  invitationId    String
+  url             String
+  uploaderName    String              @default("")
+  caption         String              @default("")
+  hiddenAt        DateTime?
+  createdAt       DateTime            @default(now())
+  invitation      Invitation          @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  uploadReceiptId String?             @unique
+  uploadReceipt   PhotoUploadReceipt? @relation(fields: [uploadReceiptId], references: [id])
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 
   @@index([createdAt])
   @@index([invitationId])
@@ -242,6 +286,10 @@ model StoryMilestone {
   dateLabel    String
   imageUrl     String?
   translations StoryMilestoneTranslation[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model StoryMilestoneTranslation {
@@ -313,11 +361,65 @@ model FaqEntryTranslation {
   @@id([entryId, locale])
 }
 
-/// What a block renders. The first six are the home page's built-in sections: they read their
-/// data from the tables above (events, milestones, settings) or from the block itself (hero photo
-/// and tagline, gallery photos, FAQ items, RSVP note) and can be reordered like any other block.
-/// The rest are free content the couple adds anywhere: a rich-text block, a card grid (a guide
-/// section), one picture, or a teaser linking to another page.
+/// One entry on the couple's wish list: a present, or a share of the honeymoon. Nothing here says
+/// which — a registry becomes a honeymoon registry through the block's own heading and intro and
+/// each entry's own words, so the couple can run either without a second table or a mode switch.
+model Gift {
+  id        String  @id @default(cuid())
+  sortOrder Int     @default(0)
+  imageUrl  String?
+  /// Where to buy it, or read about the experience. Optional: "a night of the hotel" needs no link.
+  url       String?
+  /// Free text, not a number: "€120", "about 80 francs" and "" all have to read naturally, and a
+  /// family site has no business modelling currency.
+  price     String  @default("")
+
+  claim        GiftClaim?
+  translations GiftTranslation[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
+
+  @@index([sortOrder])
+}
+
+model GiftTranslation {
+  giftId String
+  locale Locale
+  title  String @default("")
+  /// Rich text, like every other guest-facing description.
+  body   String @default("")
+  gift   Gift   @relation(fields: [giftId], references: [id], onDelete: Cascade)
+
+  @@id([giftId, locale])
+}
+
+/// Who is bringing a gift. `giftId` is the primary key, so "one gift, one taker" is the database's
+/// own rule rather than a check every action has to remember: two guests reserving the same entry
+/// in the same second cannot both win, and the loser is told so. `guestName` is the name the
+/// reserver picked from their own household, denormalised the way a photo's uploader is, so the
+/// couple's overview still reads correctly after that guest row is renamed or removed.
+model GiftClaim {
+  version      String?  @default(cuid())
+  giftId       String   @id
+  invitationId String
+  guestName    String   @default("")
+  /// An optional word for the couple, shown only in the admin: this is a gift, not a comment feed.
+  message      String   @default("")
+  createdAt    DateTime @default(now())
+
+  gift       Gift       @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@index([invitationId])
+}
+
+/// What a block renders. The built-in sections read their data from the tables above (events,
+/// milestones, settings, gifts) or from the block itself (hero photo and tagline, gallery photos,
+/// FAQ items, RSVP note) and can be reordered like any other block. The rest are free content the
+/// couple adds anywhere: a rich-text block, a card grid (a guide section), one picture, or a
+/// teaser linking to another page.
 enum BlockType {
   HERO
   STORY
@@ -329,6 +431,7 @@ enum BlockType {
   CARDS
   IMAGE
   PAGE_LINK
+  GIFTS
 }
 
 /// A public page. `home` is the root route; any other slug is served at `/<slug>`. Pages with no
@@ -342,6 +445,10 @@ model Page {
   updatedAt    DateTime          @updatedAt
   translations PageTranslation[]
   blocks       Block[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model PageTranslation {
@@ -372,6 +479,10 @@ model Block {
   page         Page               @relation(fields: [pageId], references: [id], onDelete: Cascade)
   translations BlockTranslation[]
   items        BlockItem[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model BlockTranslation {
@@ -395,6 +506,10 @@ model BlockItem {
   imageUrl     String?
   block        Block                  @relation(fields: [blockId], references: [id], onDelete: Cascade)
   translations BlockItemTranslation[]
+
+  /// Set when the couple removes this row; see `src/domain/soft-delete.ts`. Nothing the
+  /// couple can remove is destroyed, so a mis-click is recoverable.
+  deletedAt DateTime?
 }
 
 model BlockItemTranslation {
@@ -405,4 +520,37 @@ model BlockItemTranslation {
   item   BlockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([itemId, locale])
+}
+
+// Receipts outlive households so a late upload callback cannot lose its cleanup reference.
+model PhotoUploadReceipt {
+  id           String        @id
+  invitationId String
+  pathname     String        @unique
+  url          String?       @unique
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  photo        Photo?
+  cleanup      MediaCleanup?
+
+  @@index([invitationId])
+  @@index([expiresAt])
+}
+
+model MediaCleanup {
+  id          String             @id @default(cuid())
+  receiptId   String             @unique
+  receipt     PhotoUploadReceipt @relation(fields: [receiptId], references: [id])
+  readyAt     DateTime
+  attempts    Int                @default(0)
+  lastError   String?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+
+  @@index([completedAt, readyAt])
+}
+
+model BootstrapState {
+  id          String   @id
+  completedAt DateTime @default(now())
 }

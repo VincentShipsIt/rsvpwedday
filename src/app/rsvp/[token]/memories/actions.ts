@@ -2,67 +2,65 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { isAllowedImageUrl } from "@/domain/image-url";
-import { MAX_CAPTION_LENGTH, resolvePhotoBookAccess } from "@/domain/photo-book";
+import { MAX_CAPTION_LENGTH, MAX_PHOTO_BATCH } from "@/domain/photo-book";
+import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
+import {
+	createPhotoReceipt,
+	requirePhotoInvitation,
+	verifyPhotoReceipt,
+} from "@/lib/photo-receipts";
 
 const addPhotosSchema = z.object({
 	uploaderName: z.string().trim().min(1).max(80),
 	caption: z.string().trim().max(MAX_CAPTION_LENGTH),
-	urls: z
-		.array(z.string().refine(isAllowedImageUrl, { message: "must be a valid https image URL" }))
-		.min(1)
-		.max(20),
+	receiptIds: z.array(z.uuid()).min(1).max(MAX_PHOTO_BATCH),
 });
-
 export type AddPhotosInput = z.infer<typeof addPhotosSchema>;
 
-/*
- * Records photos the guest's browser has already put in the Blob store (see the sibling
- * `upload/route.ts`). The token is re-checked here rather than trusted from the upload step: this
- * action is reachable on its own, and the same two questions — is this a real invitation, is the
- * book open — decide both.
- */
+export async function preparePhotoUpload(token: string) {
+	if (!isBlobConfigured()) throw new Error("Photo uploads are unavailable");
+	const invitation = await requirePhotoInvitation(token);
+	const receipt = await createPhotoReceipt(invitation.id);
+	return { id: receipt.id, pathname: receipt.pathname };
+}
+
 export async function addPhotos(token: string, input: AddPhotosInput): Promise<FormActionResult> {
 	const parsed = addPhotosSchema.safeParse(input);
-	if (!parsed.success) {
-		return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid photo" };
+	if (!parsed.success) return { ok: false, error: "Invalid photo upload" };
+	try {
+		const invitation = await requirePhotoInvitation(token);
+		const receipts = await Promise.all(
+			[...new Set(parsed.data.receiptIds)].map((id) => verifyPhotoReceipt(id, invitation.id))
+		);
+		await db.$transaction(async (tx) => {
+			await tx.$queryRaw`SELECT id FROM "Invitation" WHERE id = ${invitation.id} FOR UPDATE`;
+			await tx.invitation.findUniqueOrThrow({ where: { id: invitation.id } });
+			for (const receipt of receipts) {
+				if (!receipt.url) throw new Error("The uploaded photo is still processing");
+				if (await tx.mediaCleanup.findUnique({ where: { receiptId: receipt.id } }))
+					throw new Error("This upload has been removed");
+				// Same-receipt retries are idempotent: they neither duplicate nor edit a saved photo.
+				await tx.photo.upsert({
+					where: { uploadReceiptId: receipt.id },
+					update: {},
+					create: {
+						invitationId: invitation.id,
+						uploadReceiptId: receipt.id,
+						url: receipt.url,
+						uploaderName: parsed.data.uploaderName,
+						caption: parsed.data.caption,
+					},
+				});
+			}
+		});
+		revalidatePath(`/rsvp/${token}/memories`);
+		return { ok: true };
+	} catch {
+		return {
+			ok: false,
+			error: "Could not save this upload. Please retry; completed photos are kept.",
+		};
 	}
-
-	const [invitation, siteContent] = await Promise.all([
-		db.invitation.findUnique({ where: { token }, select: { id: true } }),
-		db.siteContent.findUnique({
-			where: { id: 1 },
-			select: { photosEnabled: true, photosOpenAt: true, photosTestMode: true },
-		}),
-	]);
-
-	if (!invitation) {
-		return { ok: false, error: "Invitation not found" };
-	}
-
-	const access = resolvePhotoBookAccess(
-		{
-			enabled: siteContent?.photosEnabled ?? false,
-			openAt: siteContent?.photosOpenAt ?? null,
-			testMode: siteContent?.photosTestMode ?? false,
-		},
-		new Date()
-	);
-	if (access.state !== "open") {
-		return { ok: false, error: "The photo book is not open" };
-	}
-
-	await db.photo.createMany({
-		data: parsed.data.urls.map((url) => ({
-			invitationId: invitation.id,
-			url,
-			uploaderName: parsed.data.uploaderName,
-			caption: parsed.data.caption,
-		})),
-	});
-
-	revalidatePath(`/rsvp/${token}/memories`);
-	return { ok: true };
 }

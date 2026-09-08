@@ -4,10 +4,12 @@ import { getDictionary } from "@/i18n";
 import { localeCodes } from "@/i18n/locales";
 import { db } from "@/lib/db";
 import { pageLabel } from "@/lib/page-content";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPagesPage() {
+	await requireAdmin();
 	const pages = await db.page.findMany({
 		orderBy: { sortOrder: "asc" },
 		include: { translations: true, _count: { select: { blocks: true } } },

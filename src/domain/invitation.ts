@@ -1,10 +1,12 @@
-import { Attendance } from "@/generated/prisma/enums";
+import { Attendance, GuestKind } from "@/generated/prisma/enums";
 
 export type InvitationStatus = "pending" | "accepted" | "declined";
 
 export type InvitationStatusInput = {
 	respondedAt: Date | null;
-	guests: { attendance: { status: Attendance }[] }[];
+	childrenUnder12?: number | null;
+	childAttendance?: { count: number }[];
+	guests: { kind?: GuestKind; attendance: { status: Attendance }[] }[];
 };
 
 export function getInvitationStatus(invitation: InvitationStatusInput): InvitationStatus {
@@ -12,11 +14,15 @@ export function getInvitationStatus(invitation: InvitationStatusInput): Invitati
 		return "pending";
 	}
 
-	const hasAccepted = invitation.guests.some((guest) =>
-		guest.attendance.some((attendance) => attendance.status === Attendance.ACCEPTED)
+	const hasAccepted = invitation.guests.some(
+		(guest) =>
+			(invitation.childrenUnder12 == null || guest.kind !== GuestKind.CHILD) &&
+			guest.attendance.some((attendance) => attendance.status === Attendance.ACCEPTED)
 	);
 
-	return hasAccepted ? "accepted" : "declined";
+	const childrenAccepted =
+		invitation.childrenUnder12 != null && invitation.childAttendance?.some((row) => row.count > 0);
+	return hasAccepted || childrenAccepted ? "accepted" : "declined";
 }
 
 export function canRespond(now: Date, deadline: Date): boolean {

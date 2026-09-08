@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 /*
@@ -25,12 +26,16 @@ import { cn } from "@/lib/utils";
  */
 export function RichTextEditor({
 	value,
+	label,
+	"aria-labelledby": labelledBy,
 	onChange,
 	placeholder,
 	id,
 	className,
 }: {
 	value: string;
+	label: string;
+	"aria-labelledby"?: string;
 	onChange: (html: string) => void;
 	placeholder?: string;
 	id?: string;
@@ -60,7 +65,7 @@ export function RichTextEditor({
 				id: editorId,
 				role: "textbox",
 				"aria-multiline": "true",
-				...(placeholder ? { "aria-label": placeholder } : {}),
+				"aria-labelledby": labelledBy ?? `${editorId}-label`,
 				class:
 					"rich-text min-h-32 rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 			},
@@ -166,6 +171,9 @@ export function RichTextEditor({
 
 	return (
 		<div className={cn("flex flex-col gap-2", className)}>
+			<Label id={`${editorId}-label`} htmlFor={editorId}>
+				{label}
+			</Label>
 			<div className="flex flex-wrap items-center gap-1" role="toolbar" aria-label="Formatting">
 				{tools.map((tool) => (
 					<Button
@@ -197,8 +205,8 @@ export function RichTextEditor({
 							type="url"
 							value={linkDraft}
 							onChange={(event) => setLinkDraft(event.target.value)}
-							placeholder="https://"
 							aria-label="Link URL"
+							placeholder="https://"
 							className="h-7 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring"
 						/>
 						<Button type="submit" size="xs" variant="secondary">

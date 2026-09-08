@@ -3,12 +3,14 @@
 import { CameraIcon, ImagesIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { addPhotos } from "@/app/rsvp/[token]/memories/actions";
-import { MAX_CAPTION_LENGTH } from "@/domain/photo-book";
+import { addPhotos, preparePhotoUpload } from "@/app/rsvp/[token]/memories/actions";
+import { type PendingPhoto, savePhotoBatch } from "@/domain/photo-batch";
+import { MAX_CAPTION_LENGTH, MAX_PHOTO_BATCH } from "@/domain/photo-book";
 import type { Dictionary } from "@/i18n";
 import { t } from "@/i18n";
-import { uploadImage } from "@/lib/blob-upload";
 import { downscaleImage, isWebDisplayable } from "@/lib/downscale-image";
+import { uploadGuestPhoto } from "@/lib/guest-photo-upload";
+import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 const NAME_STORAGE_PREFIX = "wed:photo-uploader:";
 
@@ -32,7 +34,7 @@ type Stage =
  * its camera, while the plain input opens the camera roll for photos already taken — on a laptop
  * both are just a file picker. Files are shrunk in the browser first (`downscaleImage`, which also
  * turns an iPhone's HEIC into a JPEG other browsers can display), then uploaded straight to Blob,
- * and only the resulting URLs go through a Server Action.
+ * and only their verified receipt IDs go through a Server Action.
  */
 export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: PhotoUploadProps) {
 	const router = useRouter();
@@ -40,72 +42,91 @@ export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: Phot
 	const libraryInputRef = useRef<HTMLInputElement>(null);
 	const [uploaderName, setUploaderName] = useState(guestNames[0] ?? "");
 	const [caption, setCaption] = useState("");
+	const pending = useRef<PendingPhoto<File>[]>([]);
+	const busy = useRef(false);
 	const [stage, setStage] = useState<Stage>({ kind: "idle" });
 
 	// Several people share one household link, so remember which of them is holding the phone.
 	useEffect(() => {
-		const stored = window.localStorage.getItem(`${NAME_STORAGE_PREFIX}${token}`);
-		if (stored && guestNames.includes(stored)) {
-			setUploaderName(stored);
+		try {
+			const stored = window.localStorage.getItem(`${NAME_STORAGE_PREFIX}${token}`);
+			if (stored && guestNames.includes(stored)) setUploaderName(stored);
+		} catch {
+			// Remembering a name is optional when browser storage is unavailable.
 		}
 	}, [token, guestNames]);
 
 	function chooseName(name: string) {
 		setUploaderName(name);
-		window.localStorage.setItem(`${NAME_STORAGE_PREFIX}${token}`, name);
+		try {
+			window.localStorage.setItem(`${NAME_STORAGE_PREFIX}${token}`, name);
+		} catch {
+			// The selected name still works for this visit.
+		}
+	}
+
+	async function resumeBatch() {
+		if (busy.current) return;
+		busy.current = true;
+		const total = pending.current.length;
+		try {
+			await savePhotoBatch(pending.current, {
+				prepare: () => preparePhotoUpload(token),
+				upload: (file, receipt) => uploadGuestPhoto(file, token, receipt),
+				register: async (receiptId) => {
+					const result = await addPhotos(token, {
+						uploaderName: uploaderName || guestNames[0] || "",
+						caption: caption.trim(),
+						receiptIds: [receiptId],
+					});
+					return result.ok;
+				},
+				progress: (remaining) => setStage({ kind: "uploading", done: total - remaining, total }),
+			});
+			setCaption("");
+			setStage({ kind: "done" });
+		} catch {
+			setStage({ kind: "error", message: copy.uploadError });
+		} finally {
+			busy.current = false;
+			router.refresh();
+		}
 	}
 
 	async function handleFiles(fileList: FileList | null) {
 		const files = Array.from(fileList ?? []);
-		if (files.length === 0) {
+		if (busy.current || files.length === 0) return;
+		if (files.length > MAX_PHOTO_BATCH) {
+			setStage({ kind: "error", message: t(copy.batchLimitError, { count: MAX_PHOTO_BATCH }) });
 			return;
 		}
-
+		busy.current = true;
 		setStage({ kind: "preparing" });
-		const prepared: File[] = [];
-		for (const file of files) {
-			if (!file.type.startsWith("image/") && isWebDisplayable(file)) {
-				setStage({ kind: "error", message: copy.notAnImageError });
-				return;
+		try {
+			const prepared: PendingPhoto<File>[] = [];
+			for (const file of files) {
+				if (!file.type.startsWith("image/") && isWebDisplayable(file))
+					throw new Error(copy.notAnImageError);
+				const shrunk = await downscaleImage(file);
+				if (!isWebDisplayable(shrunk)) throw new Error(copy.unsupportedFormatError);
+				if (shrunk.size > MAX_UPLOAD_BYTES) throw new Error(copy.uploadError);
+				prepared.push({ file: shrunk });
 			}
-			const shrunk = await downscaleImage(file);
-			if (!isWebDisplayable(shrunk)) {
-				// The browser could not decode HEIC, so it never became a JPEG; storing it would put
-				// a photo in the book that most guests' phones cannot open.
-				setStage({ kind: "error", message: copy.unsupportedFormatError });
-				return;
-			}
-			prepared.push(shrunk);
-		}
-
-		const urls: string[] = [];
-		for (const [index, file] of prepared.entries()) {
-			setStage({ kind: "uploading", done: index, total: prepared.length });
-			const result = await uploadImage(file, `/rsvp/${token}/memories/upload`);
-			if (!result.ok) {
-				setStage({ kind: "error", message: result.error });
-				return;
-			}
-			urls.push(result.url);
-		}
-
-		const saved = await addPhotos(token, {
-			uploaderName: uploaderName || guestNames[0] || "",
-			caption: caption.trim(),
-			urls,
-		});
-		if (!saved.ok) {
-			setStage({ kind: "error", message: saved.error });
+			pending.current = prepared;
+		} catch (error) {
+			setStage({
+				kind: "error",
+				message: error instanceof Error ? error.message : copy.uploadError,
+			});
 			return;
+		} finally {
+			busy.current = false;
 		}
-
-		setCaption("");
-		setStage({ kind: "done" });
-		router.refresh();
+		await resumeBatch();
 	}
 
 	const isBusy = stage.kind === "preparing" || stage.kind === "uploading";
-	const isDisabled = !uploadsConfigured || isBusy;
+	const isDisabled = !uploadsConfigured || isBusy || pending.current.length > 0;
 
 	return (
 		<div className="flex w-full max-w-xl flex-col gap-4 rounded-2xl bg-ivory-dark/60 p-6 ring-1 ring-ink/10">
@@ -114,6 +135,7 @@ export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: Phot
 					<span className="text-ink/70">{copy.uploaderLabel}</span>
 					<select
 						value={uploaderName}
+						disabled={isBusy || pending.current.length > 0}
 						onChange={(event) => chooseName(event.target.value)}
 						className="rounded-lg border border-ink/15 bg-ivory px-3 py-2 text-base"
 					>
@@ -131,6 +153,7 @@ export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: Phot
 				<input
 					type="text"
 					value={caption}
+					disabled={isBusy || pending.current.length > 0}
 					maxLength={MAX_CAPTION_LENGTH}
 					placeholder={copy.captionPlaceholder}
 					onChange={(event) => setCaption(event.target.value)}
@@ -183,6 +206,15 @@ export function PhotoUpload({ token, guestNames, uploadsConfigured, copy }: Phot
 				}}
 			/>
 
+			{stage.kind === "error" && pending.current.length > 0 && (
+				<button
+					type="button"
+					onClick={() => resumeBatch()}
+					className="rounded-full px-6 py-3 ring-1 ring-ink/20"
+				>
+					{copy.retryButton}
+				</button>
+			)}
 			<p className="text-xs text-ink/50">{copy.addHint}</p>
 
 			<p aria-live="polite" className="min-h-5 text-sm">

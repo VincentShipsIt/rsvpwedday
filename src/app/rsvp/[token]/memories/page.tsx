@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PhotoBook } from "@/components/site/photo-book";
 import { PhotoUpload } from "@/components/site/photo-upload";
 import { type BookPhoto, buildBookPages, resolvePhotoBookAccess } from "@/domain/photo-book";
+import { populatedTranslation } from "@/domain/translations";
 import { SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
 import { locales } from "@/i18n/locales";
@@ -69,9 +70,10 @@ export default async function MemoriesPage({ params }: MemoriesPageProps) {
 	const localeDefinition = locales[locale];
 	const theme = siteContent?.theme ?? SiteTheme.EDITORIAL;
 	const coupleNames = settings?.coupleNames ?? "";
-	const translation =
-		siteContent?.translations.find((candidate) => candidate.locale === locale) ??
-		siteContent?.translations[0];
+	const translation = populatedTranslation(siteContent?.translations ?? [], locale, [
+		"photosTitle",
+		"photosIntro",
+	]);
 	const title = translation?.photosTitle || dictionary.photos.title;
 	const intro = translation?.photosIntro ?? "";
 
@@ -102,14 +104,19 @@ export default async function MemoriesPage({ params }: MemoriesPageProps) {
 				<section className="flex max-w-md flex-col items-center gap-3 rounded-2xl bg-ivory-dark/60 p-8 text-center ring-1 ring-ink/10">
 					<h2 className="text-xl">{dictionary.photos.closedHeading}</h2>
 					<p className="text-sm text-ink/70">
-						{t(dictionary.photos.closedBody, { date: formatDate(access.opensAt, locale) })}
+						{t(dictionary.photos.closedBody, {
+							date: formatDate(access.opensAt, locale, settings?.timeZone ?? "UTC"),
+						})}
 					</p>
 				</section>
 			) : (
 				<>
 					<PhotoUpload
 						token={token}
-						guestNames={invitation.guests.map((guest) => guest.firstName).filter(Boolean)}
+						guestNames={invitation.guests
+							.filter((guest) => guest.kind === "ADULT")
+							.map((guest) => `${guest.firstName} ${guest.lastName}`.trim())
+							.filter(Boolean)}
 						uploadsConfigured={isBlobConfigured()}
 						copy={dictionary.photos}
 					/>

@@ -1,3 +1,5 @@
+import { toWireDate } from "@/lib/wire-date";
+
 /*
  * The wedding day, and how every other date on the site relates to it.
  *
@@ -37,10 +39,10 @@ export function resolveWeddingDate(
 
 // Calendar days apart, counted by the day each moment falls on rather than by elapsed hours: an
 // event at 23:00 the night before the wedding is one day before it, not zero.
-export function dayOffset(moment: Date, weddingDate: Date): number {
+export function dayOffset(moment: Date, weddingDate: Date, timeZone = "UTC"): number {
 	const MS_PER_DAY = 24 * 60 * 60 * 1000;
 	const startOfDay = (value: Date) =>
-		new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+		new Date(`${toWireDate(value, timeZone).slice(0, 10)}T00:00:00Z`).getTime();
 	return Math.round((startOfDay(moment) - startOfDay(weddingDate)) / MS_PER_DAY);
 }
 
