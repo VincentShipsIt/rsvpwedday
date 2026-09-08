@@ -166,7 +166,8 @@ names and hero photo. A test can be sent to any address; test sends are not writ
 Every settings-section form and the Settings page save through `src/components/admin/use-autosave.ts`,
 a debounced (1.5s default) autosave hook: it skips the initial mount, only fires once the value
 differs from the last saved snapshot, serialises overlapping saves (a value that arrives mid-save
-is queued and run once the current save settles), and flushes immediately on `visibilitychange`
+is queued and run once the current save settles), waits for pending saves before internal link navigation, flushes on unmount,
+and flushes immediately on `visibilitychange`
 to hidden and on `beforeunload`. `src/components/admin/save-status.tsx` renders the resulting
 saving/saved/error state next to a secondary "Save now" button, which stays as a manual fallback
 and the retry action on error. The invitation dialog and the Guests CSV import are deliberate,

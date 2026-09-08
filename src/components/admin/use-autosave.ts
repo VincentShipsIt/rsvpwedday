@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { registerAutosaveNavigation } from "@/components/admin/autosave-navigation";
 import { Autosave, type AutosaveState, type AutosaveStatus } from "@/domain/autosave";
 import type { FormActionResult } from "@/lib/form-action";
 
@@ -40,6 +41,7 @@ export function useAutosave<T>({
 	valueRef.current = value;
 
 	useEffect(() => controller.subscribe(setState), [controller]);
+	useEffect(() => registerAutosaveNavigation(controller), [controller]);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: compare serialized drafts, not freshly allocated form objects.
 	useEffect(() => {
 		controller.update(valueRef.current);
