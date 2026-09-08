@@ -178,16 +178,40 @@ export function pageLabel(page: { slug: string; title: string }, dictionary: Dic
 		.join(" ");
 }
 
-// The in-page anchors of a page: every visible block that carries an anchor.
+/*
+ * A page's own links, in block order: an anchor for every visible block that carries one, and a
+ * link to the target page for every page teaser.
+ *
+ * Including teasers is what lets a separate page sit in the top bar between two sections — "Our
+ * story · Wedding weekend · Discover Malta · Gallery" — and the block's position decides where.
+ * The couple orders the bar by dragging blocks on the home page, which is the same gesture that
+ * orders the page itself, rather than through a second list that could disagree with it.
+ */
 export function pageAnchorLinks(
 	page: PageView,
 	site: SiteData,
-	dictionary: Dictionary
+	dictionary: Dictionary,
+	/** Every page, so a teaser with no title of its own can borrow the target page's label. */
+	pages: PageView[] = []
 ): SiteLink[] {
-	return visibleBlocks(page, site)
-		.filter((block) => block.anchor !== "")
-		.map((block) => ({
-			href: `${pagePath(page.slug)}#${block.anchor}`,
-			label: blockHeading(block, dictionary) || block.anchor,
-		}));
+	return visibleBlocks(page, site).flatMap((block) => {
+		if (block.type === BlockType.PAGE_LINK) {
+			if (!block.url) {
+				return [];
+			}
+			const target = pages.find((candidate) => pagePath(candidate.slug) === block.url);
+			const label =
+				block.title.trim() ||
+				(target ? pageLabel(target, dictionary) : block.url.replace(/^\//, ""));
+			return [{ href: block.url, label }];
+		}
+		return block.anchor === ""
+			? []
+			: [
+					{
+						href: `${pagePath(page.slug)}#${block.anchor}`,
+						label: blockHeading(block, dictionary) || block.anchor,
+					},
+				];
+	});
 }

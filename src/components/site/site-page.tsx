@@ -13,6 +13,7 @@ import type { StoryMilestoneView } from "@/components/site/story";
 import { ThemePicker } from "@/components/site/theme-picker";
 import { isHomePage } from "@/domain/blocks";
 import { clampEffectsSettings } from "@/domain/effects-settings";
+import { publicEvents } from "@/domain/event-visibility";
 import { localizeGift, publishableGifts, sortByAvailability } from "@/domain/gifts";
 import { resolveWeddingDate } from "@/domain/wedding-date";
 import { BlockType, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
@@ -75,7 +76,10 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 		notFound();
 	}
 
-	const localizedEvents: EventView[] = events.map((event) => {
+	// Anyone can read this page, so it shows only the events the couple marked public. The
+	// countdown below still resolves against `events`, the whole calendar, so hiding the welcome
+	// dinner cannot move the date the site counts to.
+	const localizedEvents: EventView[] = publicEvents(events).map((event) => {
 		const translation =
 			event.translations.find((candidate) => candidate.locale === locale) ?? event.translations[0];
 		return {

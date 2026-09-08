@@ -76,6 +76,14 @@ model Event {
   mapsUrl      String?
   dressCode    String?
   sortOrder    Int                @default(0)
+
+  /// Whether the public site lists this event at all. Off, it disappears from the `EVENTS` block
+  /// that anyone can read, while the guests actually invited to it still see it on their own RSVP
+  /// page and in their invitation email — those two filter by attendance rows, never by this. It
+  /// is how a family-only welcome dinner stops being an announcement to everybody else. Default
+  /// on, so every event that already exists keeps behaving exactly as it did.
+  showPublicly Boolean            @default(true)
+
   translations EventTranslation[]
   attendance   EventAttendance[]
 }

@@ -35,6 +35,26 @@ slugs separated by `;`, empty = every event; the Guests page serves a filled-in 
 the household, companions included. The RSVP page, the invite/reminder emails and the export all
 read the derived list, so nothing else needs to know.
 
+## Two filters on the event list
+
+They are independent and must not be confused, which is why each lives in its own module:
+
+- **Was this household invited?** `src/domain/invitation-events.ts#filterToInvited`, used by the
+  RSVP page, the invitation emails and the headcount.
+- **May anybody see this at all?** `src/domain/event-visibility.ts#publicEvents`, reading
+  `Event.showPublicly` and used only by `site-page.tsx` for the public `EVENTS` block.
+
+Turning `showPublicly` off takes a family-only welcome dinner off the public site while the guests
+actually invited to it still get it on their own RSVP page and in their invitation email, because
+those two filter by attendance rows and never by this flag. It defaults to on, so every event that
+already exists behaves exactly as before. The toggle is per event on `/admin/settings/events`.
+
+Two things it deliberately does **not** touch. The countdown's fallback (`resolveWeddingDate`) and
+the admin's day-offset labels read the whole calendar, so hiding an event never moves the date the
+site counts to — if the countdown points at a welcome dinner, the fix is to set
+`Settings.weddingDate`, not to hide the event. And `/calendar/<slug>.ics` stays reachable by slug,
+because the guests who *were* invited to a hidden event still need "Add to calendar" to work.
+
 ## Derived status
 
 `Invitation` has no stored status column. `src/domain/invitation.ts#getInvitationStatus` derives
@@ -44,7 +64,16 @@ attendance, else `declined`. Recompute it, never store it.
 ## Admin UI
 
 `/admin` is built on shadcn/ui; components live in `src/components/ui` (`components.json` pins the
-Nova preset, radix base, neutral colour). shadcn's tokens live on `:root` in `globals.css` (they
+Nova preset, radix base, neutral colour). The shell fills the screen it is given and only stops at
+`96rem` — wider than any laptop, so a guest list is not read through a letterbox while a table
+still does not stretch across an ultra-wide display; `main` carries `min-w-0` so a wide child
+scrolls inside its column rather than pushing the page sideways. The sidebar collapses to icons
+from the button beside its title, remembered per browser in `localStorage`; it renders expanded on
+the server and narrows only after that value is read, so the markup cannot mismatch on hydration.
+
+Every list the couple orders — page blocks, gifts, events, a block's own cards — reorders by
+dragging a handle (dnd-kit), never by typing a number, and `sortOrder` is saved as the row's index
+so two rows can never claim the same position. shadcn's tokens live on `:root` in `globals.css` (they
 don't collide with the public site's own `--wed-*`/`--color-*` names) so Radix's portalled content
 (Select, Dialog, AlertDialog, DropdownMenu, the Toaster — all rendered on `document.body`, outside
 `.admin-root`) resolves them too; only the base-layer rules that paint `.admin-root`'s own
@@ -264,9 +293,14 @@ thumbnails) drops all three.
 
 The public site is `/` plus one route per page the couple adds, all sharing `SiteNav`,
 `SiteFooter`, and the theme. `src/lib/site-links.ts#buildSiteLinks` returns two lists from the
-localized pages: `navLinks` (the home page's own block anchors, as absolute `/#story` hrefs so they
-work from any page) and `footerLinks` (those plus a link to every other page that has content and
-`showInNav`). `src/proxy.ts` treats every path that is not `/admin`, `/rsvp`, `/calendar` or `/api`
+localized pages. `navLinks` follows the **home page's own blocks in order**: an anchor for each
+section (absolute `/#story` hrefs, so they work from any page) and, wherever the couple placed a
+`PAGE_LINK` teaser, a link to the page it points at. That is what lets a separate page sit in the
+top bar between two sections — "Our story · Wedding weekend · Discover Malta · Gallery" — and it
+means the bar is ordered by dragging blocks rather than by a second list that could disagree with
+the page. A teaser with no title of its own borrows the target page's label. `footerLinks` is that
+list plus every other page with content and `showInNav`, deduplicated, so a teased page is named
+once. `src/proxy.ts` treats every path that is not `/admin`, `/rsvp`, `/calendar` or `/api`
 as a public page and writes the `?lang=` cookie there, so a new page needs no matcher change.
 
 `src/i18n/dictionaries/en.ts` is the source of truth (`Dictionary` type = `typeof en`). `de.ts`

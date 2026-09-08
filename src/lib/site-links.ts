@@ -15,8 +15,12 @@ export type SiteLink = { href: string; label: string };
  * page. Hrefs are absolute (`/#story`, not `#story`) so they work from any page; a block or page
  * with nothing in it never gets a link, so an empty section can't produce a dead anchor.
  *
- * The sticky top bar steps through the home page's own sections only — separate pages are reached
- * from the footer and from whatever page-teaser block the couple placed on the home page.
+ * The sticky top bar follows the home page's own blocks in order: an anchor for each section, and
+ * a link to the target page wherever the couple placed a page teaser. That is what lets a separate
+ * page sit between two sections in the bar, and it means the bar is ordered by dragging blocks
+ * rather than by a second list that could disagree with the page.
+ *
+ * The footer then lists every other page as well, including any the home page does not tease.
  */
 export function buildSiteLinks({
 	pages,
@@ -29,11 +33,16 @@ export function buildSiteLinks({
 	dictionary: Dictionary;
 }): { navLinks: SiteLink[]; footerLinks: SiteLink[] } {
 	const home = pages.find(isHomePage);
-	const navLinks = home ? pageAnchorLinks(home, site, dictionary) : [];
+	const navLinks = home ? pageAnchorLinks(home, site, dictionary, pages) : [];
 
 	const pageLinks = pages
 		.filter((page) => !isHomePage(page) && page.showInNav && visibleBlocks(page, site).length > 0)
 		.map((page) => ({ href: pagePath(page.slug), label: pageLabel(page, dictionary) }));
 
-	return { navLinks, footerLinks: [...navLinks, ...pageLinks] };
+	// A page the home page already teases is in `navLinks`, so the footer would otherwise name it
+	// twice; the nav's copy wins, since it carries the teaser's own wording.
+	const seen = new Set(navLinks.map((link) => link.href));
+	const footerLinks = [...navLinks, ...pageLinks.filter((link) => !seen.has(link.href))];
+
+	return { navLinks, footerLinks };
 }

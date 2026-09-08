@@ -124,6 +124,7 @@ export type EventInput = {
 	mapsUrl: string;
 	dressCode: string;
 	sortOrder: number;
+	showPublicly: boolean;
 	translations: EventTranslationInput[];
 };
 export type EventsInput = { events: EventInput[] };
@@ -177,6 +178,7 @@ export async function updateEvents(input: EventsInput): Promise<FormActionResult
 				mapsUrl: event.mapsUrl || null,
 				dressCode: event.dressCode || null,
 				sortOrder: event.sortOrder,
+				showPublicly: event.showPublicly,
 			};
 
 			if (event.id && existingEventIds.has(event.id)) {
