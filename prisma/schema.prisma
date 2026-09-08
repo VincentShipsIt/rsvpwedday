@@ -43,12 +43,13 @@ enum SiteTheme {
 }
 
 /// The first-load cover a guest sees before the page (see `src/components/site/opening`).
-/// `NONE` skips it entirely; the other three are alternative SVG animations of the same cover.
+/// `NONE` skips it; MEDITERRANEAN_BLOOM plays the generated blue-and-lemon envelope film.
 enum OpeningAnimation {
   NONE
   SEAL
   MONOGRAM
   BLOOM
+  MEDITERRANEAN_BLOOM
 }
 
 model Settings {

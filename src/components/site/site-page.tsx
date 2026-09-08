@@ -147,6 +147,7 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 					forceShow={Boolean(openingParam)}
 					labels={{
 						open: dictionary.site.openInvitationLabel,
+						skip: dictionary.site.skipOpeningLabel,
 						loading: dictionary.site.loadingLabel,
 					}}
 				/>

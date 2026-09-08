@@ -34,6 +34,7 @@ export const en = {
 		rsvpQuestions: "Questions? Write to {email}",
 		footerLine: "{coupleNames} · {year}",
 		openInvitationLabel: "Open the invitation",
+		skipOpeningLabel: "Skip animation",
 		loadingLabel: "Loading",
 		musicPlayLabel: "Play music",
 		musicPauseLabel: "Pause music",

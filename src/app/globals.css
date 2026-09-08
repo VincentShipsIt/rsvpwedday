@@ -1180,6 +1180,160 @@ main[data-theme="mediterranean"],
 	opacity: 0;
 }
 
+/* Generated artwork has the Mediterranean palette baked in; keep its live lettering in tune
+   even when previewed from another theme. The film ends before the cover's final dissolve. */
+.opening-cover[data-opening="mediterranean"] {
+	--color-ivory: #fdf9ec;
+	--color-ink: #1f2b45;
+	--color-green: #1d4f91;
+	--color-gold: #f2c53d;
+	--font-accent: var(--font-pinyon), cursive;
+	background: var(--color-ivory);
+	transition: opacity 0.65s ease;
+}
+
+.opening-cover[data-opening="mediterranean"][data-revealing] {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.opening-cover[data-opening="mediterranean"] .opening-content {
+	opacity: 1;
+	transition: none;
+}
+
+.opening-cinema,
+.opening-cinema-backdrop {
+	position: absolute;
+	inset: 0;
+}
+
+.opening-cinema-backdrop {
+	background: url("/openings/mediterranean-bloom/poster.jpg") center / cover;
+	filter: blur(32px);
+	opacity: 0.45;
+	transform: scale(1.1);
+}
+
+/* Keep the seal in the same coordinates as the portrait video. Wide screens frame the
+   portrait instead of cropping the seal and flap out of a landscape object-cover image. */
+.opening-cinema-stage {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	height: 100%;
+	aspect-ratio: 9 / 16;
+	transform: translate(-50%, -50%);
+	box-shadow: 0 0 70px rgb(31 43 69 / 0.1);
+}
+
+.opening-cinema-video,
+.opening-cinema-poster {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.opening-cinema[data-playing] .opening-cinema-poster {
+	opacity: 0;
+}
+
+.opening-cinema-seal {
+	position: absolute;
+	left: 50%;
+	top: 51.2%;
+	width: 34%;
+	aspect-ratio: 1;
+	transform: translate(-50%, -50%);
+	border-radius: 50%;
+	border: 0;
+	background: transparent;
+	color: var(--color-ivory);
+	cursor: pointer;
+	transition: opacity 0.16s ease;
+}
+
+.opening-cinema-seal:disabled {
+	cursor: default;
+}
+
+.opening-cinema-initials {
+	font-family: var(--font-accent);
+	font-size: clamp(1.6rem, 5.8svh, 3.5rem);
+	text-shadow:
+		0 1px 1px rgb(0 0 0 / 0.35),
+		0 -1px 1px rgb(255 255 255 / 0.2);
+}
+
+.opening-cover[data-phase="opening"] .opening-cinema-seal {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.opening-cinema-names {
+	position: absolute;
+	left: 50%;
+	width: 70%;
+	max-width: calc(100vw - 3rem);
+	top: 29%;
+	transform: translate(-50%, -50%);
+	color: var(--color-green);
+	font-family: var(--font-accent);
+	font-size: clamp(1.5rem, 5svh, 3rem);
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+	text-wrap: balance;
+	opacity: 0;
+	transition: opacity 0.35s ease;
+}
+
+.opening-cinema-names[data-visible] {
+	opacity: 1;
+}
+
+.opening-cinema-names[data-long-name] {
+	top: 24%;
+	font-size: clamp(1rem, 3svh, 1.65rem);
+}
+
+.opening-cover[data-opening="mediterranean"] .opening-actions {
+	position: absolute;
+	z-index: 1;
+	bottom: max(7%, calc(env(safe-area-inset-bottom) + 4rem));
+	left: 1rem;
+	right: 1rem;
+}
+
+.opening-cover[data-opening="mediterranean"] .opening-button {
+	border-color: rgb(29 79 145 / 0.35);
+	background: rgb(253 249 236 / 0.93);
+	color: var(--color-green);
+	box-shadow: 0 3px 15px rgb(31 43 69 / 0.08);
+}
+
+.opening-cinema-skip {
+	position: absolute;
+	z-index: 1;
+	right: max(1rem, env(safe-area-inset-right));
+	bottom: max(0.75rem, env(safe-area-inset-bottom));
+	min-height: 44px;
+	padding: 0.5rem 0.9rem;
+	border: 1px solid rgb(29 79 145 / 0.2);
+	border-radius: 999px;
+	background: rgb(253 249 236 / 0.93);
+	color: var(--color-green);
+	font-size: 0.75rem;
+	cursor: pointer;
+}
+
+.opening-cinema-skip:focus-visible,
+.opening-cinema-seal:focus-visible {
+	outline: 2px solid var(--color-green);
+	outline-offset: 4px;
+}
+
 /* ---- MONOGRAM ---- */
 
 @keyframes opening-orbit {
