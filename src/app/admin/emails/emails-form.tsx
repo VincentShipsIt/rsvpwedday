@@ -115,7 +115,7 @@ export function EmailsForm({ initialTemplates, defaults, sendingEnabled }: Email
 
 	function sendTest() {
 		startSending(async () => {
-			const result = await sendTestEmailAction({ kind, locale, to: testTo });
+			const result = await sendTestEmailAction({ ...template, kind, locale, to: testTo });
 			if (result.ok) {
 				toast.success(`Test ${KIND_META[kind].title.toLowerCase()} sent to ${testTo}`);
 			} else {
@@ -176,6 +176,7 @@ export function EmailsForm({ initialTemplates, defaults, sendingEnabled }: Email
 							<div className="flex flex-col gap-1.5">
 								<Label>Message</Label>
 								<RichTextEditor
+									label="Message"
 									placeholder={fallback.body}
 									value={template.body}
 									onChange={(html) => updateTemplate({ body: html })}

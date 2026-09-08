@@ -52,6 +52,8 @@ enum OpeningAnimation {
 }
 
 model Settings {
+  /// Existing instants stay unchanged; UTC preserves the previous production display.
+  timeZone     String   @default("UTC")
   id           Int      @id @default(1)
   coupleNames  String
   rsvpDeadline DateTime
@@ -372,6 +374,7 @@ model GiftTranslation {
 /// reserver picked from their own household, denormalised the way a photo's uploader is, so the
 /// couple's overview still reads correctly after that guest row is renamed or removed.
 model GiftClaim {
+  version      String   @default(cuid())
   giftId       String   @id
   invitationId String
   guestName    String   @default("")

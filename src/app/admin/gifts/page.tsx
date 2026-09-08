@@ -22,6 +22,7 @@ export default async function GiftsAdminPage() {
 			translations: true,
 			claim: {
 				select: {
+					version: true,
 					invitationId: true,
 					guestName: true,
 					message: true,
@@ -45,6 +46,7 @@ export default async function GiftsAdminPage() {
 		.sort((a, b) => b.claim.createdAt.getTime() - a.claim.createdAt.getTime())
 		.map(({ gift, claim }) => ({
 			giftId: gift.id,
+			claimVersion: claim.version,
 			giftTitle: localizeGift(gift, Locale.en).title || "Untitled gift",
 			price: gift.price,
 			guestName: claim.guestName,

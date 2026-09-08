@@ -7,6 +7,7 @@ import { sanitizeRichText } from "@/domain/rich-text";
 import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { FormActionResult } from "@/lib/form-action";
+import { requireAdmin } from "@/lib/require-admin";
 
 const imageUrlSchema = z.string().refine((value) => value === "" || isAllowedImageUrl(value), {
 	message: "must be a valid https image URL",
@@ -40,6 +41,7 @@ export type GiftsInput = { gifts: GiftInput[] };
  * the form asks before removing a row somebody has already taken.
  */
 export async function updateGifts(input: GiftsInput): Promise<FormActionResult> {
+	await requireAdmin();
 	for (const [index, gift] of input.gifts.entries()) {
 		if (!imageUrlSchema.safeParse(gift.imageUrl).success) {
 			return { ok: false, error: `Enter a valid https image URL for gift #${index + 1}.` };
@@ -119,8 +121,18 @@ export async function updateGifts(input: GiftsInput): Promise<FormActionResult> 
  * Puts a gift back on the list on the couple's say-so — for the guest who emails to say they
  * cannot manage it after all, rather than releasing it themselves.
  */
-export async function releaseClaim(giftId: string): Promise<FormActionResult> {
-	await db.giftClaim.deleteMany({ where: { giftId } });
+export async function releaseClaim(
+	giftId: string,
+	claimVersion: string
+): Promise<FormActionResult> {
+	await requireAdmin();
+	const result = await db.giftClaim.deleteMany({ where: { giftId, version: claimVersion } });
 	revalidateGifts();
+	if (result.count === 0)
+		return {
+			ok: false,
+			error:
+				"This reservation changed. The current reservation has been kept; review the refreshed list.",
+		};
 	return { ok: true };
 }
