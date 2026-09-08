@@ -1,12 +1,16 @@
 "use server";
 
-import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import type { Locale } from "@/generated/prisma/enums";
-import { isBlobConfigured } from "@/lib/blob";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
 import type { FormActionResult } from "@/lib/form-action";
+import {
+	processMediaCleanup,
+	queueAbandonedPhotoUploads,
+	queuePhotoMediaCleanup,
+} from "@/lib/media-cleanup";
+import { requireAdmin } from "@/lib/require-admin";
+import { parseWireDatePreserving } from "@/lib/wire-date";
 
 // The book lives at `/rsvp/<token>/memories`, one page per invitation token, so every guest's
 // copy is stale after any change here.
@@ -25,10 +29,19 @@ export type MemoriesInput = {
 };
 
 export async function updateMemories(input: MemoriesInput): Promise<FormActionResult> {
-	// The browser sends `datetime-local` with no zone, so it is read in the server's zone — which
-	// on Vercel is UTC. That is why the form spells the resolved moment out underneath the field.
-	const openAt = input.photosOpenAt ? new Date(input.photosOpenAt) : null;
-	if (openAt !== null && Number.isNaN(openAt.getTime())) {
+	await requireAdmin();
+	const [settings, previousContent] = await Promise.all([
+		db.settings.findUnique({ where: { id: 1 }, select: { timeZone: true } }),
+		db.siteContent.findUnique({ where: { id: 1 }, select: { photosOpenAt: true } }),
+	]);
+	const openAt = input.photosOpenAt
+		? parseWireDatePreserving(
+				input.photosOpenAt,
+				settings?.timeZone ?? "UTC",
+				previousContent?.photosOpenAt ?? null
+			)
+		: null;
+	if (input.photosOpenAt && openAt === null) {
 		return { ok: false, error: "Enter a valid date and time for when the book opens." };
 	}
 
@@ -72,6 +85,7 @@ export async function updateMemories(input: MemoriesInput): Promise<FormActionRe
 // Hiding takes a photo out of every guest's book but keeps it here, so a hasty moderation call
 // during the party can be undone the next morning.
 export async function setPhotoHidden(photoId: string, hidden: boolean): Promise<FormActionResult> {
+	await requireAdmin();
 	await db.photo.update({
 		where: { id: photoId },
 		data: { hiddenAt: hidden ? new Date() : null },
@@ -80,21 +94,27 @@ export async function setPhotoHidden(photoId: string, hidden: boolean): Promise<
 	return { ok: true };
 }
 
-// A real delete: the row goes, and so does the file, so "remove this photo" means it is gone from
-// the Blob store too rather than merely unlinked. A store that has already lost the file (or is
-// not configured at all) must not block removing the row.
-export async function deletePhoto(photoId: string): Promise<FormActionResult> {
-	const photo = await db.photo.findUnique({ where: { id: photoId }, select: { url: true } });
-	await db.photo.delete({ where: { id: photoId } });
-
-	if (photo && isBlobConfigured()) {
-		try {
-			await del(photo.url, { token: env.BLOB_READ_WRITE_TOKEN });
-		} catch {
-			// Left behind in the store; the guest-facing book no longer references it either way.
-		}
-	}
-
+export async function deletePhoto(
+	photoId: string
+): Promise<FormActionResult & { cleanupPending?: boolean; legacy?: boolean }> {
+	await requireAdmin();
+	const outcome = await db.$transaction(async (tx) => {
+		const photo = await tx.photo.findUnique({ where: { id: photoId } });
+		if (!photo) return { legacy: false };
+		await tx.$queryRaw`SELECT id FROM "Invitation" WHERE id = ${photo.invitationId} FOR UPDATE`;
+		if (photo.uploadReceiptId) await queuePhotoMediaCleanup(tx, photo.uploadReceiptId);
+		await tx.photo.deleteMany({ where: { id: photoId } });
+		return { legacy: photo.uploadReceiptId === null };
+	});
+	const cleanup = await processMediaCleanup();
 	revalidateMemories();
-	return { ok: true };
+	return { ok: true, cleanupPending: cleanup.pending > 0, legacy: outcome.legacy };
+}
+
+export async function retryPhotoCleanup(): Promise<FormActionResult & { pending?: number }> {
+	await requireAdmin();
+	await queueAbandonedPhotoUploads();
+	const cleanup = await processMediaCleanup();
+	revalidateMemories();
+	return { ok: true, pending: cleanup.pending };
 }

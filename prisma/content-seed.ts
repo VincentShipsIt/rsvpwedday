@@ -1,13 +1,33 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { Locale, SiteTheme } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 
-/*
- * Placeholder wedding content: settings, the four events with their translations, the site copy,
- * and the story milestones. Every step is guarded on a count or an upsert, so this is safe to run
- * on every deploy — it fills an empty database once and never touches content afterwards. The
- * couple's real names, venue, and dates are typed into `/admin`, never committed here.
- */
+// Initialization and its marker commit together. An interrupted first setup rolls back and is
+// retried; pre-marker installations are adopted without restoring deliberately removed content.
 export async function seedContent() {
+	return db.$transaction(
+		async (tx) => {
+			await tx.$executeRaw`SELECT pg_advisory_xact_lock(700055)`;
+			if (await tx.bootstrapState.findUnique({ where: { id: "content-v1" } })) {
+				return tx.event.findMany({ orderBy: { sortOrder: "asc" } });
+			}
+			const existing = await Promise.all([
+				tx.settings.count(),
+				tx.siteContent.count(),
+				tx.event.count(),
+				tx.page.count(),
+				tx.storyMilestone.count(),
+				tx.invitation.count(),
+			]);
+			if (existing.every((count) => count === 0)) await initializeContent(tx);
+			await tx.bootstrapState.create({ data: { id: "content-v1" } });
+			return tx.event.findMany({ orderBy: { sortOrder: "asc" } });
+		},
+		{ timeout: 30_000 }
+	);
+}
+
+async function initializeContent(db: Prisma.TransactionClient) {
 	const rsvpDeadline = new Date();
 	rsvpDeadline.setDate(rsvpDeadline.getDate() + 60);
 
@@ -20,10 +40,7 @@ export async function seedContent() {
 		update: {},
 	});
 
-	// The full four-event lineup (welcome dinner, wedding, reception, farewell brunch) only gets
-	// created once, from a clean database — an already-seeded environment that predates this
-	// event keeps whatever single "wedding" event it has, via the upsert below, so re-running the
-	// seed never duplicates or reorders existing events.
+	// Only reached for a fresh database, within the initialization transaction.
 	const eventCount = await db.event.count();
 
 	if (eventCount === 0) {
@@ -152,33 +169,6 @@ export async function seedContent() {
 				},
 			},
 		});
-	} else {
-		await db.event.upsert({
-			where: { slug: "wedding" },
-			create: {
-				slug: "wedding",
-				startsAt: weddingDate,
-				venue: "Placeholder Venue",
-				address: "123 Placeholder Street",
-				sortOrder: 0,
-				translations: {
-					create: [
-						{ locale: Locale.en, name: "Wedding Ceremony", description: "Join us as we say I do." },
-						{
-							locale: Locale.de,
-							name: "Hochzeitszeremonie",
-							description: "Sei dabei, wenn wir Ja sagen.",
-						},
-						{
-							locale: Locale.ku,
-							name: "Merasîma Zewacê",
-							description: "Werin em bi hev re erê bibêjin.",
-						},
-					],
-				},
-			},
-			update: {},
-		});
 	}
 
 	await db.siteContent.upsert({
@@ -257,7 +247,7 @@ export async function seedContent() {
 		}
 	}
 
-	await seedPlaceholderPhotos();
+	await seedPlaceholderPhotos(db);
 
 	return db.event.findMany({ orderBy: { sortOrder: "asc" } });
 }
@@ -309,7 +299,7 @@ function isSeededPlaceholder(url: string): boolean {
 	);
 }
 
-async function seedPlaceholderPhotos() {
+async function seedPlaceholderPhotos(db: Prisma.TransactionClient) {
 	const siteContent = await db.siteContent.findUnique({ where: { id: 1 } });
 
 	if (!siteContent || siteContent.placeholderPhotoGeneration >= PLACEHOLDER_GENERATION) {

@@ -32,6 +32,7 @@ export function resolvePhotoBookAccess(gate: PhotoBookGate, now: Date): PhotoBoo
 }
 
 export const MAX_CAPTION_LENGTH = 140;
+export const MAX_PHOTO_BATCH = 20;
 
 export type BookPhoto = {
 	id: string;
@@ -79,4 +80,17 @@ export function buildLeaves(pages: BookPage[], pagesPerLeaf: 1 | 2): (BookPage |
 		leaves.push(leaf);
 	}
 	return leaves;
+}
+
+// A turned desktop leaf leaves its back face visible on the left. Phones have no visible backs.
+export function lastBookPosition(pageCount: number, pagesPerLeaf: 1 | 2): number {
+	return Math.max(0, pagesPerLeaf === 2 ? Math.floor(pageCount / 2) : pageCount - 1);
+}
+
+export function positionForPage(pageIndex: number, pagesPerLeaf: 1 | 2): number {
+	return pagesPerLeaf === 2 ? Math.ceil(pageIndex / 2) : pageIndex;
+}
+
+export function visibleBookPage(turned: number, pagesPerLeaf: 1 | 2, pageCount: number): number {
+	return Math.max(0, Math.min(turned * pagesPerLeaf, pageCount - 1));
 }

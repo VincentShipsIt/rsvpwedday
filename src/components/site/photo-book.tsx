@@ -2,7 +2,13 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type BookPage, buildLeaves } from "@/domain/photo-book";
+import {
+	type BookPage,
+	buildLeaves,
+	lastBookPosition,
+	positionForPage,
+	visibleBookPage,
+} from "@/domain/photo-book";
 import type { Dictionary } from "@/i18n";
 import { t } from "@/i18n";
 
@@ -34,6 +40,7 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 	const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 	const [turned, setTurned] = useState(0);
 	const previousPhotoCount = useRef(photoCount);
+	const previousPagesPerLeaf = useRef<1 | 2>(1);
 
 	// Two facing pages need the room for them; below that the book runs one page at a time. Read
 	// after mount so the server and the first client render agree on the single-page layout.
@@ -54,26 +61,31 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 	}, []);
 
 	const leaves = buildLeaves(pages, isSpread ? 2 : 1);
-	const lastLeaf = leaves.length;
+	const pagesPerLeaf = isSpread ? 2 : 1;
+	const lastPosition = lastBookPosition(pages.length, pagesPerLeaf);
 
-	// Switching layouts halves or doubles the leaf count, so a reader deep in the book can end up
-	// past its last sheet.
 	useEffect(() => {
-		setTurned((current) => Math.min(current, lastLeaf));
-	}, [lastLeaf]);
+		const previousLayout = previousPagesPerLeaf.current;
+		setTurned((current) =>
+			Math.min(
+				lastPosition,
+				positionForPage(visibleBookPage(current, previousLayout, pages.length), pagesPerLeaf)
+			)
+		);
+		previousPagesPerLeaf.current = pagesPerLeaf;
+	}, [pagesPerLeaf, lastPosition, pages.length]);
 
-	// A photo the guest just added lands at the back of the book; turn to it rather than leaving
-	// them on the cover wondering whether it worked.
 	useEffect(() => {
 		if (photoCount > previousPhotoCount.current) {
-			setTurned(Math.max(0, lastLeaf - 1));
+			const newest = pages.findLastIndex((page) => page.kind === "photo");
+			if (newest >= 0) setTurned(positionForPage(newest, pagesPerLeaf));
 		}
 		previousPhotoCount.current = photoCount;
-	}, [photoCount, lastLeaf]);
+	}, [photoCount, pages, pagesPerLeaf]);
 
 	const turnForward = useCallback(() => {
-		setTurned((current) => Math.min(current + 1, lastLeaf - 1));
-	}, [lastLeaf]);
+		setTurned((current) => Math.min(current + 1, lastPosition));
+	}, [lastPosition]);
 
 	const turnBack = useCallback(() => {
 		setTurned((current) => Math.max(current - 1, 0));
@@ -81,6 +93,12 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
+			const target = event.target;
+			if (
+				target instanceof HTMLElement &&
+				(target.matches("input, textarea, select") || target.isContentEditable)
+			)
+				return;
 			if (event.key === "ArrowRight") {
 				turnForward();
 			}
@@ -106,8 +124,7 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 	const transition = prefersReducedMotion
 		? "none"
 		: `transform ${TURN_MS}ms cubic-bezier(0.2, 0.7, 0.3, 1)`;
-	const pagesPerLeaf = isSpread ? 2 : 1;
-	const currentPage = Math.min(turned * pagesPerLeaf + 1, pages.length);
+	const currentPage = visibleBookPage(turned, pagesPerLeaf, pages.length) + 1;
 
 	return (
 		<div className="flex w-full flex-col items-center gap-6">
@@ -180,7 +197,7 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 						aria-hidden="true"
 						tabIndex={-1}
 						onClick={turnForward}
-						disabled={turned >= lastLeaf - 1}
+						disabled={turned >= lastPosition}
 						className="absolute inset-y-0 right-0 w-1/3 cursor-e-resize disabled:cursor-default"
 						style={{ zIndex: leaves.length * 2 + 1 }}
 					/>
@@ -202,7 +219,7 @@ export function PhotoBook({ pages, coupleNames, title, intro, photoCount, copy }
 				<button
 					type="button"
 					onClick={turnForward}
-					disabled={turned >= lastLeaf - 1}
+					disabled={turned >= lastPosition}
 					className="underline underline-offset-4 disabled:opacity-40 disabled:no-underline"
 				>
 					{copy.nextPage}

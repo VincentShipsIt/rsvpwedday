@@ -184,14 +184,16 @@ model EmailLog {
 /// it, which is what the admin moderates by. `hiddenAt` takes a photo out of the book without
 /// destroying it — deleting is a separate, deliberate action.
 model Photo {
-  id           String     @id @default(cuid())
-  invitationId String
-  url          String
-  uploaderName String     @default("")
-  caption      String     @default("")
-  hiddenAt     DateTime?
-  createdAt    DateTime   @default(now())
-  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  id              String              @id @default(cuid())
+  invitationId    String
+  url             String
+  uploaderName    String              @default("")
+  caption         String              @default("")
+  hiddenAt        DateTime?
+  createdAt       DateTime            @default(now())
+  invitation      Invitation          @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  uploadReceiptId String?             @unique
+  uploadReceipt   PhotoUploadReceipt? @relation(fields: [uploadReceiptId], references: [id])
 
   @@index([createdAt])
   @@index([invitationId])
@@ -481,4 +483,37 @@ model BlockItemTranslation {
   item   BlockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([itemId, locale])
+}
+
+// Receipts outlive households so a late upload callback cannot lose its cleanup reference.
+model PhotoUploadReceipt {
+  id           String        @id
+  invitationId String
+  pathname     String        @unique
+  url          String?       @unique
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  photo        Photo?
+  cleanup      MediaCleanup?
+
+  @@index([invitationId])
+  @@index([expiresAt])
+}
+
+model MediaCleanup {
+  id          String             @id @default(cuid())
+  receiptId   String             @unique
+  receipt     PhotoUploadReceipt @relation(fields: [receiptId], references: [id])
+  readyAt     DateTime
+  attempts    Int                @default(0)
+  lastError   String?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+
+  @@index([completedAt, readyAt])
+}
+
+model BootstrapState {
+  id          String   @id
+  completedAt DateTime @default(now())
 }

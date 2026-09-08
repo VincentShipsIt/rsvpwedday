@@ -9,14 +9,15 @@ import { toWireDateOrEmpty } from "@/lib/wire-date";
 export const dynamic = "force-dynamic";
 
 export default async function MemoriesPage() {
-	const [siteContent, photos, settings, events] = await Promise.all([
+	const [siteContent, photos, settings, events, pendingCleanup] = await Promise.all([
 		db.siteContent.findUnique({ where: { id: 1 }, include: { translations: true } }),
 		db.photo.findMany({
 			orderBy: { createdAt: "desc" },
 			include: { invitation: { select: { email: true } } },
 		}),
-		db.settings.findUnique({ where: { id: 1 }, select: { weddingDate: true } }),
+		db.settings.findUnique({ where: { id: 1 }, select: { weddingDate: true, timeZone: true } }),
 		db.event.findMany({ orderBy: { startsAt: "asc" }, select: { startsAt: true } }),
+		db.mediaCleanup.count({ where: { completedAt: null } }),
 	]);
 
 	const wedding = resolveWeddingDate(settings?.weddingDate, events);
@@ -41,10 +42,11 @@ export default async function MemoriesPage() {
 				</p>
 			</div>
 			<MemoriesForm
+				timeZone={settings?.timeZone ?? "UTC"}
 				initialEnabled={siteContent?.photosEnabled ?? false}
-				initialOpenAt={toWireDateOrEmpty(siteContent?.photosOpenAt)}
+				initialOpenAt={toWireDateOrEmpty(siteContent?.photosOpenAt, settings?.timeZone ?? "UTC")}
 				initialTestMode={siteContent?.photosTestMode ?? false}
-				weddingDate={toWireDateOrEmpty(wedding.date)}
+				weddingDate={toWireDateOrEmpty(wedding.date, settings?.timeZone ?? "UTC")}
 				initialTranslations={localeCodes.map((locale) => {
 					const stored = siteContent?.translations.find(
 						(translation) => translation.locale === locale
@@ -57,6 +59,7 @@ export default async function MemoriesPage() {
 				})}
 			/>
 			<PhotoModeration
+				pendingCleanup={pendingCleanup}
 				isBookOpen={access.state === "open"}
 				photos={photos.map((photo) => ({
 					id: photo.id,

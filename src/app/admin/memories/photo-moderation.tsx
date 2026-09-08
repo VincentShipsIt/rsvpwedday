@@ -4,7 +4,7 @@ import { EyeIcon, EyeOffIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useTransition } from "react";
 import { toast } from "sonner";
-import { deletePhoto, setPhotoHidden } from "@/app/admin/memories/actions";
+import { deletePhoto, retryPhotoCleanup, setPhotoHidden } from "@/app/admin/memories/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -43,9 +43,11 @@ const REFRESH_MS = 15_000;
 export function PhotoModeration({
 	photos,
 	isBookOpen,
+	pendingCleanup,
 }: {
 	photos: ModeratedPhoto[];
 	isBookOpen: boolean;
+	pendingCleanup: number;
 }) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
@@ -77,7 +79,15 @@ export function PhotoModeration({
 		startTransition(async () => {
 			const result = await deletePhoto(photo.id);
 			if (result.ok) {
-				toast.success("Photo deleted");
+				if (result.legacy)
+					toast.info(
+						"Photo removed from the book. Its legacy file was kept because ownership cannot be verified."
+					);
+				else if (result.cleanupPending)
+					toast.info(
+						"Photo removed from the book. Storage removal is pending; retry cleanup below."
+					);
+				else toast.success("Photo and its file deleted");
 			} else {
 				toast.error(result.error);
 			}
@@ -95,6 +105,32 @@ export function PhotoModeration({
 				)}
 			</CardHeader>
 			<CardContent>
+				<div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+					<p className="text-muted-foreground">
+						{pendingCleanup > 0
+							? `${pendingCleanup} file removal(s) pending. Recent uploads wait up to 15 minutes before removal.`
+							: "Storage cleanup also removes abandoned uploads older than one day."}
+					</p>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={isPending}
+						onClick={() =>
+							startTransition(async () => {
+								const result = await retryPhotoCleanup();
+								if (!result.ok) toast.error(result.error);
+								else if (result.pending)
+									toast.info(
+										`${result.pending} file removal(s) still pending. Retry after upload tokens expire or storage recovers.`
+									);
+								else toast.success("Storage cleanup complete");
+							})
+						}
+					>
+						Retry storage cleanup
+					</Button>
+				</div>
 				{photos.length === 0 ? (
 					<p className="text-sm text-muted-foreground">
 						{isBookOpen
@@ -155,8 +191,10 @@ export function PhotoModeration({
 											<AlertDialogHeader>
 												<AlertDialogTitle>Delete this photo?</AlertDialogTitle>
 												<AlertDialogDescription>
-													The file is removed from storage as well, so this cannot be undone. To
-													take it out of the book but keep it, hide it instead.
+													The photo leaves the book immediately. Verified uploads are queued for
+													permanent storage removal, which may need a retry. Older files without
+													proof of ownership are kept in storage. To keep the photo in this list,
+													hide it instead.
 												</AlertDialogDescription>
 											</AlertDialogHeader>
 											<AlertDialogFooter>
