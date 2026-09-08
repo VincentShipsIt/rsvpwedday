@@ -121,7 +121,9 @@ function isGuestKind(value: string): value is GuestKind {
 }
 
 export function parseImportCsv(text: string, options: ImportCsvOptions = {}): ImportCsvResult {
-	const rows = parseCsvRows(text).filter((row) => row.some((cell) => cell.trim() !== ""));
+	const rows = parseCsvRows(text.replace(/^\uFEFF/, "")).filter((row) =>
+		row.some((cell) => cell.trim() !== "")
+	);
 	if (rows.length === 0) {
 		return { invitations: [], errors: ["CSV is empty"] };
 	}
@@ -136,7 +138,12 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 			.every((cell) => ["guestId", "childrenUnder12"].includes(cell.trim())) &&
 		new Set(header.map((cell) => cell.trim())).size === header.length;
 	if (!isHeaderValid) {
-		return { invitations: [], errors: [`Header must be: ${IMPORT_CSV_HEADER.join(",")}`] };
+		return {
+			invitations: [],
+			errors: [
+				`Header must start with: ${IMPORT_CSV_HEADER.join(",")}. Optional columns: guestId, childrenUnder12.`,
+			],
+		};
 	}
 
 	const errors: string[] = [];
@@ -171,6 +178,10 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 		}
 		if (!isGuestKind(kindRaw)) {
 			errors.push(`Row ${rowNumber}: invalid kind "${kindRaw}"`);
+			return;
+		}
+		if (guestEmail && !z.email().safeParse(guestEmail).success) {
+			errors.push(`Row ${rowNumber}: guestEmail must be empty or a valid email`);
 			return;
 		}
 		if (!firstName || !lastName) {
@@ -227,6 +238,10 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 			guests: [],
 			eventSlugs,
 		};
+		if (invitation.locale !== localeRaw || invitation.companionAllowance !== companionAllowance) {
+			errors.push(`Row ${rowNumber}: conflicting locale or companionAllowance for the household`);
+			return;
+		}
 		if (childrenUnder12 !== undefined) {
 			if (
 				invitation.childrenUnder12 !== undefined &&
@@ -254,6 +269,16 @@ export function parseImportCsv(text: string, options: ImportCsvOptions = {}): Im
 		invitationsByEmail.set(householdEmail, invitation);
 	});
 
+	for (const invitation of invitationsByEmail.values()) {
+		if (
+			invitation.childrenUnder12 !== undefined &&
+			invitation.guests.some((guest) => guest.kind === GuestKind.CHILD)
+		) {
+			errors.push(
+				`${invitation.email}: use either childrenUnder12 or legacy named CHILD rows, not both`
+			);
+		}
+	}
 	return { invitations: Array.from(invitationsByEmail.values()), errors };
 }
 
@@ -298,6 +323,8 @@ export function serializeImportTemplateCsv(eventSlugs: string[]): string {
 	return lines.join("\n");
 }
 
+// Spreadsheet exports prefix formula-like text (including phone numbers starting + or -)
+// with an apostrophe. This display-only escape never changes stored data or machine CSV.
 export function serializeSpreadsheetCsvRow(fields: string[]): string {
 	return serializeCsvRow(fields.map((value) => (/^\s*[=+@-]/.test(value) ? `'${value}` : value)));
 }
