@@ -1,7 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { seedContent } from "../prisma/content-seed";
 import { migrateToPages } from "../prisma/page-migration";
 import { resolveDatabaseUrl } from "../src/lib/database-url";
+import { pushDatabase } from "./push-database";
 
 const url = resolveDatabaseUrl(process.env);
 
@@ -10,14 +10,7 @@ if (!url) {
 	process.exit(0);
 }
 
-const push = spawnSync("./node_modules/.bin/prisma", ["db", "push"], {
-	stdio: "inherit",
-	env: { ...process.env, DATABASE_URL: url },
-});
-
-if (push.status !== 0) {
-	process.exit(push.status ?? 1);
-}
+await pushDatabase(url);
 
 // A deployment against an empty database would otherwise serve a nameless, event-less page until
 // somebody opens the admin. `seedContent` records initialization transactionally, so this fills that gap once and is a

@@ -370,3 +370,8 @@ Photo writes require reserved upload receipts verified against the configured Bl
 Removal queues durable cleanup transactionally, waits for token expiry, and supports retries
 from Memories. Files from legacy records without ownership receipts are not automatically
 deleted. Bootstrap markers prevent deleted seeded pages/gifts from returning on deployment.
+
+`bun run db:push` and deployment preparation share `scripts/push-database.ts`. Before Prisma
+syncs the schema, it adds the nullable legacy-photo receipt column and unique index in an
+idempotent transaction. No ownership is inferred, existing rows are unchanged, actual duplicate
+receipts fail, and Prisma's normal data-loss protection remains enabled.
