@@ -3,6 +3,7 @@
 import {
 	CameraIcon,
 	FileTextIcon,
+	GiftIcon,
 	LayoutDashboardIcon,
 	LogOutIcon,
 	MailIcon,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
 	{ href: "/admin/guests", label: "Guests", icon: UsersIcon },
 	{ href: "/admin/pages", label: "Pages", icon: FileTextIcon },
 	{ href: "/admin/emails", label: "Emails", icon: MailIcon },
+	{ href: "/admin/gifts", label: "Wish list", icon: GiftIcon },
 	{ href: "/admin/memories", label: "Memories", icon: CameraIcon },
 	{ href: "/admin/settings", label: "Settings", icon: SettingsIcon, children: SETTINGS_SECTIONS },
 ] as const;

@@ -13,6 +13,7 @@ import type { StoryMilestoneView } from "@/components/site/story";
 import { ThemePicker } from "@/components/site/theme-picker";
 import { isHomePage } from "@/domain/blocks";
 import { clampEffectsSettings } from "@/domain/effects-settings";
+import { localizeGift, publishableGifts, sortByAvailability } from "@/domain/gifts";
 import { resolveWeddingDate } from "@/domain/wedding-date";
 import { BlockType, OpeningAnimation, SiteTheme } from "@/generated/prisma/enums";
 import { getDictionary, t } from "@/i18n";
@@ -52,12 +53,20 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 	const dictionary = getDictionary(locale);
 	const localeDefinition = locales[locale];
 
-	const [settings, siteContent, pageRecords, events, milestones] = await Promise.all([
+	const [settings, siteContent, pageRecords, events, milestones, giftRecords] = await Promise.all([
 		db.settings.findUnique({ where: { id: 1 } }),
 		db.siteContent.findUnique({ where: { id: 1 } }),
 		db.page.findMany({ orderBy: { sortOrder: "asc" }, include: pageInclude }),
 		db.event.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
 		db.storyMilestone.findMany({ orderBy: { sortOrder: "asc" }, include: { translations: true } }),
+		db.gift.findMany({
+			orderBy: { sortOrder: "asc" },
+			include: {
+				translations: true,
+				// Only whether it is spoken for; the public page never names who took what.
+				claim: { select: { invitationId: true, guestName: true } },
+			},
+		}),
 	]);
 
 	const pages = pageRecords.map((page) => localizePage(page, locale));
@@ -95,9 +104,14 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 		};
 	});
 
+	const gifts = sortByAvailability(
+		publishableGifts(giftRecords.map((gift) => localizeGift(gift, locale)))
+	);
+
 	const site: SiteData = {
 		eventCount: localizedEvents.length,
 		milestoneCount: localizedMilestones.length,
+		giftCount: gifts.length,
 		hasSettings: Boolean(settings),
 	};
 
@@ -192,6 +206,7 @@ export async function SitePage({ slug, params }: { slug: string; params: SitePag
 						theme,
 						events: localizedEvents,
 						milestones: localizedMilestones,
+						gifts,
 						weddingDate: resolveWeddingDate(settings?.weddingDate, events).date,
 						settings: settings
 							? { rsvpDeadline: settings.rsvpDeadline, replyTo: settings.replyTo }

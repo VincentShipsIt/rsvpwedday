@@ -60,6 +60,7 @@ const BUILT_IN_SOURCES: Partial<Record<BlockType, { href: string; label: string 
 	[BlockType.STORY]: { href: "/admin/settings/milestones", label: "Edit the milestones" },
 	[BlockType.EVENTS]: { href: "/admin/settings/events", label: "Edit the events" },
 	[BlockType.RSVP]: { href: "/admin/settings", label: "Edit the RSVP deadline" },
+	[BlockType.GIFTS]: { href: "/admin/gifts", label: "Edit the wish list" },
 };
 
 export function BlockCard({
