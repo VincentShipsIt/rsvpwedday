@@ -488,12 +488,15 @@ function ItemRow({
 				>
 					<GripVerticalIcon />
 				</Button>
-				<Input
-					id={`${fieldId}-title`}
-					value={translation.title}
-					placeholder={isFaq ? "Question" : "Title"}
-					onChange={(event) => onTranslationChange(item.key, { title: event.target.value })}
-				/>
+				<div className="flex min-w-0 flex-1 flex-col gap-1.5">
+					<Label htmlFor={`${fieldId}-title`}>{isFaq ? "Question" : "Title"}</Label>
+					<Input
+						id={`${fieldId}-title`}
+						value={translation.title}
+						placeholder={isFaq ? "Question" : "Title"}
+						onChange={(event) => onTranslationChange(item.key, { title: event.target.value })}
+					/>
+				</div>
 				<Button
 					type="button"
 					variant="ghost"

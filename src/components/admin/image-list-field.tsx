@@ -195,6 +195,7 @@ export function ImageListField({
 			{linkOpen ? (
 				<div className="flex gap-2">
 					<Input
+						aria-label="Photo link"
 						placeholder="https://"
 						value={draftUrl}
 						disabled={disabled}

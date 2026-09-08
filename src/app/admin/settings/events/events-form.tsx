@@ -204,22 +204,28 @@ export function EventsForm({ weddingDate, timeZone, initialEvents }: EventsFormP
 								slug={event.slug}
 							>
 								<div className="grid gap-2 sm:grid-cols-2">
-									<Input
-										aria-label="Slug"
-										placeholder="Slug"
-										value={event.slug}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { slug: changeEvent.target.value })
-										}
-									/>
-									<Input
-										aria-label="Dress code"
-										placeholder="Dress code"
-										value={event.dressCode}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { dressCode: changeEvent.target.value })
-										}
-									/>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-slug`}>Slug</Label>
+										<Input
+											id={`${event.key}-slug`}
+											placeholder="Slug"
+											value={event.slug}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { slug: changeEvent.target.value })
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-dress-code`}>Dress code</Label>
+										<Input
+											id={`${event.key}-dress-code`}
+											placeholder="Dress code"
+											value={event.dressCode}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { dressCode: changeEvent.target.value })
+											}
+										/>
+									</div>
 									<DateTimeField
 										label="Starts"
 										value={event.startsAt}
@@ -232,31 +238,40 @@ export function EventsForm({ weddingDate, timeZone, initialEvents }: EventsFormP
 										onChange={(value) => updateEvent(event.key, { endsAt: value })}
 										clearable
 									/>
-									<Input
-										aria-label="Venue"
-										placeholder="Venue"
-										value={event.venue}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { venue: changeEvent.target.value })
-										}
-									/>
-									<Input
-										aria-label="Address"
-										placeholder="Address"
-										value={event.address}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { address: changeEvent.target.value })
-										}
-									/>
-									<Input
-										className="sm:col-span-2"
-										aria-label="Maps URL"
-										placeholder="Maps URL"
-										value={event.mapsUrl}
-										onChange={(changeEvent) =>
-											updateEvent(event.key, { mapsUrl: changeEvent.target.value })
-										}
-									/>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-venue`}>Venue</Label>
+										<Input
+											id={`${event.key}-venue`}
+											placeholder="Venue"
+											value={event.venue}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { venue: changeEvent.target.value })
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`${event.key}-address`}>Address</Label>
+										<Input
+											id={`${event.key}-address`}
+											placeholder="Address"
+											value={event.address}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { address: changeEvent.target.value })
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5 sm:col-span-2">
+										<Label htmlFor={`${event.key}-maps-url`}>Maps URL</Label>
+										<Input
+											className="sm:col-span-2"
+											id={`${event.key}-maps-url`}
+											placeholder="Maps URL"
+											value={event.mapsUrl}
+											onChange={(changeEvent) =>
+												updateEvent(event.key, { mapsUrl: changeEvent.target.value })
+											}
+										/>
+									</div>
 								</div>
 
 								<div className="flex items-start justify-between gap-4 rounded-lg border p-3">
@@ -289,16 +304,19 @@ export function EventsForm({ weddingDate, timeZone, initialEvents }: EventsFormP
 											value={translation.locale}
 											className="flex flex-col gap-2"
 										>
-											<Input
-												aria-label="Name"
-												placeholder="Name"
-												value={translation.name}
-												onChange={(changeEvent) =>
-													updateTranslation(event.key, translation.locale, {
-														name: changeEvent.target.value,
-													})
-												}
-											/>
+											<div className="flex flex-col gap-1.5">
+												<Label htmlFor={`${event.key}-${translation.locale}-name`}>Name</Label>
+												<Input
+													id={`${event.key}-${translation.locale}-name`}
+													placeholder="Name"
+													value={translation.name}
+													onChange={(changeEvent) =>
+														updateTranslation(event.key, translation.locale, {
+															name: changeEvent.target.value,
+														})
+													}
+												/>
+											</div>
 											<RichTextEditor
 												label={`Event description (${locales[translation.locale].label})`}
 												placeholder="Description"
