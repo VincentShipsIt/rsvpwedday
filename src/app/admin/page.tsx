@@ -2,6 +2,7 @@ import { AdminDashboard } from "@/app/admin/admin-dashboard";
 import { hasSuccessfulEmail } from "@/domain/email-delivery";
 import { computeHeadcount } from "@/domain/headcount";
 import { getInvitationStatus } from "@/domain/invitation";
+import { populatedTranslation } from "@/domain/translations";
 import { EmailKind, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
@@ -41,13 +42,11 @@ export default async function AdminDashboardPage({
 	).length;
 
 	const eventRows = events.map((event) => {
-		const translation =
-			event.translations.find((candidate) => candidate.locale === Locale.en) ??
-			event.translations[0];
+		const translation = populatedTranslation(event.translations, Locale.en, ["name"]);
 		const counts = headcount.byEvent[event.id] ?? { adults: 0, children: 0 };
 		return {
 			id: event.id,
-			name: translation?.name ?? event.slug,
+			name: translation.name || event.slug,
 			adults: counts.adults,
 			children: counts.children,
 		};

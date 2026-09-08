@@ -68,9 +68,14 @@ export default async function GuestsPage({
 		companionAllowance: invitation.companionAllowance,
 		childrenUnder12: childrenUnder12(invitation),
 		childAttendance: childAttendanceCounts(invitation),
-		childDietary: invitation.guests.flatMap((guest) =>
-			guest.kind === "CHILD" && guest.dietary ? [guest.dietary] : []
-		),
+		childDietary:
+			invitation.childrenDietary != null
+				? invitation.childrenDietary
+					? [invitation.childrenDietary]
+					: []
+				: invitation.guests.flatMap((guest) =>
+						guest.kind === "CHILD" && guest.dietary ? [guest.dietary] : []
+					),
 		respondedAt: invitation.respondedAt
 			? formatDateTime(invitation.respondedAt, "en", timeZone)
 			: null,
