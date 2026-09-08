@@ -10,6 +10,7 @@ import Link from "next/link";
 import type { EventView } from "@/components/site/events";
 import { LemonGlyph } from "@/components/site/lemon-sprig";
 import { Reveal } from "@/components/site/reveal";
+import { RichText } from "@/components/site/rich-text";
 import type { Locale } from "@/generated/prisma/enums";
 import type { Dictionary } from "@/i18n";
 import { formatDayLabel, formatTime } from "@/lib/format";
@@ -88,9 +89,13 @@ export function EventsTimeline({
 								{formatTime(event.startsAt, locale)}
 							</span>
 							<h3 className="mt-1 text-xl">{event.name}</h3>
-							{event.description && (
-								<p className="max-w-md text-sm text-ink/70 italic">{event.description}</p>
-							)}
+							{/* The description is rich text from the admin's editor, like every other piece of
+							    guest-facing copy, so it goes through `RichText` rather than being printed as
+							    the literal `<p>` tags it is stored as. */}
+							<RichText
+								html={event.description ?? ""}
+								className="max-w-md text-sm text-ink/70 italic"
+							/>
 							<details className="group mt-2 flex flex-col text-sm">
 								{/* `list-none` plus the WebKit pseudo-element hides the default marker; the
 								    two labels swap on the element's own `open` state via `group-open:`. */}
