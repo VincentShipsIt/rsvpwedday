@@ -62,3 +62,97 @@ describe("computeHeadcount", () => {
 		});
 	});
 });
+
+describe("family headcounts", () => {
+	it("counts the highest attending child total once overall and exact totals per event", () => {
+		const count = computeHeadcount(
+			[
+				{
+					respondedAt: new Date(),
+					childrenUnder12: 4,
+					guests: [],
+					childAttendance: [
+						{ eventId: "wedding", count: 3 },
+						{ eventId: "brunch", count: 2 },
+					],
+				},
+			],
+			events
+		);
+		expect(count.attendingOverall).toEqual({ adults: 0, children: 3 });
+		expect(count.byEvent.wedding.children).toBe(3);
+		expect(count.byEvent.brunch.children).toBe(2);
+	});
+	it("does not double-count archived named children after conversion", () => {
+		const count = computeHeadcount(
+			[
+				{
+					respondedAt: new Date(),
+					childrenUnder12: 2,
+					guests: [
+						{
+							kind: GuestKind.CHILD,
+							attendance: [{ eventId: "wedding", status: Attendance.ACCEPTED }],
+						},
+					],
+					childAttendance: [{ eventId: "wedding", count: 2 }],
+				},
+			],
+			events
+		);
+		expect(count.attendingOverall.children).toBe(2);
+		expect(count.byEvent.wedding.children).toBe(2);
+	});
+	it("retains distinct legacy children attending disjoint events", () => {
+		const count = computeHeadcount(
+			[
+				{
+					respondedAt: new Date(),
+					childrenUnder12: null,
+					guests: [
+						{
+							kind: GuestKind.CHILD,
+							attendance: [{ eventId: "wedding", status: Attendance.ACCEPTED }],
+						},
+						{
+							kind: GuestKind.CHILD,
+							attendance: [{ eventId: "brunch", status: Attendance.ACCEPTED }],
+						},
+					],
+				},
+			],
+			events
+		);
+		expect(count.attendingOverall.children).toBe(2);
+		expect(count.byEvent.wedding.children).toBe(1);
+		expect(count.byEvent.brunch.children).toBe(1);
+	});
+	it("counts a legacy child attending multiple events only once overall", () => {
+		const count = computeHeadcount(
+			[
+				{
+					respondedAt: new Date(),
+					guests: [
+						{
+							kind: GuestKind.CHILD,
+							attendance: [
+								{ eventId: "wedding", status: Attendance.ACCEPTED },
+								{ eventId: "brunch", status: Attendance.ACCEPTED },
+							],
+						},
+					],
+				},
+			],
+			events
+		);
+		expect(count.attendingOverall.children).toBe(1);
+	});
+	it("keeps an unresponded household pending without counting its total as accepted", () => {
+		const count = computeHeadcount(
+			[{ respondedAt: null, childrenUnder12: 3, guests: [], childAttendance: [] }],
+			events
+		);
+		expect(count.invitations.pending).toBe(1);
+		expect(count.attendingOverall.children).toBe(0);
+	});
+});
