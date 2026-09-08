@@ -665,6 +665,37 @@ main[data-theme="mediterranean"],
 }
 
 /*
+ * Pointer tilt (`src/components/site/tilt.tsx`). The component writes `--tilt-x`/`--tilt-y` and
+ * the `data-tilt-state` attribute; the transform is here so a card at rest carries none at all —
+ * an always-on `perspective()` would hold every card in a composited layer and resample its text
+ * through it for the whole visit.
+ *
+ * `tracking` has to keep up with the hand, so it uses a transition short enough to read as the
+ * card following the pointer rather than chasing it; `settling` is the long ease that drops it
+ * back level once the pointer leaves.
+ */
+.tilt[data-tilt-state] {
+	transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+.tilt[data-tilt-state="tracking"] {
+	transition: transform 0.12s ease-out;
+}
+
+.tilt[data-tilt-state="settling"] {
+	transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Belt and braces with the component's own bail-out: no listener is ever attached for these, so
+   the attribute cannot appear, but a card must read as flat even if one somehow did. */
+@media (prefers-reduced-motion: reduce), (hover: none) {
+	.tilt[data-tilt-state] {
+		transform: none;
+		transition: none;
+	}
+}
+
+/*
  * FAQ accordion. `FaqItem` keeps the native `<details>` and only takes the toggle over to run a
  * height animation, holding the element `open` for the whole close so the browser cannot pull the
  * answer out of the DOM mid-transition. `.faq-closing` is what tells the chevron to turn back at
