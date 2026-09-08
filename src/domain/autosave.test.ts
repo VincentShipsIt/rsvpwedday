@@ -14,7 +14,7 @@ describe("autosave durability", () => {
 	it("saves a reversion while the previous draft is in flight", async () => {
 		const first = deferred();
 		const save = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue({ ok: true });
-		const controller = new Autosave("A", save);
+		const controller = new Autosave<string>("A", save);
 		controller.update("B");
 		const pending = controller.flush();
 		controller.update("A");
@@ -29,7 +29,7 @@ describe("autosave durability", () => {
 		const first = deferred();
 		const save = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue({ ok: true });
 		const retryNotice = vi.fn();
-		const controller = new Autosave("A", save, retryNotice);
+		const controller = new Autosave<string>("A", save, retryNotice);
 		const unsubscribe = controller.subscribe(() => {});
 		controller.update("B");
 		unsubscribe();
@@ -46,7 +46,7 @@ describe("autosave durability", () => {
 	it("serializes writes and persists the latest queued draft", async () => {
 		const first = deferred();
 		const save = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue({ ok: true });
-		const controller = new Autosave("A", save);
+		const controller = new Autosave<string>("A", save);
 		controller.update("B");
 		const pending = controller.flush();
 		controller.update("C");

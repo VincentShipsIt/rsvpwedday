@@ -2,8 +2,9 @@
 
 Family wedding RSVP site. Guests get a personal link by email (`/rsvp/<token>`) and confirm
 attendance per named guest per event. The couple manages everything in a password-protected
-`/admin`. There are no anonymous plus-ones: every attendee, including a guest-added companion,
-is a named person with contact details.
+`/admin`. Guests aged 12 and over are named people; guest-added companions need an email or phone.
+Children under 12 are a household count, separate from the adult companion allowance, with
+per-event counts and optional shared dietary notes. They never need names or contact details.
 
 ## Stack
 
@@ -341,3 +342,30 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Audit fixes and family counts
+
+`Invitation.childrenUnder12` is nullable for legacy compatibility. Null projects the existing
+`GuestKind.CHILD` records into counts; an explicit count uses `InvitationChildAttendance` rows.
+Legacy child records are retained, but never counted twice after conversion. Per-event totals
+count actual child attendance; the anonymous overall child total is the largest event count.
+`src/domain/children.ts` owns this projection. RSVP submissions validate exact guest/event
+membership before writes inside a serializable transaction; companions retain their IDs.
+
+Every privileged admin Server Action calls `requireAdmin` before reading input or data.
+Database-backed admin pages and export/template routes also guard their own data access.
+Upload token generation checks the session in its callback; signed Blob completion is separate.
+
+CSV imports merge identities instead of replacing guests. Optional `guestId` supports explicit
+matching; existing replies, dietary notes, companions, and omitted guests survive re-import.
+Spreadsheet exports include reply details and one aggregate row for children per household;
+its event cells contain counts, while adult event cells contain attendance status.
+
+`Settings.timeZone` is an IANA zone, initially UTC to preserve existing instants. All date forms
+exchange wall time in this zone through `wire-date.ts`, and all public/email date formatting
+uses it. Changing the zone changes display without silently moving stored timestamps.
+
+Photo writes require reserved upload receipts verified against the configured Blob store.
+Removal queues durable cleanup transactionally, waits for token expiry, and supports retries
+from Memories. Files from legacy records without ownership receipts are not automatically
+deleted. Bootstrap markers prevent deleted seeded pages/gifts from returning on deployment.

@@ -139,19 +139,23 @@ export function InvitationDialog({
 		};
 
 		startTransition(async () => {
-			const result =
-				target.mode === "edit"
-					? await updateInvitation(target.invitationId, payload)
-					: await createInvitation(payload);
+			try {
+				const result =
+					target.mode === "edit"
+						? await updateInvitation(target.invitationId, payload)
+						: await createInvitation(payload);
 
-			if (!result.ok) {
-				setError(result.error);
-				return;
+				if (!result.ok) {
+					setError(result.error);
+					return;
+				}
+
+				toast.success(target.mode === "edit" ? "Invitation updated" : "Invitation created");
+				onOpenChange(false);
+				router.refresh();
+			} catch {
+				setError("The invitation could not be saved. Please try again.");
 			}
-
-			toast.success(target.mode === "edit" ? "Invitation updated" : "Invitation created");
-			onOpenChange(false);
-			router.refresh();
 		});
 	}
 
