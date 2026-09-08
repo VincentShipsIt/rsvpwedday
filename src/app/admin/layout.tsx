@@ -15,8 +15,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 				<div className="flex min-h-dvh flex-col md:flex-row">
 					<AdminSidebar logout={logout} />
 					<AdminMobileNav />
-					<main className="flex-1">
-						<div className="mx-auto max-w-4xl px-6 py-10">{children}</div>
+					{/* `min-w-0` lets a wide child (the guests table) scroll inside this column
+					    instead of pushing the whole page sideways. */}
+					<main className="min-w-0 flex-1">
+						{/*
+						 * The admin fills the screen it is given — a laptop should not read a guest
+						 * list through a 56rem letterbox — and only stops at 96rem, wider than any
+						 * laptop, so a table does not stretch across an ultra-wide display.
+						 */}
+						<div className="mx-auto max-w-[96rem] px-6 py-10 lg:px-10">{children}</div>
 					</main>
 				</div>
 			) : (
