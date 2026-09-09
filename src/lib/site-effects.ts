@@ -5,6 +5,7 @@ const openingParams: Record<string, OpeningAnimation> = {
 	seal: OpeningAnimation.SEAL,
 	monogram: OpeningAnimation.MONOGRAM,
 	bloom: OpeningAnimation.BLOOM,
+	mediterranean: OpeningAnimation.MEDITERRANEAN_BLOOM,
 };
 
 // The landing page accepts `?opening=` alongside `?theme=` so every cover animation can be
@@ -29,6 +30,13 @@ export const openingChoices: {
 	description: string;
 }[] = [
 	{
+		key: "mediterranean",
+		opening: OpeningAnimation.MEDITERRANEAN_BLOOM,
+		label: "Mediterranean Bloom",
+		description:
+			"An embossed cream envelope opens in a short film, with a blue wax seal and lemon details. Designed for the Mediterranean palette.",
+	},
+	{
 		key: "bloom",
 		opening: OpeningAnimation.BLOOM,
 		label: "Bloom",
@@ -39,7 +47,8 @@ export const openingChoices: {
 		key: "seal",
 		opening: OpeningAnimation.SEAL,
 		label: "Wax seal",
-		description: "A sealed envelope: the seal breaks, the flap lifts, and the cover splits open.",
+		description:
+			"A botanical envelope: the seal releases, the flap lifts, and a card reveals your names.",
 	},
 	{
 		key: "monogram",
@@ -61,4 +70,5 @@ export const dataOpening: Record<OpeningAnimation, string> = {
 	[OpeningAnimation.SEAL]: "seal",
 	[OpeningAnimation.MONOGRAM]: "monogram",
 	[OpeningAnimation.BLOOM]: "bloom",
+	[OpeningAnimation.MEDITERRANEAN_BLOOM]: "mediterranean",
 };

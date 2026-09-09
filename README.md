@@ -26,3 +26,21 @@ bun run build       # prisma generate && next build
 
 See `AGENTS.md` for the stack, the derived invitation-status rule, where translations live, and
 the environment variable list.
+
+## Opening effects
+
+Choose an opening in **Admin → Settings → Effects**, or preview it with `?opening=seal`,
+`?opening=bloom`, `?opening=monogram`, or `?opening=mediterranean`. A preview forces the cover
+back on even if it already opened during the visit. `?opening=none` skips the cover.
+
+**Mediterranean Bloom** is a generated envelope film with a fixed cream, blue, and lemon palette.
+Pair it with `?theme=mediterranean` to preview the matching page. Its generic media lives in
+`public/openings/mediterranean-bloom`; names and initials remain live text from settings.
+The first frame was made with Nano Banana 2 Lite and animated with Seedance 2.5. Serving the
+finished media needs no Replicate or Blob credentials.
+
+The film downloads on the guest's click. Its poster remains visible until playback starts;
+completion reveals the page, and Skip, Escape, playback errors, or a bounded timeout can also
+end the cover. The opening speed controls playback rate. Reduced motion bypasses the cover.
+`MEDITERRANEAN_BLOOM` is an additive Prisma enum value; the deployment's existing schema push
+must run before saving this choice against an older database.

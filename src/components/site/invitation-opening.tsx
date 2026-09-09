@@ -4,6 +4,7 @@ import Image from "next/image";
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { BloomArt } from "@/components/site/opening/bloom-art";
 import { getInitials } from "@/components/site/opening/initials";
+import { MediterraneanArt } from "@/components/site/opening/mediterranean-art";
 import { MonogramArt } from "@/components/site/opening/monogram-art";
 import { SealArt } from "@/components/site/opening/seal-art";
 import { OpeningAnimation, type SiteTheme } from "@/generated/prisma/enums";
@@ -33,11 +34,13 @@ type CoverAnimation = Exclude<OpeningAnimation, typeof OpeningAnimation.NONE>;
 
 // How long each open transition runs, at 100% speed, before the cover unmounts. Must cover the
 // longest chain in that variant's `[data-phase="opening"]` CSS: its own art animation, then the
-// shared split (`--opening-reveal-delay` + 0.9s).
+// shared split (delay + 0.9s), or the seal’s dissolve (2.45s + 0.8s).
+// The film's duration only sizes its watchdog; the media's ended event starts its dissolve.
 const revealMs: Record<CoverAnimation, number> = {
-	[OpeningAnimation.SEAL]: 1800,
+	[OpeningAnimation.SEAL]: 3300,
 	[OpeningAnimation.MONOGRAM]: 1300,
 	[OpeningAnimation.BLOOM]: 1600,
+	[OpeningAnimation.MEDITERRANEAN_BLOOM]: 5000,
 };
 
 // The cover ground is cut into four quadrants that each slide out to their own corner on open,
@@ -73,7 +76,9 @@ function waitForHeroAssets(): Promise<void> {
 	const fonts =
 		"fonts" in document ? document.fonts.ready.then(() => undefined) : Promise.resolve();
 	const images = Array.from(
-		document.querySelectorAll<HTMLImageElement>("img.hero-photo-img, img.opening-photo")
+		document.querySelectorAll<HTMLImageElement>(
+			"img.hero-photo-img, img.opening-photo, img.opening-cinema-poster"
+		)
 	)
 		.filter((image) => !image.complete)
 		.map(
@@ -117,39 +122,89 @@ export function InvitationOpening({
 	/** Reveal speed as a percentage (admin setting); scales every open animation and delay. */
 	speed: number;
 	forceShow?: boolean;
-	labels: { open: string; loading: string };
+	labels: { open: string; loading: string; skip: string };
 }) {
 	const [shouldShow, setShouldShow] = useState(false);
 	const [phase, setPhase] = useState<Phase>("loading");
 	const [isVisible, setIsVisible] = useState(true);
+	const [isRevealing, setIsRevealing] = useState(false);
 	const hasOpenedRef = useRef(false);
+	const isFinishingRef = useRef(false);
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	const skipRef = useRef<HTMLButtonElement>(null);
+	const videoRef = useRef<HTMLVideoElement>(null);
+	const timerRef = useRef<number | null>(null);
 	const coverRef = useRef<HTMLDivElement>(null);
 	const artRef = useRef<HTMLDivElement>(null);
+	const isFilm = animation === OpeningAnimation.MEDITERRANEAN_BLOOM;
 	// 200% speed → every reveal duration and delay is halved, in CSS (`--opening-scale`) and here.
 	const scale = 100 / Math.max(speed, 1);
 
-	const handleOpen = useCallback(() => {
-		if (hasOpenedRef.current) {
+	const finishFilm = useCallback(() => {
+		if (!hasOpenedRef.current || isFinishingRef.current) {
 			return;
 		}
-		hasOpenedRef.current = true;
-		setPhase("opening");
-		try {
-			sessionStorage.setItem(SESSION_KEY, "1");
-		} catch {
-			// Private browsing or storage disabled: opening still proceeds, it just won't be
-			// remembered as "already seen" for the rest of the session.
+		isFinishingRef.current = true;
+		if (timerRef.current !== null) {
+			window.clearTimeout(timerRef.current);
 		}
-		const art = artRef.current?.querySelector("svg")?.getBoundingClientRect();
-		const detail: InvitationOpenedDetail = art
-			? { x: art.left + art.width / 2, y: art.top + art.height / 2 }
-			: undefined;
-		window.dispatchEvent(
-			new CustomEvent<InvitationOpenedDetail>(INVITATION_OPENED_EVENT, { detail })
-		);
-		window.setTimeout(() => setIsVisible(false), revealMs[animation] * scale);
-	}, [animation, scale]);
+		videoRef.current?.pause();
+		setIsRevealing(true);
+		timerRef.current = window.setTimeout(() => setIsVisible(false), 700);
+	}, []);
+
+	useEffect(
+		() => () => {
+			if (timerRef.current !== null) {
+				window.clearTimeout(timerRef.current);
+			}
+		},
+		[]
+	);
+
+	const handleOpen = useCallback(
+		(skipFilm = false) => {
+			if (hasOpenedRef.current) {
+				if (isFilm && skipFilm) {
+					finishFilm();
+				}
+				return;
+			}
+			hasOpenedRef.current = true;
+			setPhase("opening");
+			try {
+				sessionStorage.setItem(SESSION_KEY, "1");
+			} catch {
+				// Private browsing or storage disabled: opening still proceeds, it just won't be
+				// remembered as "already seen" for the rest of the session.
+			}
+			const art = (
+				artRef.current?.querySelector("[data-opening-origin]") ??
+				artRef.current?.querySelector("svg")
+			)?.getBoundingClientRect();
+			const detail: InvitationOpenedDetail = art
+				? { x: art.left + art.width / 2, y: art.top + art.height / 2 }
+				: undefined;
+			window.dispatchEvent(
+				new CustomEvent<InvitationOpenedDetail>(INVITATION_OPENED_EVENT, { detail })
+			);
+			if (isFilm) {
+				const video = videoRef.current;
+				if (skipFilm || !video || video.error) {
+					finishFilm();
+					return;
+				}
+				// Start inside the user's gesture; keep the poster until actual playback begins.
+				video.playbackRate = 1 / scale;
+				void video.play().catch(finishFilm);
+				// A stalled network or decoder must not strand the guest behind the invitation.
+				timerRef.current = window.setTimeout(finishFilm, revealMs[animation] * scale + 8000);
+				return;
+			}
+			timerRef.current = window.setTimeout(() => setIsVisible(false), revealMs[animation] * scale);
+		},
+		[animation, scale, isFilm, finishFilm]
+	);
 
 	useEffect(() => {
 		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -240,21 +295,39 @@ export function InvitationOpening({
 
 	useEffect(() => {
 		if (!shouldShow || !isVisible) return;
-		const target = phase === "ready" ? buttonRef.current : coverRef.current;
+		const target =
+			phase === "ready"
+				? buttonRef.current
+				: isFilm && phase === "opening"
+					? skipRef.current
+					: coverRef.current;
 		target?.focus();
 		function handleKeyDown(event: KeyboardEvent) {
 			if (event.key === "Escape") {
 				event.preventDefault();
-				handleOpen();
+				handleOpen(true);
 			}
 			if (event.key === "Tab") {
 				event.preventDefault();
-				target?.focus();
+				const buttons = Array.from(
+					coverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []
+				).filter((button) => button.tabIndex >= 0 && button.getAttribute("aria-hidden") !== "true");
+				if (buttons.length === 0) {
+					coverRef.current?.focus();
+					return;
+				}
+				const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+				const next = event.shiftKey
+					? current <= 0
+						? buttons.length - 1
+						: current - 1
+					: (current + 1) % buttons.length;
+				buttons[next]?.focus();
 			}
 		}
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [shouldShow, isVisible, phase, handleOpen]);
+	}, [shouldShow, isVisible, phase, handleOpen, isFilm]);
 
 	if (!shouldShow || !isVisible || !coupleNames.trim()) {
 		return null;
@@ -269,6 +342,7 @@ export function InvitationOpening({
 			data-theme={dataTheme[theme]}
 			data-opening={dataOpening[animation]}
 			data-phase={phase}
+			data-revealing={isRevealing ? "" : undefined}
 			data-photo={heroImageUrl ? "" : undefined}
 			ref={coverRef}
 			tabIndex={-1}
@@ -279,33 +353,53 @@ export function InvitationOpening({
 			style={{ "--opening-scale": scale } as CSSProperties}
 			className="opening-cover fixed inset-0 z-50 overflow-hidden text-ink"
 		>
-			{PANELS.map((panel) => (
-				<div
-					key={panel.key}
-					className={`opening-panel absolute h-[calc(50%+1px)] w-[calc(50%+1px)] overflow-hidden ${panel.className}`}
-					style={{ "--panel-x": panel.x, "--panel-y": panel.y } as CSSProperties}
-				>
-					{/* Bottom to top: solid ground, the hero photo (blurred and dimmed at rest, full
+			{!isFilm &&
+				PANELS.map((panel) => (
+					<div
+						key={panel.key}
+						className={`opening-panel absolute h-[calc(50%+1px)] w-[calc(50%+1px)] overflow-hidden ${panel.className}`}
+						style={{ "--panel-x": panel.x, "--panel-y": panel.y } as CSSProperties}
+					>
+						{/* Bottom to top: solid ground, the hero photo (blurred and dimmed at rest, full
 					    on open), then the paper scrim carrying the theme's own page texture. */}
-					<div className="absolute h-dvh w-screen bg-ivory">
-						{heroImageUrl && (
-							<Image
-								src={heroImageUrl}
-								alt=""
-								fill
-								sizes="100vw"
-								className="opening-photo object-cover"
-							/>
-						)}
-						<div className="opening-scrim absolute inset-0 bg-ivory/85" />
+						<div className="absolute h-dvh w-screen bg-ivory">
+							{heroImageUrl && (
+								<Image
+									src={heroImageUrl}
+									alt=""
+									fill
+									sizes="100vw"
+									className="opening-photo object-cover"
+								/>
+							)}
+							<div className="opening-scrim absolute inset-0 bg-ivory/85" />
+						</div>
 					</div>
-				</div>
-			))}
+				))}
 			<div
 				ref={artRef}
 				className="opening-content absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center"
 			>
-				{isSeal && <SealArt initials={initials} />}
+				{isFilm && (
+					<MediterraneanArt
+						videoRef={videoRef}
+						initials={initials}
+						coupleNames={coupleNames}
+						openLabel={labels.open}
+						ready={phase === "ready"}
+						onOpen={() => handleOpen()}
+						onFinished={finishFilm}
+					/>
+				)}
+				{isSeal && (
+					<SealArt
+						initials={initials}
+						coupleNames={coupleNames}
+						openLabel={labels.open}
+						ready={phase === "ready"}
+						onOpen={() => handleOpen()}
+					/>
+				)}
 				{animation === OpeningAnimation.MONOGRAM && <MonogramArt initials={initials} />}
 				{isBloom ? (
 					<div className="relative flex items-center justify-center">
@@ -314,12 +408,12 @@ export function InvitationOpening({
 							{coupleNames}
 						</h2>
 					</div>
-				) : (
+				) : !isFilm ? (
 					<h2 className="opening-names font-accent text-3xl text-ink sm:text-4xl">{coupleNames}</h2>
-				)}
+				) : null}
 				{/* The loading label and the button share one grid cell so swapping them never
 				    shifts the art above. */}
-				<div className="grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
+				<div className="opening-actions grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
 					<p className="opening-loading-label text-xs uppercase tracking-[0.3em] text-ink/60">
 						{labels.loading}
 						<span aria-hidden="true" className="opening-loading-dots">
@@ -331,7 +425,7 @@ export function InvitationOpening({
 					<button
 						ref={buttonRef}
 						type="button"
-						onClick={handleOpen}
+						onClick={() => handleOpen()}
 						tabIndex={phase === "ready" ? 0 : -1}
 						aria-hidden={phase !== "ready"}
 						className="opening-button min-h-11 rounded-full border border-ink/20 bg-ivory px-6 text-sm uppercase tracking-widest text-ink transition-colors outline-none hover:bg-ivory-dark focus-visible:border-ink/60 focus-visible:ring-2 focus-visible:ring-ink/20"
@@ -339,6 +433,16 @@ export function InvitationOpening({
 						{labels.open}
 					</button>
 				</div>
+				{isFilm && (
+					<button
+						ref={skipRef}
+						type="button"
+						onClick={() => handleOpen(true)}
+						className="opening-cinema-skip"
+					>
+						{labels.skip}
+					</button>
+				)}
 			</div>
 		</div>
 	);
