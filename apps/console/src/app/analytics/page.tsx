@@ -8,19 +8,21 @@ import {
 	TableRow,
 } from "@rsvpwedday/ui/table";
 import { ConsoleShell } from "@/components/console-shell";
-import { euro, pipelineValue } from "@/lib/crm";
+import { euro, isClientStatus, isLeadStatus, pipelineValue } from "@/lib/crm";
 import { getCrm } from "@/lib/store";
 
 export default async function AnalyticsPage() {
-	const { leads, clients, providers } = await getCrm();
-	const pipeline = clients.reduce((sum, client) => sum + pipelineValue(client), 0);
-	const fee = clients.reduce((sum, client) => sum + client.fee, 0);
+	const { couples, providers } = await getCrm();
+	const clients = couples.filter((row) => isClientStatus(row.status));
+	const leads = couples.filter((row) => isLeadStatus(row.status));
+	const pipeline = clients.reduce((sum, row) => sum + pipelineValue(row), 0);
+	const fee = clients.reduce((sum, row) => sum + row.fee, 0);
 	const byPlace = new Map<string, { fee: number; count: number }>();
-	for (const client of clients) {
-		const current = byPlace.get(client.place.label) ?? { fee: 0, count: 0 };
-		current.fee += client.fee;
+	for (const row of clients) {
+		const current = byPlace.get(row.place.label) ?? { fee: 0, count: 0 };
+		current.fee += row.fee;
 		current.count += 1;
-		byPlace.set(client.place.label, current);
+		byPlace.set(row.place.label, current);
 	}
 
 	return (

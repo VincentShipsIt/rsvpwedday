@@ -1,5 +1,3 @@
-import { Button } from "@rsvpwedday/ui/button";
-import { Input } from "@rsvpwedday/ui/input";
 import {
 	Table,
 	TableBody,
@@ -12,42 +10,46 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rsvpwedday/ui/tabs";
 import Link from "next/link";
 import { Suspense } from "react";
-import { moveLead, saveLead } from "@/app/actions";
+import { moveCouple } from "@/app/actions";
 import { ConsoleShell } from "@/components/console-shell";
 import { ContactLinks } from "@/components/contact-links";
+import { CoupleDialog } from "@/components/couple-dialog";
 import { FilterBar } from "@/components/filter-bar";
 import { StageBoard } from "@/components/stage-board";
-import { filterLeads, leadStageLabels, leadStages, uniquePlaces } from "@/lib/crm";
+import { coupleStatusLabels, filterCouples, leadStatuses, uniquePlaces } from "@/lib/crm";
 import { getCrm } from "@/lib/store";
 
 export default async function LeadsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ q?: string; stage?: string; place?: string; view?: string }>;
+	searchParams: Promise<{ q?: string; status?: string; place?: string; view?: string }>;
 }) {
 	const filters = await searchParams;
-	const { leads } = await getCrm();
-	const rows = filterLeads(leads, filters);
-	const places = uniquePlaces(leads);
+	const { couples } = await getCrm();
+	const rows = filterCouples(couples, { ...filters, lane: "lead" });
+	const places = uniquePlaces(couples);
 
 	return (
 		<ConsoleShell pathname="/leads">
 			<div className="flex flex-col gap-8">
-				<div>
-					<h1 className="font-display text-3xl font-semibold tracking-tight">Leads</h1>
-					<p className="text-ink-soft mt-1 font-serif text-sm">
-						Enquiries before they are a wedding on the books.
-					</p>
+				<div className="flex flex-wrap items-end justify-between gap-3">
+					<div>
+						<h1 className="font-display text-3xl font-semibold tracking-tight">Leads</h1>
+						<p className="text-ink-soft mt-1 font-serif text-sm">
+							Same couple record as Clients. Confirm the status and they move.
+						</p>
+					</div>
+					<CoupleDialog defaultStatus="new" label="New couple" />
 				</div>
 				<Suspense>
 					<FilterBar
 						selects={[
 							{
-								name: "stage",
-								label: "Stage",
-								options: leadStages.map((stage) => ({
-									value: stage,
-									label: leadStageLabels[stage],
+								name: "status",
+								label: "Status",
+								options: leadStatuses.map((status) => ({
+									value: status,
+									label: coupleStatusLabels[status],
 								})),
 							},
 							{
@@ -65,15 +67,15 @@ export default async function LeadsPage({
 					</TabsList>
 					<TabsContent value="board">
 						<StageBoard
-							columns={leadStages.map((id) => ({ id, label: leadStageLabels[id] }))}
-							items={rows.map((lead) => ({
-								id: lead.id,
-								href: `/leads/${lead.id}`,
-								title: lead.couple,
-								meta: `${lead.place.label}${lead.date ? ` · ${lead.date}` : ""}`,
-								column: lead.stage,
+							columns={leadStatuses.map((id) => ({ id, label: coupleStatusLabels[id] }))}
+							items={rows.map((row) => ({
+								id: row.id,
+								href: `/couples/${row.id}`,
+								title: row.couple,
+								meta: `${row.place.label}${row.date ? ` · ${row.date}` : ""}`,
+								column: row.status,
 							}))}
-							move={moveLead}
+							move={moveCouple}
 						/>
 					</TabsContent>
 					<TabsContent value="table">
@@ -83,23 +85,23 @@ export default async function LeadsPage({
 								<TableHeader>
 									<TableRow>
 										<TableHead>Couple</TableHead>
-										<TableHead>Stage</TableHead>
+										<TableHead>Status</TableHead>
 										<TableHead>Place</TableHead>
 										<TableHead>Date</TableHead>
 										<TableHead>Contact</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{rows.map((lead) => (
-										<TableRow key={lead.id}>
+									{rows.map((row) => (
+										<TableRow key={row.id}>
 											<TableCell className="font-medium">
-												<Link href={`/leads/${lead.id}`}>{lead.couple}</Link>
+												<Link href={`/couples/${row.id}`}>{row.couple}</Link>
 											</TableCell>
-											<TableCell>{leadStageLabels[lead.stage]}</TableCell>
-											<TableCell className="text-ink-soft">{lead.place.label}</TableCell>
-											<TableCell className="tabular-nums">{lead.date ?? "—"}</TableCell>
+											<TableCell>{coupleStatusLabels[row.status]}</TableCell>
+											<TableCell className="text-ink-soft">{row.place.label}</TableCell>
+											<TableCell className="tabular-nums">{row.date ?? "—"}</TableCell>
 											<TableCell>
-												<ContactLinks contact={lead.contact} />
+												<ContactLinks contact={row.contact} />
 											</TableCell>
 										</TableRow>
 									))}
@@ -108,18 +110,6 @@ export default async function LeadsPage({
 						</div>
 					</TabsContent>
 				</Tabs>
-				<section className="max-w-xl">
-					<h2 className="font-display text-lg font-semibold tracking-tight">Quick add</h2>
-					<form action={saveLead} className="mt-3 grid gap-2 sm:grid-cols-2">
-						<Input name="couple" required placeholder="Couple" aria-label="Couple" />
-						<Input name="place" required placeholder="Place" aria-label="Place" />
-						<Input name="date" type="date" aria-label="Date" />
-						<Input name="whatsapp" placeholder="WhatsApp" aria-label="WhatsApp" />
-						<Button type="submit" className="sm:col-span-2">
-							Save lead
-						</Button>
-					</form>
-				</section>
 			</div>
 		</ConsoleShell>
 	);

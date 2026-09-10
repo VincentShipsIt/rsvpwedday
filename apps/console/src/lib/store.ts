@@ -1,14 +1,94 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { Client, CrmData, InboxMessage, Lead, Provider, Thread } from "@/lib/crm";
+import type { Couple, CoupleStatus, CrmData, InboxMessage, Provider, Thread } from "@/lib/crm";
 
 const dataPath = join(process.cwd(), "data/crm.json");
 
+type LegacyLead = {
+	id: string;
+	couple: string;
+	place: Couple["place"];
+	date?: string;
+	stage?: string;
+	source?: string;
+	contact: Couple["contact"];
+	notes?: string;
+	createdAt?: string;
+};
+
+type LegacyClient = Omit<Couple, "status" | "createdAt"> & {
+	status: string;
+	createdAt?: string;
+};
+
+type DiskShape = Partial<CrmData> & {
+	leads?: LegacyLead[];
+	clients?: LegacyClient[];
+};
+
+function asCoupleStatus(value: string | undefined, fallback: CoupleStatus): CoupleStatus {
+	if (value === "booked") return "confirmed";
+	const allowed: CoupleStatus[] = [
+		"new",
+		"talking",
+		"option",
+		"confirmed",
+		"day-of",
+		"wrapped",
+		"lost",
+	];
+	return value && (allowed as string[]).includes(value) ? (value as CoupleStatus) : fallback;
+}
+
+function fromLead(row: LegacyLead): Couple {
+	return {
+		id: row.id,
+		couple: row.couple,
+		place: row.place,
+		date: row.date,
+		status: asCoupleStatus(row.stage, "new"),
+		source: row.source,
+		contact: row.contact,
+		notes: row.notes,
+		createdAt: row.createdAt ?? new Date().toISOString(),
+		fee: 0,
+		budget: 0,
+		bookedVendorTotal: 0,
+		ourCost: 0,
+		features: [],
+		providerIds: [],
+	};
+}
+
+function fromClient(row: LegacyClient): Couple {
+	return {
+		...row,
+		status: asCoupleStatus(row.status, "confirmed"),
+		createdAt: row.createdAt ?? new Date().toISOString(),
+		fee: row.fee ?? 0,
+		budget: row.budget ?? 0,
+		bookedVendorTotal: row.bookedVendorTotal ?? 0,
+		ourCost: row.ourCost ?? 0,
+		features: row.features ?? [],
+		providerIds: row.providerIds ?? [],
+	};
+}
+
+function normalize(raw: DiskShape): CrmData {
+	const couples = raw.couples ?? [
+		...(raw.leads ?? []).map(fromLead),
+		...(raw.clients ?? []).map(fromClient),
+	];
+	return {
+		couples,
+		providers: raw.providers ?? [],
+		threads: raw.threads ?? [],
+	};
+}
+
 async function readCrm(): Promise<CrmData> {
 	const raw = await readFile(dataPath, "utf8");
-	const data = JSON.parse(raw) as CrmData;
-	data.threads ??= [];
-	return data;
+	return normalize(JSON.parse(raw) as DiskShape);
 }
 
 async function writeCrm(data: CrmData): Promise<void> {
@@ -20,14 +100,9 @@ export async function getCrm(): Promise<CrmData> {
 	return readCrm();
 }
 
-export async function getLead(id: string): Promise<Lead | undefined> {
+export async function getCouple(id: string): Promise<Couple | undefined> {
 	const data = await readCrm();
-	return data.leads.find((row) => row.id === id);
-}
-
-export async function getClient(id: string): Promise<Client | undefined> {
-	const data = await readCrm();
-	return data.clients.find((row) => row.id === id);
+	return data.couples.find((row) => row.id === id);
 }
 
 export async function getProvider(id: string): Promise<Provider | undefined> {
@@ -35,22 +110,13 @@ export async function getProvider(id: string): Promise<Provider | undefined> {
 	return data.providers.find((row) => row.id === id);
 }
 
-export async function upsertLead(lead: Lead): Promise<Lead> {
+export async function upsertCouple(couple: Couple): Promise<Couple> {
 	const data = await readCrm();
-	const index = data.leads.findIndex((row) => row.id === lead.id);
-	if (index >= 0) data.leads[index] = lead;
-	else data.leads.unshift(lead);
+	const index = data.couples.findIndex((row) => row.id === couple.id);
+	if (index >= 0) data.couples[index] = couple;
+	else data.couples.unshift(couple);
 	await writeCrm(data);
-	return lead;
-}
-
-export async function upsertClient(client: Client): Promise<Client> {
-	const data = await readCrm();
-	const index = data.clients.findIndex((row) => row.id === client.id);
-	if (index >= 0) data.clients[index] = client;
-	else data.clients.unshift(client);
-	await writeCrm(data);
-	return client;
+	return couple;
 }
 
 export async function upsertProvider(provider: Provider): Promise<Provider> {
@@ -62,25 +128,16 @@ export async function upsertProvider(provider: Provider): Promise<Provider> {
 	return provider;
 }
 
-export async function setLeadStage(id: string, stage: Lead["stage"]): Promise<Lead | undefined> {
-	const data = await readCrm();
-	const lead = data.leads.find((row) => row.id === id);
-	if (!lead) return undefined;
-	lead.stage = stage;
-	await writeCrm(data);
-	return lead;
-}
-
-export async function setClientStatus(
+export async function setCoupleStatus(
 	id: string,
-	status: Client["status"]
-): Promise<Client | undefined> {
+	status: CoupleStatus
+): Promise<Couple | undefined> {
 	const data = await readCrm();
-	const client = data.clients.find((row) => row.id === id);
-	if (!client) return undefined;
-	client.status = status;
+	const row = data.couples.find((item) => item.id === id);
+	if (!row) return undefined;
+	row.status = status;
 	await writeCrm(data);
-	return client;
+	return row;
 }
 
 export async function getThreads(): Promise<Thread[]> {

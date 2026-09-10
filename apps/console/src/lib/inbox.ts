@@ -21,9 +21,8 @@ export function filterThreads(threads: Thread[], channel?: string): Thread[] {
 
 export function personHref(thread: Thread): string | null {
 	if (!thread.personId || !thread.personKind) return null;
-	if (thread.personKind === "lead") return `/leads/${thread.personId}`;
-	if (thread.personKind === "client") return `/clients/${thread.personId}`;
-	return `/providers/${thread.personId}`;
+	if (thread.personKind === "provider") return `/providers/${thread.personId}`;
+	return `/couples/${thread.personId}`;
 }
 
 export function matchPerson(
@@ -32,14 +31,9 @@ export function matchPerson(
 	handle: string
 ): { personId: string; personKind: ThreadPersonKind; contactName: string } | null {
 	const needle = handle.trim().toLowerCase().replace(/^@/, "");
-	for (const lead of data.leads) {
-		if (matchesContact(channel, needle, lead.contact, lead.couple)) {
-			return { personId: lead.id, personKind: "lead", contactName: lead.couple };
-		}
-	}
-	for (const client of data.clients) {
-		if (matchesContact(channel, needle, client.contact, client.couple)) {
-			return { personId: client.id, personKind: "client", contactName: client.couple };
+	for (const row of data.couples) {
+		if (matchesContact(channel, needle, row.contact, row.couple)) {
+			return { personId: row.id, personKind: "couple", contactName: row.couple };
 		}
 	}
 	for (const provider of data.providers) {

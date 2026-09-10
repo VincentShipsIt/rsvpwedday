@@ -1,7 +1,7 @@
-import type { ClientStatus, FeatureFlag, LeadStage, ProviderKind } from "@/lib/crm";
-import { slugId } from "@/lib/crm";
+import type { CoupleStatus, FeatureFlag, ProviderKind } from "@/lib/crm";
+import { isClientStatus, slugId } from "@/lib/crm";
 import { geocodePlace } from "@/lib/geocode";
-import { getCrm, upsertClient, upsertLead, upsertProvider } from "@/lib/store";
+import { getCrm, upsertCouple, upsertProvider } from "@/lib/store";
 
 export type ProposedAction = {
 	id: string;
@@ -109,17 +109,11 @@ export async function applyAction(name: string, args: Record<string, unknown>): 
 	if (name === "list_crm") {
 		const data = await getCrm();
 		return JSON.stringify({
-			leads: data.leads.map((row) => ({
-				id: row.id,
-				couple: row.couple,
-				stage: row.stage,
-				place: row.place.label,
-				date: row.date,
-			})),
-			clients: data.clients.map((row) => ({
+			couples: data.couples.map((row) => ({
 				id: row.id,
 				couple: row.couple,
 				status: row.status,
+				lane: isClientStatus(row.status) ? "client" : "lead",
 				place: row.place.label,
 				date: row.date,
 				fee: row.fee,
@@ -133,16 +127,20 @@ export async function applyAction(name: string, args: Record<string, unknown>): 
 			})),
 		});
 	}
-	if (name === "create_lead") {
-		const couple = String(args.couple);
+	if (name === "create_lead" || name === "create_client") {
+		const names = String(args.couple);
 		const placeQuery = String(args.place);
 		const geo = await geocodePlace(String(args.address ?? placeQuery));
-		const lead = await upsertLead({
-			id: slugId(couple),
-			couple,
+		const status =
+			name === "create_client"
+				? ((args.status as CoupleStatus) ?? "confirmed")
+				: ((args.stage as CoupleStatus) ?? "new");
+		const row = await upsertCouple({
+			id: slugId(names),
+			couple: names,
 			place: geo ?? { label: placeQuery },
 			date: args.date ? String(args.date) : undefined,
-			stage: (args.stage as LeadStage) ?? "new",
+			status: status === "booked" ? "confirmed" : status,
 			source: args.source ? String(args.source) : "Agent",
 			contact: {
 				email: args.email ? String(args.email) : undefined,
@@ -151,33 +149,14 @@ export async function applyAction(name: string, args: Record<string, unknown>): 
 			},
 			notes: args.notes ? String(args.notes) : undefined,
 			createdAt: new Date().toISOString(),
-		});
-		return `Saved lead ${lead.couple}`;
-	}
-	if (name === "create_client") {
-		const couple = String(args.couple);
-		const placeQuery = String(args.place);
-		const geo = await geocodePlace(String(args.address ?? placeQuery));
-		const client = await upsertClient({
-			id: slugId(couple),
-			couple,
-			place: geo ?? { label: placeQuery },
-			date: String(args.date),
 			fee: Number(args.fee ?? 0),
 			budget: Number(args.budget ?? 0),
 			bookedVendorTotal: 0,
 			ourCost: 0,
-			status: (args.status as ClientStatus) ?? "option",
 			features: ["site", "rsvp"] as FeatureFlag[],
-			contact: {
-				email: args.email ? String(args.email) : undefined,
-				phone: args.phone ? String(args.phone) : undefined,
-				whatsapp: args.whatsapp ? String(args.whatsapp) : undefined,
-			},
-			notes: args.notes ? String(args.notes) : undefined,
 			providerIds: [],
 		});
-		return `Saved client ${client.couple}`;
+		return `Saved couple ${row.couple} (${row.status})`;
 	}
 	if (name === "create_provider") {
 		const nameValue = String(args.name);

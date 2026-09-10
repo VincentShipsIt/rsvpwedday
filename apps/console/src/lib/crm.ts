@@ -7,8 +7,14 @@ export type FeatureFlag =
 	| "seating"
 	| "messaging";
 
-export type LeadStage = "new" | "talking" | "option" | "booked" | "lost";
-export type ClientStatus = "option" | "confirmed" | "day-of" | "wrapped";
+export type CoupleStatus =
+	| "new"
+	| "talking"
+	| "option"
+	| "confirmed"
+	| "day-of"
+	| "wrapped"
+	| "lost";
 export type ProviderKind = "venue" | "kitchen" | "flowers" | "photo" | "music" | "other";
 
 export type Contact = {
@@ -20,7 +26,7 @@ export type Contact = {
 
 export type Channel = "email" | "instagram" | "whatsapp";
 
-export type ThreadPersonKind = "lead" | "client" | "provider";
+export type ThreadPersonKind = "couple" | "lead" | "client" | "provider";
 
 export type InboxMessage = {
 	id: string;
@@ -49,33 +55,23 @@ export type Place = {
 	lng?: number;
 };
 
-export type Lead = {
+export type Couple = {
 	id: string;
 	couple: string;
 	place: Place;
 	date?: string;
-	stage: LeadStage;
+	status: CoupleStatus;
 	source?: string;
 	contact: Contact;
 	notes?: string;
 	createdAt: string;
-};
-
-export type Client = {
-	id: string;
-	couple: string;
-	place: Place;
-	date: string;
 	domain?: string;
 	guestOrigin?: string;
 	fee: number;
 	budget: number;
 	bookedVendorTotal: number;
 	ourCost: number;
-	status: ClientStatus;
 	features: FeatureFlag[];
-	contact: Contact;
-	notes?: string;
 	providerIds: string[];
 };
 
@@ -94,8 +90,7 @@ export type Provider = {
 };
 
 export type CrmData = {
-	leads: Lead[];
-	clients: Client[];
+	couples: Couple[];
 	providers: Provider[];
 	threads: Thread[];
 };
@@ -114,19 +109,14 @@ export const euro = new Intl.NumberFormat("de-DE", {
 	maximumFractionDigits: 0,
 });
 
-export const leadStageLabels: Record<LeadStage, string> = {
+export const coupleStatusLabels: Record<CoupleStatus, string> = {
 	new: "New",
 	talking: "Talking",
-	option: "Option",
-	booked: "Booked",
-	lost: "Lost",
-};
-
-export const clientStatusLabels: Record<ClientStatus, string> = {
 	option: "Option",
 	confirmed: "Confirmed",
 	"day-of": "Day-of",
 	wrapped: "Wrapped",
+	lost: "Lost",
 };
 
 export const providerKindLabels: Record<ProviderKind, string> = {
@@ -148,8 +138,29 @@ export const featureLabels: Record<FeatureFlag, string> = {
 	messaging: "WhatsApp",
 };
 
-export const leadStages: LeadStage[] = ["new", "talking", "option", "booked", "lost"];
-export const clientStatuses: ClientStatus[] = ["option", "confirmed", "day-of", "wrapped"];
+export const coupleStatuses: CoupleStatus[] = [
+	"new",
+	"talking",
+	"option",
+	"confirmed",
+	"day-of",
+	"wrapped",
+	"lost",
+];
+export const leadStatuses: CoupleStatus[] = ["new", "talking", "option", "lost"];
+export const clientStatuses: CoupleStatus[] = ["confirmed", "day-of", "wrapped"];
+
+export function isLeadStatus(status: CoupleStatus): boolean {
+	return (leadStatuses as CoupleStatus[]).includes(status);
+}
+
+export function isClientStatus(status: CoupleStatus): boolean {
+	return (clientStatuses as CoupleStatus[]).includes(status);
+}
+
+export function coupleLane(status: CoupleStatus): "lead" | "client" {
+	return isClientStatus(status) ? "client" : "lead";
+}
 export const providerKinds: ProviderKind[] = [
 	"venue",
 	"kitchen",
@@ -159,8 +170,8 @@ export const providerKinds: ProviderKind[] = [
 	"other",
 ];
 
-export function pipelineValue(client: Client): number {
-	return client.fee + (client.bookedVendorTotal - client.ourCost);
+export function pipelineValue(row: Couple): number {
+	return row.fee + (row.bookedVendorTotal - row.ourCost);
 }
 
 export function slugId(value: string): string {
@@ -188,32 +199,18 @@ export function matchesQuery(haystack: string, query: string): boolean {
 	return haystack.toLowerCase().includes(query.trim().toLowerCase());
 }
 
-export function filterLeads(
-	leads: Lead[],
-	filters: { q?: string; stage?: string; place?: string }
-): Lead[] {
-	return leads.filter((lead) => {
-		if (filters.stage && filters.stage !== "all" && lead.stage !== filters.stage) return false;
-		if (filters.place && filters.place !== "all" && lead.place.label !== filters.place) {
+export function filterCouples(
+	couples: Couple[],
+	filters: { q?: string; status?: string; place?: string; lane?: "lead" | "client" }
+): Couple[] {
+	return couples.filter((row) => {
+		if (filters.lane === "lead" && !isLeadStatus(row.status)) return false;
+		if (filters.lane === "client" && !isClientStatus(row.status)) return false;
+		if (filters.status && filters.status !== "all" && row.status !== filters.status) return false;
+		if (filters.place && filters.place !== "all" && row.place.label !== filters.place) {
 			return false;
 		}
-		const blob = `${lead.couple} ${lead.place.label} ${lead.notes ?? ""} ${lead.source ?? ""}`;
-		return matchesQuery(blob, filters.q ?? "");
-	});
-}
-
-export function filterClients(
-	clients: Client[],
-	filters: { q?: string; status?: string; place?: string }
-): Client[] {
-	return clients.filter((client) => {
-		if (filters.status && filters.status !== "all" && client.status !== filters.status) {
-			return false;
-		}
-		if (filters.place && filters.place !== "all" && client.place.label !== filters.place) {
-			return false;
-		}
-		const blob = `${client.couple} ${client.place.label} ${client.domain ?? ""} ${client.notes ?? ""}`;
+		const blob = `${row.couple} ${row.place.label} ${row.notes ?? ""} ${row.source ?? ""} ${row.domain ?? ""}`;
 		return matchesQuery(blob, filters.q ?? "");
 	});
 }

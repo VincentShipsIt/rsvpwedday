@@ -8,7 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@rsvpwedday/ui/select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function FormSelect({
 	name,
@@ -22,6 +22,9 @@ export function FormSelect({
 	options: Array<{ value: string; label: string }>;
 }) {
 	const [value, setValue] = useState(defaultValue);
+	useEffect(() => {
+		setValue(defaultValue);
+	}, [defaultValue]);
 	return (
 		<div>
 			<Label htmlFor={name}>{label}</Label>

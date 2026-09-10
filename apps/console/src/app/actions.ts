@@ -2,17 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { sendOutbound } from "@/lib/channels";
-import type { Client, ClientStatus, Lead, LeadStage, Provider, ProviderKind } from "@/lib/crm";
+import type { Couple, CoupleStatus, FeatureFlag, Provider, ProviderKind } from "@/lib/crm";
 import { slugId } from "@/lib/crm";
 import { geocodePlace } from "@/lib/geocode";
 import {
 	appendMessage,
+	getCouple,
 	getThread,
 	markThreadRead,
-	setClientStatus,
-	setLeadStage,
-	upsertClient,
-	upsertLead,
+	setCoupleStatus,
+	upsertCouple,
 	upsertProvider,
 } from "@/lib/store";
 
@@ -35,59 +34,45 @@ function revalidateCrm(): void {
 	revalidatePath("/", "layout");
 }
 
-export async function saveLead(form: FormData): Promise<void> {
-	const couple = text(form, "couple");
-	if (!couple) return;
+export async function saveCouple(form: FormData): Promise<Couple | undefined> {
+	const names = text(form, "couple");
+	if (!names) return undefined;
+	const existing = text(form, "id") ? await getCouple(text(form, "id")) : undefined;
 	const place = await resolvePlace(text(form, "place"), text(form, "address"));
-	const lead: Lead = {
-		id: text(form, "id") || slugId(couple),
-		couple,
+	const features = text(form, "features");
+	const row: Couple = {
+		id: existing?.id || slugId(names),
+		couple: names,
 		place,
 		date: text(form, "date") || undefined,
-		stage: (text(form, "stage") as LeadStage) || "new",
-		source: text(form, "source") || undefined,
+		status: (text(form, "status") as CoupleStatus) || existing?.status || "new",
+		source: text(form, "source") || existing?.source,
 		contact: {
 			email: text(form, "email") || undefined,
 			phone: text(form, "phone") || undefined,
 			whatsapp: text(form, "whatsapp") || undefined,
+			instagram: text(form, "instagram") || existing?.contact.instagram,
 		},
 		notes: text(form, "notes") || undefined,
-		createdAt: text(form, "createdAt") || new Date().toISOString(),
+		createdAt: text(form, "createdAt") || existing?.createdAt || new Date().toISOString(),
+		domain: text(form, "domain") || existing?.domain,
+		guestOrigin: text(form, "guestOrigin") || existing?.guestOrigin,
+		fee: text(form, "fee") ? number(form, "fee") : (existing?.fee ?? 0),
+		budget: text(form, "budget") ? number(form, "budget") : (existing?.budget ?? 0),
+		bookedVendorTotal: text(form, "bookedVendorTotal")
+			? number(form, "bookedVendorTotal")
+			: (existing?.bookedVendorTotal ?? 0),
+		ourCost: text(form, "ourCost") ? number(form, "ourCost") : (existing?.ourCost ?? 0),
+		features: features
+			? (features.split(",") as FeatureFlag[])
+			: (existing?.features ?? ["site", "rsvp"]),
+		providerIds: text(form, "providerIds")
+			? text(form, "providerIds").split(",")
+			: (existing?.providerIds ?? []),
 	};
-	await upsertLead(lead);
+	await upsertCouple(row);
 	revalidateCrm();
-}
-
-export async function saveClient(form: FormData): Promise<void> {
-	const couple = text(form, "couple");
-	if (!couple) return;
-	const place = await resolvePlace(text(form, "place"), text(form, "address"));
-	const existingFeatures = text(form, "features");
-	const client: Client = {
-		id: text(form, "id") || slugId(couple),
-		couple,
-		place,
-		date: text(form, "date") || new Date().toISOString().slice(0, 10),
-		domain: text(form, "domain") || undefined,
-		guestOrigin: text(form, "guestOrigin") || undefined,
-		fee: number(form, "fee"),
-		budget: number(form, "budget"),
-		bookedVendorTotal: number(form, "bookedVendorTotal"),
-		ourCost: number(form, "ourCost"),
-		status: (text(form, "status") as ClientStatus) || "option",
-		features: existingFeatures
-			? (existingFeatures.split(",") as Client["features"])
-			: ["site", "rsvp"],
-		contact: {
-			email: text(form, "email") || undefined,
-			phone: text(form, "phone") || undefined,
-			whatsapp: text(form, "whatsapp") || undefined,
-		},
-		notes: text(form, "notes") || undefined,
-		providerIds: text(form, "providerIds") ? text(form, "providerIds").split(",") : [],
-	};
-	await upsertClient(client);
-	revalidateCrm();
+	return row;
 }
 
 export async function saveProvider(form: FormData): Promise<void> {
@@ -122,13 +107,8 @@ export async function saveProvider(form: FormData): Promise<void> {
 	revalidateCrm();
 }
 
-export async function moveLead(id: string, stage: LeadStage): Promise<void> {
-	await setLeadStage(id, stage);
-	revalidateCrm();
-}
-
-export async function moveClient(id: string, status: ClientStatus): Promise<void> {
-	await setClientStatus(id, status);
+export async function moveCouple(id: string, status: CoupleStatus): Promise<void> {
+	await setCoupleStatus(id, status);
 	revalidateCrm();
 }
 

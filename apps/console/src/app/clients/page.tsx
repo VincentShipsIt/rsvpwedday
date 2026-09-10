@@ -12,15 +12,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rsvpwedday/ui/tabs";
 import Link from "next/link";
 import { Suspense } from "react";
-import { moveClient } from "@/app/actions";
+import { moveCouple } from "@/app/actions";
 import { ConsoleShell } from "@/components/console-shell";
+import { CoupleDialog } from "@/components/couple-dialog";
 import { FilterBar } from "@/components/filter-bar";
 import { StageBoard } from "@/components/stage-board";
 import {
 	clientStatuses,
-	clientStatusLabels,
+	coupleStatusLabels,
 	euro,
-	filterClients,
+	filterCouples,
 	pipelineValue,
 	uniquePlaces,
 } from "@/lib/crm";
@@ -32,9 +33,9 @@ export default async function ClientsPage({
 	searchParams: Promise<{ q?: string; status?: string; place?: string }>;
 }) {
 	const filters = await searchParams;
-	const { clients } = await getCrm();
-	const rows = filterClients(clients, filters);
-	const pipeline = rows.reduce((sum, client) => sum + pipelineValue(client), 0);
+	const { couples } = await getCrm();
+	const rows = filterCouples(couples, { ...filters, lane: "client" });
+	const pipeline = rows.reduce((sum, row) => sum + pipelineValue(row), 0);
 
 	return (
 		<ConsoleShell pathname="/clients">
@@ -43,13 +44,16 @@ export default async function ClientsPage({
 					<div>
 						<h1 className="font-display text-3xl font-semibold tracking-tight">Clients</h1>
 						<p className="text-ink-soft mt-1 font-serif text-sm">
-							Weddings on the books. Fee plus margin on booked providers.
+							Validated couples — status Confirmed or later.
 						</p>
 					</div>
-					<p className="font-serif text-sm">
-						Pipeline{" "}
-						<span className="font-sans font-medium tabular-nums">{euro.format(pipeline)}</span>
-					</p>
+					<div className="flex items-center gap-4">
+						<p className="font-serif text-sm">
+							Pipeline{" "}
+							<span className="font-sans font-medium tabular-nums">{euro.format(pipeline)}</span>
+						</p>
+						<CoupleDialog defaultStatus="confirmed" label="New couple" />
+					</div>
 				</div>
 				<Suspense>
 					<FilterBar
@@ -59,13 +63,13 @@ export default async function ClientsPage({
 								label: "Status",
 								options: clientStatuses.map((status) => ({
 									value: status,
-									label: clientStatusLabels[status],
+									label: coupleStatusLabels[status],
 								})),
 							},
 							{
 								name: "place",
 								label: "Place",
-								options: uniquePlaces(clients).map((place) => ({ value: place, label: place })),
+								options: uniquePlaces(couples).map((place) => ({ value: place, label: place })),
 							},
 						]}
 					/>
@@ -77,15 +81,15 @@ export default async function ClientsPage({
 					</TabsList>
 					<TabsContent value="board">
 						<StageBoard
-							columns={clientStatuses.map((id) => ({ id, label: clientStatusLabels[id] }))}
-							items={rows.map((client) => ({
-								id: client.id,
-								href: `/clients/${client.id}`,
-								title: client.couple,
-								meta: `${client.place.label} · ${client.date}`,
-								column: client.status,
+							columns={clientStatuses.map((id) => ({ id, label: coupleStatusLabels[id] }))}
+							items={rows.map((row) => ({
+								id: row.id,
+								href: `/couples/${row.id}`,
+								title: row.couple,
+								meta: `${row.place.label}${row.date ? ` · ${row.date}` : ""}`,
+								column: row.status,
 							}))}
-							move={moveClient}
+							move={moveCouple}
 						/>
 					</TabsContent>
 					<TabsContent value="table">
@@ -94,38 +98,34 @@ export default async function ClientsPage({
 								<TableCaption className="sr-only">Clients</TableCaption>
 								<TableHeader>
 									<TableRow>
-										<TableHead>Client</TableHead>
+										<TableHead>Couple</TableHead>
 										<TableHead>Status</TableHead>
 										<TableHead>Fee</TableHead>
 										<TableHead>Pipeline</TableHead>
-										<TableHead>Features</TableHead>
 										<TableHead>
 											<span className="sr-only">Open</span>
 										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{rows.map((client) => (
-										<TableRow key={client.id}>
+									{rows.map((row) => (
+										<TableRow key={row.id}>
 											<TableCell>
-												<p className="font-medium">{client.couple}</p>
+												<p className="font-medium">{row.couple}</p>
 												<p className="text-ink-soft text-xs">
-													{client.place.label} · {client.date}
+													{row.place.label} · {row.date}
 												</p>
 											</TableCell>
 											<TableCell>
-												<Badge variant="secondary">{clientStatusLabels[client.status]}</Badge>
+												<Badge variant="secondary">{coupleStatusLabels[row.status]}</Badge>
 											</TableCell>
-											<TableCell className="tabular-nums">{euro.format(client.fee)}</TableCell>
+											<TableCell className="tabular-nums">{euro.format(row.fee)}</TableCell>
 											<TableCell className="tabular-nums">
-												{euro.format(pipelineValue(client))}
-											</TableCell>
-											<TableCell className="text-pretty whitespace-normal">
-												{client.features.join(" · ")}
+												{euro.format(pipelineValue(row))}
 											</TableCell>
 											<TableCell className="text-right">
 												<Button variant="outline" size="sm" asChild>
-													<Link href={`/clients/${client.id}`}>Open</Link>
+													<Link href={`/couples/${row.id}`}>Open</Link>
 												</Button>
 											</TableCell>
 										</TableRow>

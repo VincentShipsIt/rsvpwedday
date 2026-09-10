@@ -5,25 +5,16 @@ function icsDate(iso: string): string {
 }
 
 export async function GET(): Promise<Response> {
-	const { clients, leads } = await getCrm();
+	const { couples } = await getCrm();
 	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Say Yes//Studio CRM//EN"];
-	for (const client of clients) {
+	for (const row of couples) {
+		if (!row.date) continue;
 		lines.push(
 			"BEGIN:VEVENT",
-			`UID:${client.id}@sayyess.com`,
-			`DTSTART;VALUE=DATE:${icsDate(client.date)}`,
-			`SUMMARY:${client.couple} — ${client.place.label}`,
-			`LOCATION:${client.place.address ?? client.place.label}`,
-			"END:VEVENT"
-		);
-	}
-	for (const lead of leads) {
-		if (!lead.date) continue;
-		lines.push(
-			"BEGIN:VEVENT",
-			`UID:lead-${lead.id}@sayyess.com`,
-			`DTSTART;VALUE=DATE:${icsDate(lead.date)}`,
-			`SUMMARY:[Lead] ${lead.couple} — ${lead.place.label}`,
+			`UID:${row.id}@sayyess.com`,
+			`DTSTART;VALUE=DATE:${icsDate(row.date)}`,
+			`SUMMARY:${row.couple} — ${row.place.label}`,
+			`LOCATION:${row.place.address ?? row.place.label}`,
 			"END:VEVENT"
 		);
 	}

@@ -2,30 +2,22 @@ import { Badge } from "@rsvpwedday/ui/badge";
 import { Button } from "@rsvpwedday/ui/button";
 import Link from "next/link";
 import { ConsoleShell } from "@/components/console-shell";
+import { coupleStatusLabels } from "@/lib/crm";
 import { getCrm } from "@/lib/store";
 
 export default async function CalendarPage() {
-	const { leads, clients } = await getCrm();
-	const events = [
-		...clients.map((client) => ({
-			id: client.id,
-			href: `/clients/${client.id}`,
-			title: client.couple,
-			date: client.date,
-			place: client.place.label,
-			kind: "Client" as const,
-		})),
-		...leads
-			.filter((lead) => lead.date)
-			.map((lead) => ({
-				id: lead.id,
-				href: `/leads/${lead.id}`,
-				title: lead.couple,
-				date: lead.date as string,
-				place: lead.place.label,
-				kind: "Lead" as const,
-			})),
-	].sort((a, b) => a.date.localeCompare(b.date));
+	const { couples } = await getCrm();
+	const events = couples
+		.filter((row) => row.date)
+		.map((row) => ({
+			id: row.id,
+			href: `/couples/${row.id}`,
+			title: row.couple,
+			date: row.date as string,
+			place: row.place.label,
+			status: coupleStatusLabels[row.status],
+		}))
+		.sort((a, b) => a.date.localeCompare(b.date));
 
 	const groups = events.reduce((map, event) => {
 		const key = event.date.slice(0, 7);
@@ -40,8 +32,7 @@ export default async function CalendarPage() {
 					<div>
 						<h1 className="font-display text-3xl font-semibold tracking-tight">Calendar</h1>
 						<p className="text-ink-soft mt-1 font-serif text-sm">
-							Upcoming weddings and dated leads. Subscribe with the ICS feed in Google Calendar or
-							Apple Calendar.
+							Every dated couple. Subscribe with the ICS feed in Google Calendar or Apple Calendar.
 						</p>
 					</div>
 					<Button variant="outline" asChild>
@@ -58,16 +49,13 @@ export default async function CalendarPage() {
 						</h2>
 						<ul className="mt-3 divide-y divide-ink/10 rounded-xl bg-card ring-1 ring-foreground/10">
 							{rows.map((event) => (
-								<li
-									key={`${event.kind}-${event.id}`}
-									className="flex flex-wrap items-center gap-3 px-4 py-3"
-								>
+								<li key={event.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
 									<p className="w-28 tabular-nums">{event.date}</p>
 									<Link href={event.href} className="font-medium hover:text-saffron">
 										{event.title}
 									</Link>
 									<p className="text-ink-soft font-serif text-sm">{event.place}</p>
-									<Badge variant="secondary">{event.kind}</Badge>
+									<Badge variant="secondary">{event.status}</Badge>
 								</li>
 							))}
 						</ul>

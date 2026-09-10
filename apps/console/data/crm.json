@@ -1,5 +1,5 @@
 {
-	"leads": [
+	"couples": [
 		{
 			"id": "nina-omar",
 			"couple": "Nina & Omar",
@@ -10,7 +10,7 @@
 				"lng": 14.5146
 			},
 			"date": "2027-08-14",
-			"stage": "talking",
+			"status": "talking",
 			"source": "Instagram DM",
 			"contact": {
 				"email": "nina@example.com",
@@ -19,7 +19,13 @@
 				"instagram": "ninaomar"
 			},
 			"notes": "Want a Saturday in August. Households in DE and KU.",
-			"createdAt": "2026-08-02T10:00:00.000Z"
+			"createdAt": "2026-08-02T10:00:00.000Z",
+			"fee": 0,
+			"budget": 0,
+			"bookedVendorTotal": 0,
+			"ourCost": 0,
+			"features": [],
+			"providerIds": []
 		},
 		{
 			"id": "sofia-marc",
@@ -31,13 +37,19 @@
 				"lng": 14.218
 			},
 			"date": "2027-10-09",
-			"stage": "new",
+			"status": "new",
 			"source": "Referral — Elisa",
 			"contact": {
 				"email": "sofia@example.com"
 			},
 			"notes": "Asked for a clifftop house. No date hold yet.",
-			"createdAt": "2026-09-01T09:00:00.000Z"
+			"createdAt": "2026-09-01T09:00:00.000Z",
+			"fee": 0,
+			"budget": 0,
+			"bookedVendorTotal": 0,
+			"ourCost": 0,
+			"features": [],
+			"providerIds": []
 		},
 		{
 			"id": "lea-piotr",
@@ -49,17 +61,21 @@
 				"lng": 13.391
 			},
 			"date": "2027-04-17",
-			"stage": "option",
+			"status": "option",
 			"source": "Studio email",
 			"contact": {
 				"phone": "+49 170 555 0199",
 				"whatsapp": "+49 170 555 0199"
 			},
 			"notes": "Civil in Berlin, blessing in Malta the week after.",
-			"createdAt": "2026-07-18T12:00:00.000Z"
-		}
-	],
-	"clients": [
+			"createdAt": "2026-07-18T12:00:00.000Z",
+			"fee": 0,
+			"budget": 0,
+			"bookedVendorTotal": 0,
+			"ourCost": 0,
+			"features": [],
+			"providerIds": []
+		},
 		{
 			"id": "elisa-jonas",
 			"couple": "Elisa & Jonas",
@@ -77,13 +93,24 @@
 			"bookedVendorTotal": 41000,
 			"ourCost": 33500,
 			"status": "confirmed",
-			"features": ["site", "rsvp", "gifts", "photos", "liveWall"],
+			"features": [
+				"site",
+				"rsvp",
+				"gifts",
+				"photos",
+				"liveWall"
+			],
 			"contact": {
 				"email": "elisa@example.com",
 				"whatsapp": "+356 9911 2233"
 			},
 			"notes": "Our house for May.",
-			"providerIds": ["ta-cenc", "trattoria-luna", "lens-mira"]
+			"providerIds": [
+				"ta-cenc",
+				"trattoria-luna",
+				"lens-mira"
+			],
+			"createdAt": "2026-09-10T07:07:25.375Z"
 		},
 		{
 			"id": "amina-leo",
@@ -102,12 +129,16 @@
 			"bookedVendorTotal": 12000,
 			"ourCost": 9800,
 			"status": "option",
-			"features": ["site", "rsvp"],
+			"features": [
+				"site",
+				"rsvp"
+			],
 			"contact": {
 				"email": "amina@example.com"
 			},
 			"notes": "Site only until the house is held.",
-			"providerIds": []
+			"providerIds": [],
+			"createdAt": "2026-09-10T07:07:25.375Z"
 		},
 		{
 			"id": "maya-tomas",
@@ -126,13 +157,24 @@
 			"bookedVendorTotal": 67000,
 			"ourCost": 54000,
 			"status": "day-of",
-			"features": ["site", "rsvp", "gifts", "photos", "liveWall", "seating", "messaging"],
+			"features": [
+				"site",
+				"rsvp",
+				"gifts",
+				"photos",
+				"liveWall",
+				"seating",
+				"messaging"
+			],
 			"contact": {
 				"phone": "+39 333 120 4455",
 				"whatsapp": "+39 333 120 4455"
 			},
 			"notes": "Full weekend. Kitchen already locked.",
-			"providerIds": ["campo-fiori"]
+			"providerIds": [
+				"campo-fiori"
+			],
+			"createdAt": "2026-09-10T07:07:25.375Z"
 		}
 	],
 	"providers": [
@@ -154,7 +196,10 @@
 			"website": "https://example.com/ta-cenc",
 			"capacity": "180 seated",
 			"notes": "Clifftop. Our house for May.",
-			"tags": ["clifftop", "hotel"]
+			"tags": [
+				"clifftop",
+				"hotel"
+			]
 		},
 		{
 			"id": "trattoria-luna",
@@ -173,7 +218,10 @@
 			"hours": "Tue–Sun dinner",
 			"capacity": "Family kitchen, 120 plates",
 			"notes": "Child plates without a named list.",
-			"tags": ["family", "children"]
+			"tags": [
+				"family",
+				"children"
+			]
 		},
 		{
 			"id": "campo-fiori",
@@ -192,7 +240,10 @@
 			},
 			"instagram": "campofiori",
 			"notes": "Dried citrus, olive, no foam.",
-			"tags": ["dried", "sicily"]
+			"tags": [
+				"dried",
+				"sicily"
+			]
 		},
 		{
 			"id": "lens-mira",
@@ -211,7 +262,9 @@
 			},
 			"instagram": "miralens",
 			"notes": "Uploads to the photographer seat, not the guest QR.",
-			"tags": ["reportage"]
+			"tags": [
+				"reportage"
+			]
 		}
 	],
 	"threads": [
