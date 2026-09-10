@@ -22,8 +22,8 @@ export default function PrestationsPage() {
 						All in. We hold the <em className="italic">house.</em>
 					</h1>
 					<p className="mt-8 max-w-md text-pretty text-[15px] text-ink-soft">
-						Venues, menu, tasting, the days, your people. The difference is whether you already have
-						a house, or we option one from our roster.
+						Both of them take the whole weekend off your hands. The only question is whether the
+						house is already yours, or whether we go and find it.
 					</p>
 				</header>
 

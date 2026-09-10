@@ -23,8 +23,8 @@ export default function PricingPage() {
 						A planning fee. Then the <em className="italic">house.</em>
 					</h1>
 					<p className="mt-8 max-w-md text-pretty text-[15px] text-ink-soft">
-						You do not subscribe. We charge for the weekend, then a markup on what we book from our
-						own roster.
+						You are quoted once for the weekend, and again on anything we book for you. No second
+						invoice arrives that you did not see coming.
 					</p>
 				</header>
 
@@ -61,18 +61,19 @@ export default function PricingPage() {
 						<ul className="mt-10 flex flex-col gap-7 text-pretty text-[15px] text-ink-soft">
 							<li>
 								<strong className="display-sm block text-lg text-ink">Planning</strong>
-								Venues, tasting, the days, your people. We hold it so you do not.
+								Finding the house, sitting down with the chef, holding the order of the days, and
+								answering your family.
 							</li>
 							<li>
 								<strong className="display-sm block text-lg text-ink">Roster markup</strong>
-								Houses, kitchens, flowers and photographers we already work with. Quoted per
-								weekend.
+								The people we have worked beside for years — the house, the chef, the florist, the
+								photographer. Quoted per weekend, before we book.
 							</li>
 							<li>
 								<strong className="display-sm block text-lg text-ink">
 									Never a bill each month
 								</strong>
-								One fee. Then the house. You are not renting an app.
+								One fee, then the house. Nothing arrives every month.
 							</li>
 						</ul>
 					</div>
@@ -117,8 +118,8 @@ export default function PricingPage() {
 						Ask for a number on your <em className="italic">dates.</em>
 					</h2>
 					<p className="mt-8 max-w-md text-pretty text-[15px] text-ink-soft">
-						Starting fees are the floor. How many, which house, and whether we hold it move the
-						number.
+						A starting fee is a floor, not a quote. How many of you, which house, and whether we go
+						and find it will all move the number.
 					</p>
 					<p className="mt-10">
 						<TextLink href={`mailto:${studio.enquiryEmail}`}>{studio.enquiryEmail}</TextLink>

@@ -8,21 +8,25 @@ import { studio } from "@/lib/brand";
 import { offerings, services } from "@/lib/offer";
 
 const steps = [
-	{ n: "I", title: "Enquire", copy: "Dates, roughly how many, whether you already have a house." },
+	{
+		n: "I",
+		title: "Write",
+		copy: "Your date, or the month you keep circling. We answer with what is still free.",
+	},
 	{
 		n: "II",
 		title: "Hold",
-		copy: "We option the house and the kitchen. Nothing goes on a marketplace.",
+		copy: "We put the house and the chef on hold before anyone else can reach them.",
 	},
 	{
 		n: "III",
 		title: "Taste",
-		copy: "Menu, flowers, the table. You sit down once. Then we lock it.",
+		copy: "You sit down once — the menu, the flowers, the table — and then it is settled.",
 	},
 	{
 		n: "IV",
 		title: "The day",
-		copy: "We are there. You are not running a production.",
+		copy: "We arrive before you wake. You spend it as a guest at your own wedding.",
 	},
 ];
 
@@ -31,24 +35,30 @@ export default function MarketingHome() {
 		<div className="relative">
 			<section className="relative min-h-[88dvh] text-ivory">
 				<Image
-					src="/studio/cliff.jpg"
-					alt="Limestone cliffs above the sea at dusk"
+					src="/studio/couple.jpg"
+					alt="A couple holding hands in the last of the light, lace against a dark suit"
 					fill
 					priority
 					sizes="100vw"
 					className="object-cover"
 				/>
-				<div className="absolute inset-0 bg-linear-to-b from-dusk/70 via-dusk/35 to-dusk/90" />
+				{/* Two scrims, not one. The vertical pass seats the header and the section
+					    below it; the horizontal pass darkens only the left third, where the type
+					    lives, so the laid table keeps its own light on the right rather than
+					    being flattened under a full-frame wash. */}
+				<div className="absolute inset-0 bg-linear-to-b from-dusk/65 via-dusk/25 to-dusk/85" />
+				<div className="absolute inset-0 bg-linear-to-r from-dusk/85 via-dusk/40 to-transparent" />
 				<div className="relative flex min-h-[88dvh] flex-col">
 					<SiteHeader invert />
 					<div className="mt-auto px-6 pt-24 pb-16 md:px-12 md:pb-20">
-						<Eyebrow className="text-ivory/60">{studio.place}</Eyebrow>
+						<Eyebrow className="text-ivory/60">{studio.descriptor}</Eyebrow>
 						<h1 className="display mt-7 text-[clamp(3.5rem,13vw,11rem)]">
 							You said <em className="italic">Yes.</em>
 						</h1>
 						<div className="mt-9 h-px w-24 bg-champagne/70" />
 						<p className="mt-7 max-w-sm text-pretty text-[15px] text-ivory/75">
-							We hold the rest — the house, the kitchen, the weekend. In Malta.
+							Everything after that is ours — the house, the chef, the three days, and the hundred
+							small decisions nobody warns you about.
 						</p>
 					</div>
 				</div>
@@ -63,10 +73,10 @@ export default function MarketingHome() {
 					<div className="mb-16 max-w-3xl">
 						<Eyebrow>What we hold</Eyebrow>
 						<h2 id="hold-heading" className="display mt-6 text-[clamp(2.25rem,4.6vw,3.75rem)]">
-							The house, the kitchen, the <em className="italic">days.</em>
+							You hand it over <em className="italic">once.</em>
 						</h2>
 						<p className="mt-7 max-w-md text-pretty text-[15px] text-ink-soft">
-							All-inclusive planning. Not a vendor directory.
+							One studio for the whole weekend, from the first visit to the last car.
 						</p>
 					</div>
 					<ul className="grid gap-x-12 sm:grid-cols-2 lg:grid-cols-4">
@@ -83,7 +93,7 @@ export default function MarketingHome() {
 					<figure className="relative min-h-[30rem]">
 						<Image
 							src="/studio/table.jpg"
-							alt="A long terrace table at dusk, dried citrus and olive along the linen"
+							alt="A long terrace table laid for dinner above the sea, candles lit at dusk"
 							fill
 							sizes="(min-width: 768px) 50vw, 100vw"
 							className="object-cover"
@@ -104,7 +114,7 @@ export default function MarketingHome() {
 					<div className="mb-16 max-w-3xl">
 						<Eyebrow>Prestations</Eyebrow>
 						<h2 id="offer-heading" className="display mt-6 text-[clamp(2.25rem,4.6vw,3.75rem)]">
-							All in. Two ways to <em className="italic">hold it.</em>
+							Two ways. Both of them <em className="italic">whole.</em>
 						</h2>
 					</div>
 					<ul className="grid gap-x-12 gap-y-14 lg:grid-cols-2">
@@ -134,8 +144,8 @@ export default function MarketingHome() {
 								They know where to <em className="italic">be.</em>
 							</h2>
 							<p className="mt-8 max-w-md text-pretty text-[15px] text-dusk-soft">
-								A private place to reply, on your own domain. Who is coming, who eats what. Included
-								in every weekend. Not a product you subscribe to.
+								Your family gets a private page under your own name, where they reply, say what they
+								cannot eat and find out where to be. It arrives with the weekend.
 							</p>
 							<p className="mt-10">
 								<TextLink
@@ -178,7 +188,8 @@ export default function MarketingHome() {
 						Write to the <em className="italic">studio.</em>
 					</h2>
 					<p className="mt-8 max-w-md text-pretty text-[15px] text-ink-soft">
-						Your dates, roughly how many, and whether you already have a house in Malta.
+						Tell us the date, or the month you keep circling, and roughly how many of you there will
+						be. We will write back with what is still free.
 					</p>
 					<p className="mt-10">
 						<TextLink href={`mailto:${studio.enquiryEmail}`}>{studio.enquiryEmail}</TextLink>
