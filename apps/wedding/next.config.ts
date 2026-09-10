@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
 	images: {
 		remotePatterns: [{ protocol: "https", hostname: "**" }],
 	},
+	transpilePackages: ["@rsvpwedday/ui"],
 	devIndicators: { position: "bottom-right" },
 };
 

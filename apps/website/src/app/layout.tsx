@@ -17,7 +17,7 @@ const body = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-	title: `${studio.name} — destination wedding planning`,
+	title: `${studio.name} — ${studio.baseline}`,
 	description:
 		"Full-service destination planning. Each household gets a private site, RSVP, album and gifts — on their own domain.",
 };

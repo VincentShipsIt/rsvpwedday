@@ -15,7 +15,7 @@ const display = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-	title: "Planning console — Atelier Vero",
+	title: "Planning console — Say Yes",
 	robots: { index: false, follow: false },
 };
 

@@ -62,11 +62,14 @@ export default function MarketingHome() {
 					</p>
 					<div className="md:col-span-9">
 						<h1 className="max-w-4xl text-balance font-display text-5xl leading-[0.95] font-semibold tracking-tight text-ink md:text-7xl lg:text-8xl">
-							{studio.tagline}
+							{studio.hero}
 						</h1>
+						<p className="mt-5 max-w-3xl text-balance font-display text-3xl font-medium tracking-tight text-ink-soft md:text-5xl">
+							{studio.baseline}
+						</p>
 						<p className="mt-8 max-w-xl text-pretty text-lg text-ink-soft md:text-xl">
-							Destination planning for households that span languages and islands. We run the
-							weekend. You keep a private site — RSVP, gifts, album — on your own domain.
+							Destination planning for households that span languages and islands. Private guest
+							site — RSVP, gifts, album — on your own domain.
 						</p>
 					</div>
 				</section>
