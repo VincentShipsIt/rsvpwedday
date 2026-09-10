@@ -18,48 +18,52 @@ const thread = [
 export default function AgentPage() {
 	return (
 		<ConsoleShell active="/agent">
-			<p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">Console</p>
-			<h1 className="mt-1 font-display text-4xl tracking-tight">Agent</h1>
-			<p className="text-muted-foreground mt-2 max-w-xl">
-				Drafts timelines, headcounts, and translations into the CMS locales. It does not write until
-				you confirm. It is not on the guest site.
-			</p>
-
-			<Card className="mt-10 max-w-2xl">
-				<CardHeader className="sr-only">
-					<p>Preview conversation</p>
-				</CardHeader>
-				<CardContent>
-					<ul className="flex flex-col gap-6">
-						{thread.map((turn) => (
-							<li key={turn.text}>
-								<p className="text-muted-foreground text-xs tracking-wide uppercase">{turn.who}</p>
-								<p className="mt-1 text-pretty">{turn.text}</p>
-							</li>
-						))}
-					</ul>
-				</CardContent>
-				<CardFooter className="flex-col items-stretch gap-2">
-					<div className="flex gap-2">
-						<Label htmlFor="agent-draft" className="sr-only">
-							Ask the agent
-						</Label>
-						<Input
-							id="agent-draft"
-							name="draft"
-							placeholder="Translate the site to German…"
-							readOnly
-							aria-describedby="agent-preview-note"
-						/>
-						<Button type="button" variant="outline" disabled>
-							Draft
-						</Button>
-					</div>
-					<p id="agent-preview-note" className="text-muted-foreground text-xs">
-						Preview only. Confirm-before-write lands with the AI ops epic.
+			<div className="flex flex-col gap-8">
+				<div>
+					<h1 className="text-2xl font-medium">Agent</h1>
+					<p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+						Drafts timelines, headcounts, and translations into the CMS locales. It does not write
+						until you confirm. It is not on the guest site.
 					</p>
-				</CardFooter>
-			</Card>
+				</div>
+
+				<Card className="max-w-2xl">
+					<CardHeader className="sr-only">
+						<p>Preview conversation</p>
+					</CardHeader>
+					<CardContent>
+						<ul className="flex flex-col gap-6">
+							{thread.map((turn) => (
+								<li key={turn.text}>
+									<p className="text-muted-foreground text-xs font-medium">{turn.who}</p>
+									<p className="mt-1 text-pretty">{turn.text}</p>
+								</li>
+							))}
+						</ul>
+					</CardContent>
+					<CardFooter className="flex-col items-stretch gap-2">
+						<div className="flex gap-2">
+							<Label htmlFor="agent-draft" className="sr-only">
+								Ask the agent
+							</Label>
+							<Input
+								id="agent-draft"
+								name="draft"
+								className="min-w-0 flex-1"
+								placeholder="Translate the site to German…"
+								readOnly
+								aria-describedby="agent-preview-note"
+							/>
+							<Button type="button" variant="outline" disabled>
+								Draft
+							</Button>
+						</div>
+						<p id="agent-preview-note" className="text-muted-foreground text-xs">
+							Preview only. Confirm-before-write lands with the AI ops epic.
+						</p>
+					</CardFooter>
+				</Card>
+			</div>
 		</ConsoleShell>
 	);
 }

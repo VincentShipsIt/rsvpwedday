@@ -4,18 +4,18 @@ Bun/Turbo monorepo for a wedding planning company:
 
 | App | Port | Who |
 |---|---|---|
-| `apps/wedding` | 3010 | Couple CMS + guest RSVP/gifts/memories (the live product) |
-| `apps/console` | 3011 | Planner OS (requests, partners, AI) — placeholder |
-| `apps/website` | 3012 | Company marketing site — placeholder |
+| `apps/client` | 3010 | Couple CMS + guest RSVP/gifts/memories (the live product) |
+| `apps/console` | 3011 | Planner OS (requests, partners, AI) |
+| `apps/website` | 3012 | Company marketing site |
 
 ## Getting started
 
 ```
 bun install
-cp apps/wedding/.env.example apps/wedding/.env   # DATABASE_URL and admin/session secrets
-bun run db:push        # sync apps/wedding/prisma/schema.prisma
+cp apps/client/.env.example apps/client/.env   # DATABASE_URL and admin/session secrets
+bun run db:push        # sync apps/client/prisma/schema.prisma
 bun run db:seed        # placeholder settings, one event, one sample invitation
-bun run dev            # wedding app at http://localhost:3010
+bun run dev            # client app at http://localhost:3010
 bun run dev:console    # http://localhost:3011
 bun run dev:website    # http://localhost:3012
 ```
@@ -28,7 +28,7 @@ prints a sample RSVP link once it finishes.
 ```
 bun run check       # Biome lint and format (repo root)
 bun run typecheck   # tsc in each app
-bun run test        # Vitest in apps/wedding (domain layer)
+bun run test        # Vitest in apps/client (domain layer)
 bun run build       # all apps via Turbo
 ```
 

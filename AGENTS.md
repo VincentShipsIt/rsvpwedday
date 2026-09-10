@@ -7,10 +7,10 @@ need an email or phone. Children under 12 are a household count, separate from t
 allowance, with per-event counts and optional shared dietary notes. They never need names or
 contact details.
 
-Application code for the live guest site and couple CMS lives in `apps/wedding`. Paths in this
-file that start `src/` mean `apps/wedding/src/`. `apps/console` is the planner OS (empty until
-the console epic). `apps/website` is the company marketing site (empty until that epic). Do not
-put planner-only features into `apps/wedding` when `apps/console` exists for them.
+Application code for the live guest site and couple CMS lives in `apps/client`. Paths in this
+file that start `src/` mean `apps/client/src/`. `apps/console` is the planner OS. `apps/website`
+is the company marketing site. Do not put planner-only features into `apps/client` when
+`apps/console` exists for them. Shared shadcn primitives live in `packages/ui`.
 
 ## Stack
 
@@ -19,17 +19,17 @@ Prisma 7 with `@prisma/adapter-pg`, Tailwind 4, Biome, Vitest, Resend + React Em
 
 ## Commands
 
-- `bun install` — installs workspaces; `apps/wedding` `postinstall` runs `prisma generate`
-- `bun run dev` — wedding app on port 3010 (`apps/console` is 3011, `apps/website` is 3012)
+- `bun install` — installs workspaces; `apps/client` `postinstall` runs `prisma generate`
+- `bun run dev` — client app on port 3010 (`apps/console` is 3011, `apps/website` is 3012)
 - `bun run build` — `turbo run build` (all apps)
 - `bun run check` / `bun run check:fix` — Biome lint and format from the repo root
 - `bun run typecheck` — `turbo run typecheck`
-- `bun run test` — Vitest in `apps/wedding` (domain layer only; no DOM)
-- `bun run db:push` — sync `apps/wedding/prisma/schema.prisma` to the database (no migrations
-  directory). On Vercel the wedding app's `vercel-build` script runs the same push before
+- `bun run test` — Vitest in `apps/client` (domain layer only; no DOM)
+- `bun run db:push` — sync `apps/client/prisma/schema.prisma` to the database (no migrations
+  directory). On Vercel the client app's `vercel-build` script runs the same push before
   `next build` whenever a direct database url resolves, so a production deployment syncs the
   database and a preview without one still builds. After this monorepo wrap, the Vercel project's
-  Root Directory must be `apps/wedding` (dashboard HITL; do not run the Vercel CLI locally).
+  Root Directory must be `apps/client` (dashboard HITL; do not run the Vercel CLI locally).
 - `bun run db:seed` — placeholder settings, one `wedding` event, one sample invitation
 - `bun run db:studio` — Prisma Studio
 

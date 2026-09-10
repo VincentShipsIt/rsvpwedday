@@ -1,12 +1,36 @@
-import { Button } from "@rsvpwedday/ui/button";
+import { BotIcon, HandshakeIcon, InboxIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 const NAV = [
-	{ href: "/", label: "Requests" },
-	{ href: "/partners", label: "Partners" },
-	{ href: "/agent", label: "Agent" },
+	{ href: "/", label: "Requests", icon: InboxIcon },
+	{ href: "/partners", label: "Partners", icon: HandshakeIcon },
+	{ href: "/agent", label: "Agent", icon: BotIcon },
 ] as const;
+
+function NavLink({
+	href,
+	active,
+	children,
+}: {
+	href: string;
+	active: boolean;
+	children: ReactNode;
+}) {
+	return (
+		<Link
+			href={href}
+			aria-current={active ? "page" : undefined}
+			className={cn(
+				"flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+				active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground"
+			)}
+		>
+			{children}
+		</Link>
+	);
+}
 
 export function ConsoleShell({
 	active,
@@ -16,30 +40,39 @@ export function ConsoleShell({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex min-h-dvh">
-			<aside className="flex w-56 shrink-0 flex-col border-r bg-muted/40 px-3 py-6 pb-16">
-				<p className="px-2 font-display text-lg tracking-tight">Say Yes</p>
-				<p className="text-muted-foreground mt-1 px-2 text-xs">Planning console</p>
-				<nav aria-label="Console" className="mt-10 flex flex-col gap-1">
-					{NAV.map((item) => (
-						<Button
-							key={item.href}
-							variant={active === item.href ? "secondary" : "ghost"}
-							size="sm"
-							className="w-full justify-start"
-							asChild
-						>
-							<Link href={item.href} aria-current={active === item.href ? "page" : undefined}>
+		<div className="flex min-h-dvh flex-col md:flex-row">
+			<aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r bg-sidebar text-sidebar-foreground md:flex">
+				<div className="px-5 py-5">
+					<Link href="/" className="block truncate text-lg font-medium tracking-tight">
+						Say Yes
+					</Link>
+					<p className="text-muted-foreground text-xs">Planning console</p>
+				</div>
+				<nav aria-label="Console" className="flex flex-1 flex-col gap-0.5 px-3">
+					{NAV.map((item) => {
+						const Icon = item.icon;
+						return (
+							<NavLink key={item.href} href={item.href} active={active === item.href}>
+								<Icon className="size-4 shrink-0" aria-hidden="true" />
 								{item.label}
-							</Link>
-						</Button>
-					))}
+							</NavLink>
+						);
+					})}
 				</nav>
-				<p className="text-muted-foreground mt-auto px-2 text-xs">
+				<p className="text-muted-foreground border-t px-5 py-3 text-xs">
 					Guest sites stay on their own domain.
 				</p>
 			</aside>
-			<main className="min-w-0 flex-1 p-8">{children}</main>
+			<nav aria-label="Console" className="flex gap-1 overflow-x-auto border-b px-3 py-2 md:hidden">
+				{NAV.map((item) => (
+					<NavLink key={item.href} href={item.href} active={active === item.href}>
+						{item.label}
+					</NavLink>
+				))}
+			</nav>
+			<main className="min-w-0 flex-1">
+				<div className="mx-auto max-w-[96rem] px-6 py-10 lg:px-10">{children}</div>
+			</main>
 		</div>
 	);
 }

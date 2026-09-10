@@ -7,20 +7,20 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "turbo run dev --filter=@rsvpwedday/wedding",
+		"dev": "turbo run dev --filter=@rsvpwedday/client",
 		"dev:console": "turbo run dev --filter=@rsvpwedday/console",
 		"dev:website": "turbo run dev --filter=@rsvpwedday/website",
 		"dev:all": "turbo run dev",
 		"build": "turbo run build",
-		"start": "turbo run start --filter=@rsvpwedday/wedding",
+		"start": "turbo run start --filter=@rsvpwedday/client",
 		"check": "biome check .",
 		"check:fix": "biome check --write .",
 		"typecheck": "turbo run typecheck",
 		"test": "turbo run test",
-		"db:generate": "turbo run db:generate --filter=@rsvpwedday/wedding",
-		"db:push": "turbo run db:push --filter=@rsvpwedday/wedding",
-		"db:seed": "turbo run db:seed --filter=@rsvpwedday/wedding",
-		"db:studio": "turbo run db:studio --filter=@rsvpwedday/wedding"
+		"db:generate": "turbo run db:generate --filter=@rsvpwedday/client",
+		"db:push": "turbo run db:push --filter=@rsvpwedday/client",
+		"db:seed": "turbo run db:seed --filter=@rsvpwedday/client",
+		"db:studio": "turbo run db:studio --filter=@rsvpwedday/client"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.12",
