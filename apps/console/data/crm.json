@@ -1,0 +1,180 @@
+{
+	"leads": [
+		{
+			"id": "nina-omar",
+			"couple": "Nina & Omar",
+			"place": {
+				"label": "Valletta",
+				"address": "Valletta, Malta",
+				"lat": 35.8989,
+				"lng": 14.5146
+			},
+			"date": "2027-08-14",
+			"stage": "talking",
+			"source": "Instagram DM",
+			"contact": {
+				"email": "nina@example.com",
+				"phone": "+356 9900 1122",
+				"whatsapp": "+356 9900 1122"
+			},
+			"notes": "Want a Saturday in August. Households in DE and KU.",
+			"createdAt": "2026-08-02T10:00:00.000Z"
+		},
+		{
+			"id": "sofia-marc",
+			"couple": "Sofia & Marc",
+			"place": { "label": "Gozo", "address": "Xlendi, Gozo", "lat": 36.036, "lng": 14.218 },
+			"date": "2027-10-09",
+			"stage": "new",
+			"source": "Referral — Elisa",
+			"contact": { "email": "sofia@example.com" },
+			"notes": "Asked for a clifftop house. No date hold yet.",
+			"createdAt": "2026-09-01T09:00:00.000Z"
+		},
+		{
+			"id": "lea-piotr",
+			"couple": "Lea & Piotr",
+			"place": { "label": "Berlin", "address": "Kreuzberg, Berlin", "lat": 52.498, "lng": 13.391 },
+			"date": "2027-04-17",
+			"stage": "option",
+			"source": "Studio email",
+			"contact": { "phone": "+49 170 555 0199", "whatsapp": "+49 170 555 0199" },
+			"notes": "Civil in Berlin, blessing in Malta the week after.",
+			"createdAt": "2026-07-18T12:00:00.000Z"
+		}
+	],
+	"clients": [
+		{
+			"id": "elisa-jonas",
+			"couple": "Elisa & Jonas",
+			"place": {
+				"label": "Gozo",
+				"address": "Ta' Ċenċ, Sannat, Gozo",
+				"lat": 36.019,
+				"lng": 14.244
+			},
+			"date": "2027-05-02",
+			"domain": "elisajonas.example",
+			"guestOrigin": "http://localhost:3010",
+			"fee": 14000,
+			"budget": 82000,
+			"bookedVendorTotal": 41000,
+			"ourCost": 33500,
+			"status": "confirmed",
+			"features": ["site", "rsvp", "gifts", "photos", "liveWall"],
+			"contact": { "email": "elisa@example.com", "whatsapp": "+356 9911 2233" },
+			"notes": "Our house for May.",
+			"providerIds": ["ta-cenc", "trattoria-luna", "lens-mira"]
+		},
+		{
+			"id": "amina-leo",
+			"couple": "Amina & Leo",
+			"place": { "label": "Berlin", "address": "Mitte, Berlin", "lat": 52.52, "lng": 13.405 },
+			"date": "2027-09-18",
+			"domain": "amina-leo.example",
+			"guestOrigin": "http://localhost:3010",
+			"fee": 9000,
+			"budget": 54000,
+			"bookedVendorTotal": 12000,
+			"ourCost": 9800,
+			"status": "option",
+			"features": ["site", "rsvp"],
+			"contact": { "email": "amina@example.com" },
+			"notes": "Site only until the house is held.",
+			"providerIds": []
+		},
+		{
+			"id": "maya-tomas",
+			"couple": "Maya & Tomas",
+			"place": { "label": "Puglia", "address": "Ostuni, Puglia", "lat": 40.729, "lng": 17.577 },
+			"date": "2027-06-12",
+			"domain": "mayaandtomas.example",
+			"guestOrigin": "http://localhost:3010",
+			"fee": 18000,
+			"budget": 110000,
+			"bookedVendorTotal": 67000,
+			"ourCost": 54000,
+			"status": "day-of",
+			"features": ["site", "rsvp", "gifts", "photos", "liveWall", "seating", "messaging"],
+			"contact": { "phone": "+39 333 120 4455", "whatsapp": "+39 333 120 4455" },
+			"notes": "Full weekend. Kitchen already locked.",
+			"providerIds": ["campo-fiori"]
+		}
+	],
+	"providers": [
+		{
+			"id": "ta-cenc",
+			"name": "Ta' Ċenċ",
+			"kind": "venue",
+			"place": {
+				"label": "Gozo",
+				"address": "Ta' Ċenċ, Triq Ta' Ċenċ, Sannat",
+				"lat": 36.019,
+				"lng": 14.244
+			},
+			"contact": {
+				"phone": "+356 2155 6819",
+				"whatsapp": "+356 2155 6819",
+				"email": "stay@tacenc.example"
+			},
+			"website": "https://example.com/ta-cenc",
+			"capacity": "180 seated",
+			"notes": "Clifftop. Our house for May.",
+			"tags": ["clifftop", "hotel"]
+		},
+		{
+			"id": "trattoria-luna",
+			"name": "Trattoria Luna",
+			"kind": "kitchen",
+			"place": {
+				"label": "Victoria",
+				"address": "Independence Square, Victoria, Gozo",
+				"lat": 36.044,
+				"lng": 14.24
+			},
+			"contact": { "phone": "+356 2155 0090", "whatsapp": "+356 9922 3344" },
+			"hours": "Tue–Sun dinner",
+			"capacity": "Family kitchen, 120 plates",
+			"notes": "Child plates without a named list.",
+			"tags": ["family", "children"]
+		},
+		{
+			"id": "campo-fiori",
+			"name": "Campo Fiori",
+			"kind": "flowers",
+			"place": {
+				"label": "Noto",
+				"address": "Corso Vittorio Emanuele, Noto",
+				"lat": 36.891,
+				"lng": 15.07
+			},
+			"contact": {
+				"phone": "+39 0931 835 010",
+				"whatsapp": "+39 333 880 2211",
+				"email": "studio@campofiori.example"
+			},
+			"instagram": "campofiori",
+			"notes": "Dried citrus, olive, no foam.",
+			"tags": ["dried", "sicily"]
+		},
+		{
+			"id": "lens-mira",
+			"name": "Mira Lens",
+			"kind": "photo",
+			"place": {
+				"label": "Berlin / Malta",
+				"address": "Valletta, Malta",
+				"lat": 35.8989,
+				"lng": 14.5146
+			},
+			"contact": {
+				"phone": "+49 176 4400 1188",
+				"whatsapp": "+49 176 4400 1188",
+				"email": "mira@lens.example"
+			},
+			"instagram": "miralens",
+			"notes": "Uploads to the photographer seat, not the guest QR.",
+			"tags": ["reportage"]
+		}
+	]
+}

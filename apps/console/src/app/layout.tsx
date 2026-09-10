@@ -1,3 +1,4 @@
+import { Toaster } from "@rsvpwedday/ui/sonner";
 import type { Metadata } from "next";
 import { Source_Serif_4, Syne } from "next/font/google";
 import type { ReactNode } from "react";
@@ -16,14 +17,17 @@ const body = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-	title: "Planning console — Say Yes",
+	title: "Studio CRM — Say Yes",
 	robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" className={`${display.variable} ${body.variable}`}>
-			<body className="min-h-dvh font-sans antialiased">{children}</body>
+			<body className="min-h-dvh font-sans antialiased">
+				{children}
+				<Toaster />
+			</body>
 		</html>
 	);
 }
