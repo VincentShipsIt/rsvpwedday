@@ -16,8 +16,8 @@ export default function PartnersPage() {
 		<ConsoleShell active="/partners">
 			<div className="flex flex-col gap-8">
 				<div>
-					<h1 className="text-2xl font-medium">Partners</h1>
-					<p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+					<h1 className="font-display text-3xl font-semibold tracking-tight">Partners</h1>
+					<p className="text-ink-soft mt-1 max-w-2xl font-serif text-sm">
 						Houses, kitchens, flowers, photographers we actually work with. Not a public directory.
 						Booking onto a wedding comes after the tenant lands.
 					</p>
@@ -41,7 +41,7 @@ export default function PartnersPage() {
 										<Badge variant="secondary">{categoryLabels[partner.category]}</Badge>
 									</TableCell>
 									<TableCell className="text-muted-foreground">{partner.place}</TableCell>
-									<TableCell className="text-muted-foreground text-pretty whitespace-normal">
+									<TableCell className="text-ink-soft font-serif text-pretty whitespace-normal">
 										{partner.note}
 									</TableCell>
 								</TableRow>

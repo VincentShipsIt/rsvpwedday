@@ -23,8 +23,8 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 			<div className="flex flex-col gap-8">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
-						<h1 className="text-2xl font-medium">{request.couple}</h1>
-						<p className="text-muted-foreground mt-1 text-sm">
+						<h1 className="font-display text-3xl font-semibold tracking-tight">{request.couple}</h1>
+						<p className="text-ink-soft mt-1 font-serif text-sm">
 							{request.place} · {request.date} · {request.domain}
 						</p>
 					</div>
@@ -41,7 +41,9 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 							<CardHeader className="pb-2">
 								<CardTitle className="text-muted-foreground text-xs font-normal">{label}</CardTitle>
 							</CardHeader>
-							<CardContent className="text-2xl font-semibold tabular-nums">{value}</CardContent>
+							<CardContent className="font-display text-2xl font-semibold tabular-nums">
+								{value}
+							</CardContent>
 						</Card>
 					))}
 				</div>
@@ -52,7 +54,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 				</p>
 
 				<section aria-labelledby="features-heading">
-					<h2 id="features-heading" className="text-lg font-medium">
+					<h2 id="features-heading" className="font-display text-lg font-semibold tracking-tight">
 						Features on this site
 					</h2>
 					<ul className="mt-3 flex flex-wrap gap-2">

@@ -2,48 +2,57 @@
 @import "shadcn/tailwind.css";
 @source "../../../../packages/ui/src";
 
+/*
+ * Say Yes studio tokens — same palette as apps/website. shadcn primitives
+ * (Input, Table, Badge) read --background/--primary/etc; those names map
+ * onto paper, ink and saffron here, not the couple-admin Nova greys.
+ */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
+	--background: #f4efe4;
+	--foreground: #1a1712;
+	--card: #faf7f0;
+	--card-foreground: #1a1712;
+	--popover: #faf7f0;
+	--popover-foreground: #1a1712;
+	--primary: #1a1712;
+	--primary-foreground: #f4efe4;
+	--secondary: #e6dccb;
+	--secondary-foreground: #1a1712;
+	--muted: #e6dccb;
+	--muted-foreground: #3f382e;
+	--accent: #e6dccb;
+	--accent-foreground: #1a1712;
+	--destructive: #9f2d1a;
+	--border: rgb(26 23 18 / 0.12);
+	--input: rgb(26 23 18 / 0.14);
+	--ring: #c45c26;
+	--chart-1: #c45c26;
+	--chart-2: #2f4a46;
+	--chart-3: #1a1712;
+	--chart-4: #d4c6ae;
+	--chart-5: #3f382e;
+	--radius: 0.5rem;
+	--sidebar: #1a1712;
+	--sidebar-foreground: #f4efe4;
+	--sidebar-primary: #c45c26;
+	--sidebar-primary-foreground: #f4efe4;
+	--sidebar-accent: #2a2520;
+	--sidebar-accent-foreground: #f4efe4;
+	--sidebar-border: rgb(244 239 228 / 0.12);
+	--sidebar-ring: #c45c26;
 }
 
-/*
- * Same mapping as the couple admin: :root holds the Nova tokens, @theme inline is what
- * makes `bg-sidebar` / `text-muted-foreground` actually resolve. Without this, utilities
- * paint nothing and the shell collapses to unthemed cream.
- */
 @theme inline {
-	--font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+	--font-sans: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+	--font-serif: var(--font-source), Georgia, "Times New Roman", serif;
+	--font-display: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+	--color-sand: #e6dccb;
+	--color-sand-deep: #d4c6ae;
+	--color-paper: #f4efe4;
+	--color-ink: #1a1712;
+	--color-ink-soft: #3f382e;
+	--color-saffron: #c45c26;
+	--color-sea: #2f4a46;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -95,5 +104,10 @@
 
 	body {
 		@apply bg-background text-foreground;
+	}
+
+	::selection {
+		background: #c45c26;
+		color: #f4efe4;
 	}
 }

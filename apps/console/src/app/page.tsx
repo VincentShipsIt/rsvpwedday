@@ -27,13 +27,14 @@ export default function RequestsPage() {
 			<div className="flex flex-col gap-8">
 				<div className="flex flex-wrap items-end justify-between gap-3">
 					<div>
-						<h1 className="text-2xl font-medium">Requests</h1>
-						<p className="text-muted-foreground mt-1 text-sm">
+						<h1 className="font-display text-3xl font-semibold tracking-tight">Requests</h1>
+						<p className="text-ink-soft mt-1 font-serif text-sm">
 							Fee plus margin on booked partners.
 						</p>
 					</div>
-					<p className="text-sm">
-						Pipeline <span className="font-medium tabular-nums">{euro.format(pipeline)}</span>
+					<p className="font-serif text-sm">
+						Pipeline{" "}
+						<span className="font-sans font-medium tabular-nums">{euro.format(pipeline)}</span>
 					</p>
 				</div>
 

@@ -20,8 +20,8 @@ export default function AgentPage() {
 		<ConsoleShell active="/agent">
 			<div className="flex flex-col gap-8">
 				<div>
-					<h1 className="text-2xl font-medium">Agent</h1>
-					<p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+					<h1 className="font-display text-3xl font-semibold tracking-tight">Agent</h1>
+					<p className="text-ink-soft mt-1 max-w-2xl font-serif text-sm">
 						Drafts timelines, headcounts, and translations into the CMS locales. It does not write
 						until you confirm. It is not on the guest site.
 					</p>
@@ -36,7 +36,7 @@ export default function AgentPage() {
 							{thread.map((turn) => (
 								<li key={turn.text}>
 									<p className="text-muted-foreground text-xs font-medium">{turn.who}</p>
-									<p className="mt-1 text-pretty">{turn.text}</p>
+									<p className="mt-1 font-serif text-pretty">{turn.text}</p>
 								</li>
 							))}
 						</ul>
