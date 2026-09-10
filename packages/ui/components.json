@@ -1,0 +1,21 @@
+{
+	"$schema": "https://ui.shadcn.com/schema.json",
+	"style": "radix-nova",
+	"rsc": true,
+	"tsx": true,
+	"tailwind": {
+		"config": "",
+		"css": "../../apps/console/src/app/globals.css",
+		"baseColor": "neutral",
+		"cssVariables": true,
+		"prefix": ""
+	},
+	"iconLibrary": "lucide",
+	"aliases": {
+		"components": "@rsvpwedday/ui",
+		"utils": "cn",
+		"ui": "@rsvpwedday/ui",
+		"lib": "@rsvpwedday/ui",
+		"hooks": "@rsvpwedday/ui"
+	}
+}

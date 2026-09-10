@@ -1,28 +1,35 @@
 # AGENTS.md
 
-Family wedding RSVP site. Guests get a personal link by email (`/rsvp/<token>`) and confirm
-attendance per named guest per event. The couple manages everything in a password-protected
-`/admin`. Guests aged 12 and over are named people; guest-added companions need an email or phone.
-Children under 12 are a household count, separate from the adult companion allowance, with
-per-event counts and optional shared dietary notes. They never need names or contact details.
+Family wedding RSVP site, now a Bun/Turbo monorepo. Guests get a personal link by email
+(`/rsvp/<token>`) and confirm attendance per named guest per event. The couple manages everything
+in a password-protected `/admin`. Guests aged 12 and over are named people; guest-added companions
+need an email or phone. Children under 12 are a household count, separate from the adult companion
+allowance, with per-event counts and optional shared dietary notes. They never need names or
+contact details.
+
+Application code for the live guest site and couple CMS lives in `apps/client`. Paths in this
+file that start `src/` mean `apps/client/src/`. `apps/console` is the planner OS. `apps/website`
+is the company marketing site. Do not put planner-only features into `apps/client` when
+`apps/console` exists for them. Shared shadcn primitives live in `packages/ui`.
 
 ## Stack
 
-Bun, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19, Prisma 7 with
-`@prisma/adapter-pg`, Tailwind 4, Biome, Vitest, Resend + React Email.
+Bun workspaces + Turborepo, Next.js 16 (App Router, `src/app`, `src/proxy.ts`, Turbopack), React 19,
+Prisma 7 with `@prisma/adapter-pg`, Tailwind 4, Biome, Vitest, Resend + React Email.
 
 ## Commands
 
-- `bun install` — installs and runs `postinstall` (`prisma generate`)
-- `bun run dev` — Next dev server on port 3010
-- `bun run build` — `prisma generate && next build`
-- `bun run check` / `bun run check:fix` — Biome lint and format
-- `bun run typecheck` — `tsc --noEmit`
-- `bun run test` — Vitest (domain layer only; no DOM)
-- `bun run db:push` — sync `prisma/schema.prisma` to the database (no migrations directory; this
-  is a one-database family site). On Vercel the `vercel-build` script runs the same push before
+- `bun install` — installs workspaces; `apps/client` `postinstall` runs `prisma generate`
+- `bun run dev` — client app on port 3010 (`apps/console` is 3011, `apps/website` is 3012)
+- `bun run build` — `turbo run build` (all apps)
+- `bun run check` / `bun run check:fix` — Biome lint and format from the repo root
+- `bun run typecheck` — `turbo run typecheck`
+- `bun run test` — Vitest in `apps/client` (domain layer only; no DOM)
+- `bun run db:push` — sync `apps/client/prisma/schema.prisma` to the database (no migrations
+  directory). On Vercel the client app's `vercel-build` script runs the same push before
   `next build` whenever a direct database url resolves, so a production deployment syncs the
-  database and a preview without one still builds.
+  database and a preview without one still builds. After this monorepo wrap, the Vercel project's
+  Root Directory must be `apps/client` (dashboard HITL; do not run the Vercel CLI locally).
 - `bun run db:seed` — placeholder settings, one `wedding` event, one sample invitation
 - `bun run db:studio` — Prisma Studio
 

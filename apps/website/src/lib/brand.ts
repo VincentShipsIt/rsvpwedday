@@ -1,0 +1,11 @@
+export const studio = {
+	name: "Say Yes",
+	short: "Yes",
+	hero: "You said Yes.",
+	baseline: "Weddings in Malta.",
+	descriptor: "A wedding studio in Malta",
+	enquiryEmail: "studio@sayyess.com",
+	place: "Malta",
+	guestSiteUrl: process.env.NEXT_PUBLIC_GUEST_SITE_URL ?? "http://localhost:3010",
+	consoleUrl: process.env.NEXT_PUBLIC_CONSOLE_URL ?? "http://localhost:3011",
+} as const;

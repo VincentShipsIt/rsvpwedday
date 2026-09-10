@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+/*
+ * Say Yes — studio palette. Taken off the studio photography rather than
+ * invented: the violet in `dusk` is the sky over the terrace in table.jpg,
+ * and `ivory` is the linen under it. There is deliberately no accent hue —
+ * none of the houses this sits beside (Aman, Borgo Egnazia, Fait Accompli)
+ * puts a brand colour in its type. `champagne` is a rule colour only; it
+ * does not pass contrast as text and must never be used for one.
+ */
+@theme {
+	--color-ivory: #f2ede6;
+	--color-linen: #e4dace;
+	--color-ink: #211c22;
+	--color-ink-soft: #5e5560;
+	--color-dusk: #241d28;
+	--color-dusk-deep: #191320;
+	--color-dusk-soft: #a79eab;
+	--color-champagne: #c0a47c;
+	--font-display: var(--font-display), "Bodoni 72", Didot, "Times New Roman", serif;
+	--font-body: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+	-webkit-font-smoothing: antialiased;
+	scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
+body {
+	background: var(--color-ivory);
+	color: var(--color-ink);
+	font-family: var(--font-body);
+	font-size: 16px;
+	line-height: 1.65;
+}
+
+::selection {
+	background: var(--color-ink);
+	color: var(--color-ivory);
+}
+
+/*
+ * Bodoni is a didone: at display sizes its hairlines want to close up and
+ * its optical size axis wants the large-text cut. Every headline goes
+ * through this class so the two settings can never drift apart.
+ */
+.display {
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-variation-settings: "opsz" 96;
+	letter-spacing: -0.018em;
+	line-height: 0.98;
+}
+
+.display-sm {
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-variation-settings: "opsz" 32;
+	letter-spacing: -0.008em;
+	line-height: 1.12;
+}
+
+:where(a, button):focus-visible {
+	outline: 2px solid var(--color-champagne);
+	outline-offset: 3px;
+}

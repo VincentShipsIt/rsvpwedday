@@ -1,27 +1,35 @@
 # rsvpwedday
 
-Family wedding RSVP site. Guests receive a personal link by email and confirm attendance there. The couple manages the guest list, sends the emails, and reads the head count in a password-protected admin.
+Bun/Turbo monorepo for a wedding planning company:
+
+| App | Port | Who |
+|---|---|---|
+| `apps/client` | 3010 | Couple CMS + guest RSVP/gifts/memories (the live product) |
+| `apps/console` | 3011 | Planner OS (requests, partners, AI) |
+| `apps/website` | 3012 | Company marketing site |
 
 ## Getting started
 
 ```
 bun install
-cp .env.example .env   # fill in DATABASE_URL and the admin/session secrets
-bun run db:push        # sync prisma/schema.prisma to the database
+cp apps/client/.env.example apps/client/.env   # DATABASE_URL and admin/session secrets
+bun run db:push        # sync apps/client/prisma/schema.prisma
 bun run db:seed        # placeholder settings, one event, one sample invitation
-bun run dev            # http://localhost:3010
+bun run dev            # client app at http://localhost:3010
+bun run dev:console    # http://localhost:3011
+bun run dev:website    # http://localhost:3012
 ```
 
-There is no migrations directory: this is a one-database family site, and `bun run db:push`
-keeps the schema in sync. `bun run db:seed` prints a sample RSVP link once it finishes.
+There is no migrations directory: `bun run db:push` keeps the schema in sync. `bun run db:seed`
+prints a sample RSVP link once it finishes.
 
 ## Checks
 
 ```
-bun run check       # Biome lint and format
-bun run typecheck   # tsc --noEmit
-bun run test        # Vitest, domain layer
-bun run build       # prisma generate && next build
+bun run check       # Biome lint and format (repo root)
+bun run typecheck   # tsc in each app
+bun run test        # Vitest in apps/client (domain layer)
+bun run build       # all apps via Turbo
 ```
 
 See `AGENTS.md` for the stack, the derived invitation-status rule, where translations live, and

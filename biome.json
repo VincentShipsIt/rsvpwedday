@@ -12,7 +12,11 @@
 			"!**/.next",
 			"!**/dist",
 			"!**/src/generated",
-			"!.worktrees"
+			"!.worktrees",
+			"!.tmp",
+			"!.claude",
+			"!.vercel",
+			"!apps/console/data"
 		]
 	},
 	"formatter": {
@@ -54,5 +58,11 @@
 			"tailwindDirectives": true
 		}
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } }
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
 }
