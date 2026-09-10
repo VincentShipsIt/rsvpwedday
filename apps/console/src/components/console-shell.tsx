@@ -5,6 +5,7 @@ import {
 	HomeIcon,
 	InboxIcon,
 	LineChartIcon,
+	type LucideIcon,
 	RadioIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,7 +18,10 @@ import { cn } from "@/lib/utils";
  * every morning, the records you keep, and the numbers you check now and then.
  * A flat list of eight was fine at five and stopped scanning at eight.
  */
-const SECTIONS = [
+type NavItem = { href: string; label: string; icon: LucideIcon };
+type NavSection = { label: string; items: NavItem[] };
+
+const SECTIONS: NavSection[] = [
 	{
 		label: "Workspace",
 		items: [
@@ -40,7 +44,7 @@ const SECTIONS = [
 			{ href: "/social", label: "Social", icon: RadioIcon },
 		],
 	},
-] as const;
+];
 
 const ALL_ITEMS = SECTIONS.flatMap((section) => section.items);
 

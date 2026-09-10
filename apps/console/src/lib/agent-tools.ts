@@ -140,7 +140,9 @@ export async function applyAction(name: string, args: Record<string, unknown>): 
 			couple: names,
 			place: geo ?? { label: placeQuery },
 			date: args.date ? String(args.date) : undefined,
-			status: status === "booked" ? "confirmed" : status,
+			/* "booked" is a legacy status the model still sometimes returns; it is
+			   not in CoupleStatus, so the comparison goes through string. */
+			status: (status as string) === "booked" ? "confirmed" : status,
 			source: args.source ? String(args.source) : "Agent",
 			contact: {
 				email: args.email ? String(args.email) : undefined,

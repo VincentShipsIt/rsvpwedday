@@ -6,7 +6,7 @@ import { Label } from "@rsvpwedday/ui/label";
 import { Textarea } from "@rsvpwedday/ui/textarea";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { moveCouple, saveCouple } from "@/app/actions";
+import { moveCouple, updateCouple } from "@/app/actions";
 import { ConsoleShell } from "@/components/console-shell";
 import { ContactLinks } from "@/components/contact-links";
 import { FormSelect } from "@/components/form-select";
@@ -111,7 +111,7 @@ export default async function CouplePage({ params }: { params: Promise<{ id: str
 						))}
 					</ul>
 				</section>
-				<form action={saveCouple} className="grid max-w-2xl gap-3 sm:grid-cols-2">
+				<form action={updateCouple} className="grid max-w-2xl gap-3 sm:grid-cols-2">
 					<input type="hidden" name="id" value={row.id} />
 					<input type="hidden" name="createdAt" value={row.createdAt} />
 					<input type="hidden" name="features" value={row.features.join(",")} />

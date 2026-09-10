@@ -77,6 +77,15 @@ export async function saveCouple(form: FormData): Promise<Couple | undefined> {
 	return row;
 }
 
+/*
+ * `saveCouple` hands back the row so callers can navigate to it. A <form
+ * action> must resolve to void, so the edit form on a couple's own page goes
+ * through this instead of widening saveCouple's contract.
+ */
+export async function updateCouple(form: FormData): Promise<void> {
+	await saveCouple(form);
+}
+
 export async function saveProvider(form: FormData): Promise<void> {
 	const name = text(form, "name");
 	if (!name) return;
