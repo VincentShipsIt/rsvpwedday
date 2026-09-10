@@ -1,10 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sendOutbound } from "@/lib/channels";
 import type { Client, ClientStatus, Lead, LeadStage, Provider, ProviderKind } from "@/lib/crm";
 import { slugId } from "@/lib/crm";
 import { geocodePlace } from "@/lib/geocode";
 import {
+	appendMessage,
+	getThread,
+	markThreadRead,
 	setClientStatus,
 	setLeadStage,
 	upsertClient,
@@ -125,5 +129,36 @@ export async function moveLead(id: string, stage: LeadStage): Promise<void> {
 
 export async function moveClient(id: string, status: ClientStatus): Promise<void> {
 	await setClientStatus(id, status);
+	revalidateCrm();
+}
+
+export async function openThread(id: string): Promise<void> {
+	await markThreadRead(id);
+	revalidateCrm();
+}
+
+export async function replyToThread(form: FormData): Promise<void> {
+	const threadId = text(form, "threadId");
+	const body = text(form, "body");
+	if (!threadId || !body) return;
+	const thread = await getThread(threadId);
+	if (!thread) return;
+	await sendOutbound({
+		channel: thread.channel,
+		handle: thread.handle,
+		subject: thread.subject,
+		body,
+	});
+	await appendMessage(
+		threadId,
+		{
+			id: `out-${Date.now().toString(36)}`,
+			direction: "out",
+			channel: thread.channel,
+			body,
+			at: new Date().toISOString(),
+		},
+		false
+	);
 	revalidateCrm();
 }

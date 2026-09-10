@@ -1,12 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { Client, CrmData, Lead, Provider } from "@/lib/crm";
+import type { Client, CrmData, InboxMessage, Lead, Provider, Thread } from "@/lib/crm";
 
 const dataPath = join(process.cwd(), "data/crm.json");
 
 async function readCrm(): Promise<CrmData> {
 	const raw = await readFile(dataPath, "utf8");
-	return JSON.parse(raw) as CrmData;
+	const data = JSON.parse(raw) as CrmData;
+	data.threads ??= [];
+	return data;
 }
 
 async function writeCrm(data: CrmData): Promise<void> {
@@ -79,4 +81,45 @@ export async function setClientStatus(
 	client.status = status;
 	await writeCrm(data);
 	return client;
+}
+
+export async function getThreads(): Promise<Thread[]> {
+	const data = await readCrm();
+	return data.threads;
+}
+
+export async function getThread(id: string): Promise<Thread | undefined> {
+	const data = await readCrm();
+	return data.threads.find((row) => row.id === id);
+}
+
+export async function upsertThread(thread: Thread): Promise<Thread> {
+	const data = await readCrm();
+	const index = data.threads.findIndex((row) => row.id === thread.id);
+	if (index >= 0) data.threads[index] = thread;
+	else data.threads.unshift(thread);
+	await writeCrm(data);
+	return thread;
+}
+
+export async function appendMessage(
+	threadId: string,
+	message: InboxMessage,
+	markUnread: boolean
+): Promise<Thread | undefined> {
+	const data = await readCrm();
+	const thread = data.threads.find((row) => row.id === threadId);
+	if (!thread) return undefined;
+	thread.messages.push(message);
+	thread.unread = markUnread;
+	await writeCrm(data);
+	return thread;
+}
+
+export async function markThreadRead(id: string): Promise<void> {
+	const data = await readCrm();
+	const thread = data.threads.find((row) => row.id === id);
+	if (!thread) return;
+	thread.unread = false;
+	await writeCrm(data);
 }

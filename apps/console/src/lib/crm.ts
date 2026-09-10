@@ -15,6 +15,31 @@ export type Contact = {
 	email?: string;
 	phone?: string;
 	whatsapp?: string;
+	instagram?: string;
+};
+
+export type Channel = "email" | "instagram" | "whatsapp";
+
+export type ThreadPersonKind = "lead" | "client" | "provider";
+
+export type InboxMessage = {
+	id: string;
+	direction: "in" | "out";
+	body: string;
+	at: string;
+	channel: Channel;
+};
+
+export type Thread = {
+	id: string;
+	channel: Channel;
+	subject?: string;
+	contactName: string;
+	handle: string;
+	personId?: string;
+	personKind?: ThreadPersonKind;
+	unread: boolean;
+	messages: InboxMessage[];
 };
 
 export type Place = {
@@ -72,7 +97,16 @@ export type CrmData = {
 	leads: Lead[];
 	clients: Client[];
 	providers: Provider[];
+	threads: Thread[];
 };
+
+export const channelLabels: Record<Channel, string> = {
+	email: "Email",
+	instagram: "Instagram",
+	whatsapp: "WhatsApp",
+};
+
+export const channels: Channel[] = ["email", "instagram", "whatsapp"];
 
 export const euro = new Intl.NumberFormat("de-DE", {
 	style: "currency",

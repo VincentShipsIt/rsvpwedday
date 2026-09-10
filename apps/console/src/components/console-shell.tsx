@@ -4,6 +4,7 @@ import {
 	Columns3Icon,
 	HandshakeIcon,
 	HeartIcon,
+	InboxIcon,
 	LineChartIcon,
 	RadioIcon,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
 	{ href: "/", label: "Agent", icon: BotIcon },
+	{ href: "/inbox", label: "Inbox", icon: InboxIcon },
 	{ href: "/leads", label: "Leads", icon: Columns3Icon },
 	{ href: "/clients", label: "Clients", icon: HeartIcon },
 	{ href: "/providers", label: "Providers", icon: HandshakeIcon },
@@ -50,7 +52,15 @@ function NavLink({
 	);
 }
 
-export function ConsoleShell({ pathname, children }: { pathname: string; children: ReactNode }) {
+export function ConsoleShell({
+	pathname,
+	children,
+	fill = false,
+}: {
+	pathname: string;
+	children: ReactNode;
+	fill?: boolean;
+}) {
 	return (
 		<div className="flex min-h-dvh flex-col md:flex-row">
 			<aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground md:flex">
@@ -88,8 +98,16 @@ export function ConsoleShell({ pathname, children }: { pathname: string; childre
 					</NavLink>
 				))}
 			</nav>
-			<main className="min-w-0 flex-1 bg-paper">
-				<div className="mx-auto max-w-[96rem] px-6 py-10 lg:px-12">{children}</div>
+			<main className={cn("flex min-w-0 flex-1 flex-col bg-paper", fill && "min-h-0 md:h-dvh")}>
+				<div
+					className={
+						fill
+							? "flex min-h-0 flex-1 flex-col"
+							: "mx-auto w-full max-w-[96rem] px-6 py-10 lg:px-12"
+					}
+				>
+					{children}
+				</div>
 			</main>
 		</div>
 	);

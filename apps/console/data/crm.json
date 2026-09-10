@@ -15,7 +15,8 @@
 			"contact": {
 				"email": "nina@example.com",
 				"phone": "+356 9900 1122",
-				"whatsapp": "+356 9900 1122"
+				"whatsapp": "+356 9900 1122",
+				"instagram": "ninaomar"
 			},
 			"notes": "Want a Saturday in August. Households in DE and KU.",
 			"createdAt": "2026-08-02T10:00:00.000Z"
@@ -23,22 +24,37 @@
 		{
 			"id": "sofia-marc",
 			"couple": "Sofia & Marc",
-			"place": { "label": "Gozo", "address": "Xlendi, Gozo", "lat": 36.036, "lng": 14.218 },
+			"place": {
+				"label": "Gozo",
+				"address": "Xlendi, Gozo",
+				"lat": 36.036,
+				"lng": 14.218
+			},
 			"date": "2027-10-09",
 			"stage": "new",
 			"source": "Referral — Elisa",
-			"contact": { "email": "sofia@example.com" },
+			"contact": {
+				"email": "sofia@example.com"
+			},
 			"notes": "Asked for a clifftop house. No date hold yet.",
 			"createdAt": "2026-09-01T09:00:00.000Z"
 		},
 		{
 			"id": "lea-piotr",
 			"couple": "Lea & Piotr",
-			"place": { "label": "Berlin", "address": "Kreuzberg, Berlin", "lat": 52.498, "lng": 13.391 },
+			"place": {
+				"label": "Berlin",
+				"address": "Kreuzberg, Berlin",
+				"lat": 52.498,
+				"lng": 13.391
+			},
 			"date": "2027-04-17",
 			"stage": "option",
 			"source": "Studio email",
-			"contact": { "phone": "+49 170 555 0199", "whatsapp": "+49 170 555 0199" },
+			"contact": {
+				"phone": "+49 170 555 0199",
+				"whatsapp": "+49 170 555 0199"
+			},
 			"notes": "Civil in Berlin, blessing in Malta the week after.",
 			"createdAt": "2026-07-18T12:00:00.000Z"
 		}
@@ -62,14 +78,22 @@
 			"ourCost": 33500,
 			"status": "confirmed",
 			"features": ["site", "rsvp", "gifts", "photos", "liveWall"],
-			"contact": { "email": "elisa@example.com", "whatsapp": "+356 9911 2233" },
+			"contact": {
+				"email": "elisa@example.com",
+				"whatsapp": "+356 9911 2233"
+			},
 			"notes": "Our house for May.",
 			"providerIds": ["ta-cenc", "trattoria-luna", "lens-mira"]
 		},
 		{
 			"id": "amina-leo",
 			"couple": "Amina & Leo",
-			"place": { "label": "Berlin", "address": "Mitte, Berlin", "lat": 52.52, "lng": 13.405 },
+			"place": {
+				"label": "Berlin",
+				"address": "Mitte, Berlin",
+				"lat": 52.52,
+				"lng": 13.405
+			},
 			"date": "2027-09-18",
 			"domain": "amina-leo.example",
 			"guestOrigin": "http://localhost:3010",
@@ -79,14 +103,21 @@
 			"ourCost": 9800,
 			"status": "option",
 			"features": ["site", "rsvp"],
-			"contact": { "email": "amina@example.com" },
+			"contact": {
+				"email": "amina@example.com"
+			},
 			"notes": "Site only until the house is held.",
 			"providerIds": []
 		},
 		{
 			"id": "maya-tomas",
 			"couple": "Maya & Tomas",
-			"place": { "label": "Puglia", "address": "Ostuni, Puglia", "lat": 40.729, "lng": 17.577 },
+			"place": {
+				"label": "Puglia",
+				"address": "Ostuni, Puglia",
+				"lat": 40.729,
+				"lng": 17.577
+			},
 			"date": "2027-06-12",
 			"domain": "mayaandtomas.example",
 			"guestOrigin": "http://localhost:3010",
@@ -96,7 +127,10 @@
 			"ourCost": 54000,
 			"status": "day-of",
 			"features": ["site", "rsvp", "gifts", "photos", "liveWall", "seating", "messaging"],
-			"contact": { "phone": "+39 333 120 4455", "whatsapp": "+39 333 120 4455" },
+			"contact": {
+				"phone": "+39 333 120 4455",
+				"whatsapp": "+39 333 120 4455"
+			},
 			"notes": "Full weekend. Kitchen already locked.",
 			"providerIds": ["campo-fiori"]
 		}
@@ -132,7 +166,10 @@
 				"lat": 36.044,
 				"lng": 14.24
 			},
-			"contact": { "phone": "+356 2155 0090", "whatsapp": "+356 9922 3344" },
+			"contact": {
+				"phone": "+356 2155 0090",
+				"whatsapp": "+356 9922 3344"
+			},
 			"hours": "Tue–Sun dinner",
 			"capacity": "Family kitchen, 120 plates",
 			"notes": "Child plates without a named list.",
@@ -175,6 +212,91 @@
 			"instagram": "miralens",
 			"notes": "Uploads to the photographer seat, not the guest QR.",
 			"tags": ["reportage"]
+		}
+	],
+	"threads": [
+		{
+			"id": "elisa-email",
+			"channel": "email",
+			"subject": "May weekend — guest list languages",
+			"contactName": "Elisa & Jonas",
+			"handle": "elisa@example.com",
+			"personId": "elisa-jonas",
+			"personKind": "client",
+			"unread": false,
+			"messages": [
+				{
+					"id": "m1",
+					"direction": "in",
+					"channel": "email",
+					"at": "2026-09-08T09:12:00.000Z",
+					"body": "Hi — can the RSVP mail go out in German and English the same week? Jonas’s family will ignore anything only in English."
+				},
+				{
+					"id": "m2",
+					"direction": "out",
+					"channel": "email",
+					"at": "2026-09-08T10:04:00.000Z",
+					"body": "Yes. We send per household locale. I’ll put DE on his parents and EN on yours unless you say otherwise."
+				},
+				{
+					"id": "m3",
+					"direction": "in",
+					"channel": "email",
+					"at": "2026-09-09T18:41:00.000Z",
+					"body": "Perfect. Also: two extra children under 12 from my sister. No names."
+				}
+			]
+		},
+		{
+			"id": "nina-ig",
+			"channel": "instagram",
+			"contactName": "Nina & Omar",
+			"handle": "ninaomar",
+			"personId": "nina-omar",
+			"personKind": "lead",
+			"unread": false,
+			"messages": [
+				{
+					"id": "m4",
+					"direction": "in",
+					"channel": "instagram",
+					"at": "2026-09-09T21:03:00.000Z",
+					"body": "hey we said yes last night in valletta 🥹 is august 2027 even possible or are you full"
+				},
+				{
+					"id": "out-mtv62dv3",
+					"direction": "out",
+					"channel": "instagram",
+					"body": "August is open. Send dates and roughly how many households.",
+					"at": "2026-09-10T06:48:58.287Z"
+				}
+			]
+		},
+		{
+			"id": "luna-wa",
+			"channel": "whatsapp",
+			"contactName": "Trattoria Luna",
+			"handle": "+356 9922 3344",
+			"personId": "trattoria-luna",
+			"personKind": "provider",
+			"unread": false,
+			"messages": [
+				{
+					"id": "m5",
+					"direction": "out",
+					"channel": "whatsapp",
+					"at": "2026-09-07T11:20:00.000Z",
+					"body": "Confirming 84 adults + 11 children for 2 May, child plates without a named list."
+				},
+				{
+					"id": "m6",
+					"direction": "in",
+					"channel": "whatsapp",
+					"at": "2026-09-07T11:48:00.000Z",
+					"body": "Ok. 6 vegan still? Send the count again the week before."
+				}
+			]
 		}
 	]
 }
