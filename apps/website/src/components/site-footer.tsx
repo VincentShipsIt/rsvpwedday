@@ -2,19 +2,27 @@ import { studio } from "@/lib/brand";
 
 export function SiteFooter() {
 	return (
-		<footer className="flex flex-wrap items-center justify-between gap-4 border-t border-ink/10 px-6 py-8 text-sm text-ink-soft md:px-12">
-			<p>{studio.name}</p>
-			<nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
-				<a href="/prestations" className="hover:text-saffron">
-					Prestations
-				</a>
-				<a href="/pricing" className="hover:text-saffron">
-					Pricing
-				</a>
-				<a href={`mailto:${studio.enquiryEmail}`} className="hover:text-saffron">
-					{studio.enquiryEmail}
-				</a>
-			</nav>
+		<footer className="border-t border-ink/12 px-6 py-10 md:px-12">
+			<div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-5">
+				<p className="display-sm text-xl">{studio.name}</p>
+				<nav
+					aria-label="Footer"
+					className="flex flex-wrap gap-x-7 gap-y-2 text-[10px] font-medium tracking-[0.2em] text-ink-soft uppercase"
+				>
+					<a href="/prestations" className="transition-colors hover:text-ink">
+						Prestations
+					</a>
+					<a href="/pricing" className="transition-colors hover:text-ink">
+						Pricing
+					</a>
+					<a href={`mailto:${studio.enquiryEmail}`} className="transition-colors hover:text-ink">
+						{studio.enquiryEmail}
+					</a>
+				</nav>
+				<p className="text-[10px] font-medium tracking-[0.2em] text-ink-soft uppercase">
+					{studio.place}
+				</p>
+			</div>
 		</footer>
 	);
 }

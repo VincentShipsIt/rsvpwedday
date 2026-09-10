@@ -1,177 +1,168 @@
 import Image from "next/image";
+import { Eyebrow } from "@/components/eyebrow";
 import { GuestPreview } from "@/components/guest-preview";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { TextLink } from "@/components/text-link";
 import { studio } from "@/lib/brand";
-import { features, offerings } from "@/lib/offer";
+import { offerings, services } from "@/lib/offer";
 
 const steps = [
-	{ n: "01", title: "Enquire", copy: "Dates, households, languages, the island or city." },
+	{ n: "I", title: "Enquire", copy: "Dates, roughly how many, whether you already have a house." },
 	{
-		n: "02",
+		n: "II",
 		title: "Hold",
-		copy: "We option the house and the kitchen — or we put the site up the same week.",
+		copy: "We option the house and the kitchen. Nothing goes on a marketplace.",
 	},
 	{
-		n: "03",
-		title: "Invite",
-		copy: "Personal links, not a name search. Children as counts. Meals for the caterer.",
+		n: "III",
+		title: "Taste",
+		copy: "Menu, flowers, the table. You sit down once. Then we lock it.",
 	},
 	{
-		n: "04",
+		n: "IV",
 		title: "The day",
-		copy: "Seating, a live wall, a photographer seat. We run it from one console.",
+		copy: "We are there. You are not running a production.",
 	},
 ];
 
 export default function MarketingHome() {
 	return (
 		<div className="relative">
-			<section className="relative min-h-[92dvh] text-paper">
+			<section className="relative min-h-[88dvh] text-ivory">
 				<Image
 					src="/studio/cliff.jpg"
-					alt="Limestone cliff over the sea at dusk"
+					alt="Limestone cliffs above the sea at dusk"
 					fill
 					priority
 					sizes="100vw"
 					className="object-cover"
 				/>
-				<div className="absolute inset-0 bg-linear-to-b from-ink/55 via-ink/35 to-ink/80" />
-				<div className="relative flex min-h-[92dvh] flex-col">
+				<div className="absolute inset-0 bg-linear-to-b from-dusk/70 via-dusk/35 to-dusk/90" />
+				<div className="relative flex min-h-[88dvh] flex-col">
 					<SiteHeader invert />
-					<div className="mt-auto grid gap-10 px-6 pb-16 pt-24 md:grid-cols-12 md:px-12 md:pb-24">
-						<p className="font-display text-xs font-semibold tracking-[0.28em] text-saffron uppercase md:col-span-3">
-							{studio.places.join(" · ")}
+					<div className="mt-auto px-6 pt-24 pb-16 md:px-12 md:pb-20">
+						<Eyebrow className="text-ivory/60">{studio.place}</Eyebrow>
+						<h1 className="display mt-7 text-[clamp(3.5rem,13vw,11rem)]">
+							You said <em className="italic">Yes.</em>
+						</h1>
+						<div className="mt-9 h-px w-24 bg-champagne/70" />
+						<p className="mt-7 max-w-sm text-pretty text-[15px] text-ivory/75">
+							We hold the rest — the house, the kitchen, the weekend. In Malta.
 						</p>
-						<div className="md:col-span-9">
-							<h1 className="max-w-4xl text-balance font-display text-5xl leading-[0.95] font-semibold tracking-tight md:text-7xl lg:text-8xl">
-								{studio.hero}
-							</h1>
-							<p className="mt-5 max-w-3xl text-balance font-display text-3xl font-medium tracking-tight text-sand md:text-5xl">
-								{studio.baseline}
-							</p>
-							<p className="mt-8 max-w-xl text-pretty text-lg text-sand/90 md:text-xl">
-								Destination planning for households that span languages and islands. A private guest
-								site on your domain — or we hold the house as well.
-							</p>
-						</div>
 					</div>
 				</div>
 			</section>
 
 			<main>
 				<section
-					id="site"
-					className="scroll-mt-8 bg-ink px-6 py-24 text-paper md:px-12"
-					aria-labelledby="site-heading"
+					id="hold"
+					className="scroll-mt-8 px-6 py-24 md:px-12 md:py-32"
+					aria-labelledby="hold-heading"
 				>
-					<div className="grid items-center gap-16 lg:grid-cols-12">
+					<div className="mb-16 max-w-3xl">
+						<Eyebrow>What we hold</Eyebrow>
+						<h2 id="hold-heading" className="display mt-6 text-[clamp(2.25rem,4.6vw,3.75rem)]">
+							The house, the kitchen, the <em className="italic">days.</em>
+						</h2>
+						<p className="mt-7 max-w-md text-pretty text-[15px] text-ink-soft">
+							All-inclusive planning. Not a vendor directory.
+						</p>
+					</div>
+					<ul className="grid gap-x-12 sm:grid-cols-2 lg:grid-cols-4">
+						{services.map((service) => (
+							<li key={service.id} className="border-t border-ink/20 py-6">
+								<h3 className="display-sm text-xl">{service.title}</h3>
+								<p className="mt-2 text-pretty text-[14px] text-ink-soft">{service.copy}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+
+				<section className="grid md:grid-cols-2" aria-label="The studio">
+					<figure className="relative min-h-[30rem]">
+						<Image
+							src="/studio/table.jpg"
+							alt="A long terrace table at dusk, dried citrus and olive along the linen"
+							fill
+							sizes="(min-width: 768px) 50vw, 100vw"
+							className="object-cover"
+						/>
+					</figure>
+					<figure className="relative min-h-[30rem]">
+						<Image
+							src="/studio/seal.jpg"
+							alt="A sealed envelope and a gold ring in shuttered light"
+							fill
+							sizes="(min-width: 768px) 50vw, 100vw"
+							className="object-cover"
+						/>
+					</figure>
+				</section>
+
+				<section className="px-6 py-24 md:px-12 md:py-32" aria-labelledby="offer-heading">
+					<div className="mb-16 max-w-3xl">
+						<Eyebrow>Prestations</Eyebrow>
+						<h2 id="offer-heading" className="display mt-6 text-[clamp(2.25rem,4.6vw,3.75rem)]">
+							All in. Two ways to <em className="italic">hold it.</em>
+						</h2>
+					</div>
+					<ul className="grid gap-x-12 gap-y-14 lg:grid-cols-2">
+						{offerings.map((offer) => (
+							<li key={offer.id} className="flex flex-col border-t border-ink/20 pt-7">
+								<Eyebrow>{offer.kicker}</Eyebrow>
+								<h3 className="display mt-4 text-[2rem]">{offer.name}</h3>
+								<p className="mt-5 flex-1 text-pretty text-[15px] text-ink-soft">{offer.lede}</p>
+								<p className="display-sm mt-8 text-2xl">From {offer.from}</p>
+								<p className="mt-8">
+									<TextLink href={`/prestations#${offer.id}`}>What&rsquo;s in it</TextLink>
+								</p>
+							</li>
+						))}
+					</ul>
+				</section>
+
+				<section
+					id="family"
+					className="scroll-mt-8 bg-dusk px-6 py-24 text-ivory md:px-12 md:py-32"
+					aria-labelledby="family-heading"
+				>
+					<div className="grid items-center gap-x-16 gap-y-20 lg:grid-cols-12">
 						<div className="lg:col-span-5">
-							<p className="font-display text-xs font-semibold tracking-[0.28em] text-saffron uppercase">
-								The guest site
-							</p>
-							<h2
-								id="site-heading"
-								className="mt-4 text-balance font-display text-4xl font-semibold tracking-tight md:text-5xl"
-							>
-								Not a marketplace. A house for the weekend.
+							<Eyebrow className="text-dusk-soft">For the family</Eyebrow>
+							<h2 id="family-heading" className="display mt-6 text-[clamp(2.25rem,4.6vw,3.75rem)]">
+								They know where to <em className="italic">be.</em>
 							</h2>
-							<p className="mt-6 max-w-md text-pretty text-sand">
-								Personal RSVP links. Per-event invitations. Children as a household count. A
-								memories book. Gifts without a store. English, German, Kurmanji. Hosted on the
-								couple’s domain.
+							<p className="mt-8 max-w-md text-pretty text-[15px] text-dusk-soft">
+								A private place to reply, on your own domain. Who is coming, who eats what. Included
+								in every weekend. Not a product you subscribe to.
 							</p>
-							<p className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
-								<TextLink href={studio.guestSiteUrl} className="text-paper decoration-saffron">
-									Open a live guest site
-								</TextLink>
-								<TextLink href="/prestations" className="text-paper decoration-saffron">
-									See prestations
+							<p className="mt-10">
+								<TextLink
+									href={studio.guestSiteUrl}
+									className="border-ivory/30 text-ivory hover:border-ivory"
+								>
+									A weekend, as the family sees it
 								</TextLink>
 							</p>
 						</div>
-						<div className="pb-12 lg:col-span-7 lg:pb-4">
+						<div className="pb-14 lg:col-span-7 lg:pb-6">
 							<GuestPreview />
 						</div>
 					</div>
-					<ul className="mt-24 grid gap-px bg-paper/10 sm:grid-cols-2 lg:grid-cols-3">
-						{features.map((feature, index) => (
-							<li key={feature.id} className="bg-ink p-6 md:p-8">
-								<p className="font-display text-xs tracking-[0.2em] text-saffron">
-									{String(index + 1).padStart(2, "0")}
-								</p>
-								<h3 className="mt-3 font-display text-xl font-semibold">{feature.title}</h3>
-								<p className="mt-2 text-pretty text-sand/85">{feature.copy}</p>
-							</li>
-						))}
-					</ul>
 				</section>
 
-				<section className="px-6 py-24 md:px-12" aria-labelledby="hold-heading">
-					<div className="mb-12 flex flex-wrap items-end justify-between gap-6">
-						<h2
-							id="hold-heading"
-							className="font-display text-3xl font-semibold tracking-tight md:text-4xl"
-						>
-							What we hold
-						</h2>
-						<p className="max-w-sm text-sm text-ink-soft">
-							Full service, or the site alone. Never a vendor directory. Never a monthly app for the
-							couple.
-						</p>
-					</div>
-					<ul className="grid gap-8 lg:grid-cols-3">
-						{offerings.map((offer) => (
-							<li key={offer.id} className="flex flex-col border-t border-ink/15 pt-6">
-								<p className="font-display text-xs tracking-[0.2em] text-saffron uppercase">
-									{offer.kicker}
-								</p>
-								<h3 className="mt-2 font-display text-3xl font-semibold">{offer.name}</h3>
-								<p className="mt-1 font-display text-lg text-ink-soft">From {offer.from}</p>
-								<p className="mt-4 flex-1 text-pretty text-ink-soft">{offer.lede}</p>
-								<p className="mt-6">
-									<TextLink href={`/prestations#${offer.id}`}>What’s in it</TextLink>
-								</p>
-							</li>
-						))}
-					</ul>
-				</section>
-
-				<section className="grid md:grid-cols-2">
-					<figure className="relative min-h-[28rem]">
-						<Image
-							src="/studio/table.jpg"
-							alt="Long dinner table with dried citrus and olive"
-							fill
-							sizes="(min-width: 768px) 50vw, 100vw"
-							className="object-cover"
-						/>
-					</figure>
-					<figure className="relative min-h-[28rem]">
-						<Image
-							src="/studio/seal.jpg"
-							alt="Sealed envelope and a gold ring in shuttered light"
-							fill
-							sizes="(min-width: 768px) 50vw, 100vw"
-							className="object-cover"
-						/>
-					</figure>
-				</section>
-
-				<section className="px-6 py-24 md:px-12" aria-labelledby="steps-heading">
-					<h2
-						id="steps-heading"
-						className="font-display text-3xl font-semibold tracking-tight md:text-4xl"
-					>
-						How a weekend starts
+				<section className="px-6 py-24 md:px-12 md:py-32" aria-labelledby="steps-heading">
+					<Eyebrow>In order</Eyebrow>
+					<h2 id="steps-heading" className="display mt-6 text-[clamp(2.25rem,4.6vw,3.75rem)]">
+						How a weekend <em className="italic">starts.</em>
 					</h2>
-					<ol className="mt-12 grid gap-10 md:grid-cols-4">
+					<ol className="mt-16 grid gap-x-12 gap-y-12 md:grid-cols-4">
 						{steps.map((step) => (
-							<li key={step.n}>
-								<p className="font-display text-sm tracking-[0.2em] text-saffron">{step.n}</p>
-								<h3 className="mt-3 font-display text-xl font-semibold">{step.title}</h3>
-								<p className="mt-2 text-pretty text-ink-soft">{step.copy}</p>
+							<li key={step.n} className="border-t border-ink/20 pt-7">
+								<p className="display-sm text-sm tracking-[0.2em] text-ink-soft">{step.n}</p>
+								<h3 className="display-sm mt-4 text-2xl">{step.title}</h3>
+								<p className="mt-3 text-pretty text-[14px] text-ink-soft">{step.copy}</p>
 							</li>
 						))}
 					</ol>
@@ -179,20 +170,17 @@ export default function MarketingHome() {
 
 				<section
 					id="enquire"
-					className="border-t border-ink/10 px-6 py-24 md:px-12"
+					className="border-t border-ink/12 px-6 py-24 md:px-12 md:py-32"
 					aria-labelledby="enquire-heading"
 				>
-					<h2
-						id="enquire-heading"
-						className="font-display text-4xl font-semibold tracking-tight md:text-6xl"
-					>
-						Write to the studio.
+					<Eyebrow>Enquire</Eyebrow>
+					<h2 id="enquire-heading" className="display mt-6 text-[clamp(2.75rem,6.5vw,5.5rem)]">
+						Write to the <em className="italic">studio.</em>
 					</h2>
-					<p className="mt-6 max-w-lg text-pretty text-lg text-ink-soft">
-						Dates, roughly how many households, and whether you want the site alone or the house
-						held too.
+					<p className="mt-8 max-w-md text-pretty text-[15px] text-ink-soft">
+						Your dates, roughly how many, and whether you already have a house in Malta.
 					</p>
-					<p className="mt-8">
+					<p className="mt-10">
 						<TextLink href={`mailto:${studio.enquiryEmail}`}>{studio.enquiryEmail}</TextLink>
 					</p>
 				</section>
