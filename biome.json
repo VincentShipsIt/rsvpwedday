@@ -12,7 +12,10 @@
 			"!**/.next",
 			"!**/dist",
 			"!**/src/generated",
-			"!.worktrees"
+			"!.worktrees",
+			"!.tmp",
+			"!.claude",
+			"!.vercel"
 		]
 	},
 	"formatter": {

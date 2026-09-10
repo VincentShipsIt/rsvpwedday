@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { Client } from "pg";
 import { resolveDatabaseUrl } from "../src/lib/database-url";
 
@@ -25,8 +26,9 @@ export async function pushDatabase(url: string): Promise<void> {
 	} finally {
 		await client.end();
 	}
-	const push = spawnSync("./node_modules/.bin/prisma", ["db", "push"], {
+	const push = spawnSync("bunx", ["prisma", "db", "push"], {
 		stdio: "inherit",
+		cwd: fileURLToPath(new URL("..", import.meta.url)),
 		env: { ...process.env, DATABASE_URL: url },
 	});
 	if (push.status !== 0) throw new Error(`Schema push failed (exit ${push.status ?? "unknown"}).`);

@@ -1,5 +1,6 @@
 node_modules/
 .next/
+**/.next/
 out/
 dist/
 coverage/
@@ -8,8 +9,10 @@ coverage/
 !.env.example
 .vercel/
 .worktrees/
+.turbo/
 .tmp/
 src/generated/
+**/src/generated/
 .DS_Store
 *.log
 *.tsbuildinfo
