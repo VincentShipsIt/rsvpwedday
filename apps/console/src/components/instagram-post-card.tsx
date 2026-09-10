@@ -29,7 +29,7 @@ export function InstagramPostCard({ post }: { post: InstagramPost }) {
 					href={post.permalink}
 					target="_blank"
 					rel="noreferrer"
-					className="relative aspect-square bg-sand"
+					className="relative aspect-square bg-accent"
 				>
 					<Image
 						src={post.mediaUrl}
@@ -44,13 +44,13 @@ export function InstagramPostCard({ post }: { post: InstagramPost }) {
 				<iframe
 					title={who ? `Instagram post by ${who}` : "Instagram post"}
 					src={post.embedUrl}
-					className="aspect-[4/5] w-full border-0 bg-sand"
+					className="aspect-[4/5] w-full border-0 bg-accent"
 					loading="lazy"
 					allow="encrypted-media; picture-in-picture"
 				/>
 			)}
 			<div className="flex flex-1 flex-col gap-2 p-3">
-				{post.mediaUrl && meta ? <p className="text-ink-soft font-serif text-xs">{meta}</p> : null}
+				{post.mediaUrl && meta ? <p className="text-muted-foreground text-xs">{meta}</p> : null}
 				{post.caption ? <p className="line-clamp-3 text-sm leading-snug">{post.caption}</p> : null}
 				<Button variant="outline" size="sm" className="mt-auto w-fit" asChild>
 					<a href={post.permalink} target="_blank" rel="noreferrer">

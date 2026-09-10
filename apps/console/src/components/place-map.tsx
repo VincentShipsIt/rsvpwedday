@@ -5,7 +5,7 @@ export function PlaceMap({ place }: { place: Place }) {
 	const src = mapEmbedSrc(place);
 	if (!src) {
 		return (
-			<p className="text-ink-soft font-serif text-sm">
+			<p className="text-muted-foreground text-sm">
 				No coordinates yet. Save with an address to geocode.
 			</p>
 		);
@@ -22,13 +22,13 @@ export function PlaceMap({ place }: { place: Place }) {
 			<p className="bg-card px-3 py-2 text-xs">
 				<a
 					href={mapsExternalHref(place)}
-					className="text-saffron underline-offset-2 hover:underline"
+					className="text-foreground underline-offset-2 hover:underline"
 					target="_blank"
 					rel="noreferrer"
 				>
 					Open in Google Maps
 				</a>
-				{place.address ? <span className="text-ink-soft"> · {place.address}</span> : null}
+				{place.address ? <span className="text-muted-foreground"> · {place.address}</span> : null}
 			</p>
 		</div>
 	);

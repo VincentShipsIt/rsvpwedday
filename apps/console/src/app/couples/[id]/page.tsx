@@ -37,22 +37,20 @@ export default async function CouplePage({ params }: { params: Promise<{ id: str
 	] as const;
 
 	return (
-		<ConsoleShell pathname={lane === "client" ? "/clients" : "/leads"}>
+		<ConsoleShell pathname="/couples">
 			<div className="flex flex-col gap-8">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<Button variant="ghost" size="sm" className="-ml-2 mb-1" asChild>
-							<Link href={lane === "client" ? "/clients" : "/leads"}>
+							<Link href={lane === "client" ? "/couples?lane=client" : "/couples?lane=lead"}>
 								← {lane === "client" ? "Clients" : "Leads"}
 							</Link>
 						</Button>
-						<p className="font-display text-xs tracking-[0.2em] text-saffron uppercase">
+						<p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
 							{lane === "client" ? "Client" : "Lead"}
 						</p>
-						<h1 className="font-display mt-1 text-3xl font-semibold tracking-tight">
-							{row.couple}
-						</h1>
-						<p className="text-ink-soft mt-1 font-serif text-sm">
+						<h1 className="mt-1 text-3xl font-semibold tracking-tight">{row.couple}</h1>
+						<p className="text-muted-foreground mt-1 text-sm">
 							{coupleStatusLabels[row.status]} · {row.place.label}
 							{row.date ? ` · ${row.date}` : ""}
 							{row.domain ? ` · ${row.domain}` : ""}
@@ -94,19 +92,17 @@ export default async function CouplePage({ params }: { params: Promise<{ id: str
 										{label}
 									</CardTitle>
 								</CardHeader>
-								<CardContent className="font-display text-2xl font-semibold tabular-nums">
-									{value}
-								</CardContent>
+								<CardContent className="text-2xl font-semibold tabular-nums">{value}</CardContent>
 							</Card>
 						))}
 					</div>
 				) : null}
 				<PlaceMap place={row.place} />
 				<section>
-					<h2 className="font-display text-lg font-semibold tracking-tight">Providers</h2>
+					<h2 className="text-lg font-semibold tracking-tight">Providers</h2>
 					<ul className="mt-3 flex flex-wrap gap-2">
 						{booked.length === 0 ? (
-							<li className="text-ink-soft text-sm">None booked yet.</li>
+							<li className="text-muted-foreground text-sm">None booked yet.</li>
 						) : null}
 						{booked.map((provider) => (
 							<li key={provider.id}>
@@ -146,7 +142,7 @@ export default async function CouplePage({ params }: { params: Promise<{ id: str
 						<Textarea id="notes" name="notes" defaultValue={row.notes ?? ""} />
 					</div>
 					{lane === "lead" ? (
-						<p className="text-ink-soft sm:col-span-2 font-serif text-sm">
+						<p className="text-muted-foreground sm:col-span-2 text-sm">
 							Set status to Confirmed to validate the lead — they show up under Clients.
 						</p>
 					) : null}

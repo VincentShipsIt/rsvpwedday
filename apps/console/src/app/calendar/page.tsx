@@ -30,8 +30,8 @@ export default async function CalendarPage() {
 			<div className="flex flex-col gap-8">
 				<div className="flex flex-wrap items-end justify-between gap-3">
 					<div>
-						<h1 className="font-display text-3xl font-semibold tracking-tight">Calendar</h1>
-						<p className="text-ink-soft mt-1 font-serif text-sm">
+						<h1 className="text-3xl font-semibold tracking-tight">Calendar</h1>
+						<p className="text-muted-foreground mt-1 text-sm">
 							Every dated couple. Subscribe with the ICS feed in Google Calendar or Apple Calendar.
 						</p>
 					</div>
@@ -41,20 +41,20 @@ export default async function CalendarPage() {
 				</div>
 				{[...groups.entries()].map(([month, rows]) => (
 					<section key={month}>
-						<h2 className="font-display text-lg font-semibold tracking-tight">
+						<h2 className="text-lg font-semibold tracking-tight">
 							{new Date(`${month}-01T12:00:00`).toLocaleDateString("en-GB", {
 								month: "long",
 								year: "numeric",
 							})}
 						</h2>
-						<ul className="mt-3 divide-y divide-ink/10 rounded-xl bg-card ring-1 ring-foreground/10">
+						<ul className="mt-3 divide-y divide-border rounded-xl bg-card ring-1 ring-foreground/10">
 							{rows.map((event) => (
 								<li key={event.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
 									<p className="w-28 tabular-nums">{event.date}</p>
-									<Link href={event.href} className="font-medium hover:text-saffron">
+									<Link href={event.href} className="font-medium hover:text-foreground">
 										{event.title}
 									</Link>
-									<p className="text-ink-soft font-serif text-sm">{event.place}</p>
+									<p className="text-muted-foreground text-sm">{event.place}</p>
 									<Badge variant="secondary">{event.status}</Badge>
 								</li>
 							))}

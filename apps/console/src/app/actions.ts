@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { sendOutbound } from "@/lib/channels";
-import type { Couple, CoupleStatus, FeatureFlag, Provider, ProviderKind } from "@/lib/crm";
+import type { Channel, Couple, CoupleStatus, FeatureFlag, Provider, ProviderKind } from "@/lib/crm";
 import { slugId } from "@/lib/crm";
 import { geocodePlace } from "@/lib/geocode";
+import { threadIdFor } from "@/lib/inbox";
 import {
 	appendMessage,
 	getCouple,
@@ -13,6 +14,7 @@ import {
 	setCoupleStatus,
 	upsertCouple,
 	upsertProvider,
+	upsertThread,
 } from "@/lib/store";
 
 function text(form: FormData, key: string): string {
@@ -96,6 +98,9 @@ export async function saveProvider(form: FormData): Promise<void> {
 		hours: text(form, "hours") || undefined,
 		capacity: text(form, "capacity") || undefined,
 		notes: text(form, "notes") || undefined,
+		rating: Number(text(form, "rating")) || undefined,
+		reviewCount: Number(text(form, "reviewCount")) || undefined,
+		reviewsUrl: text(form, "reviewsUrl") || undefined,
 		tags: text(form, "tags")
 			? text(form, "tags")
 					.split(",")
@@ -135,6 +140,47 @@ export async function replyToThread(form: FormData): Promise<void> {
 			id: `out-${Date.now().toString(36)}`,
 			direction: "out",
 			channel: thread.channel,
+			body,
+			at: new Date().toISOString(),
+		},
+		false
+	);
+	revalidateCrm();
+}
+
+/*
+ * Opening a first email to somebody we have never written to. Clicking an
+ * address anywhere in the console lands on the inbox with `to` set, and this
+ * is what turns that into a real thread on send — so a first email is written
+ * in the same place as every reply, rather than handing off to a mail client.
+ */
+export async function startThread(form: FormData): Promise<void> {
+	const handle = text(form, "handle");
+	const body = text(form, "body");
+	if (!handle || !body) return;
+	const channel = (text(form, "channel") as Channel) || "email";
+	const subject = text(form, "subject") || undefined;
+	const id = threadIdFor(channel, handle);
+
+	if (!(await getThread(id))) {
+		await upsertThread({
+			id,
+			channel,
+			subject,
+			contactName: text(form, "name") || handle,
+			handle,
+			unread: false,
+			messages: [],
+		});
+	}
+
+	await sendOutbound({ channel, handle, subject, body });
+	await appendMessage(
+		id,
+		{
+			id: `out-${Date.now().toString(36)}`,
+			direction: "out",
+			channel,
 			body,
 			at: new Date().toISOString(),
 		},

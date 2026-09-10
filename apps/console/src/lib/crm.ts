@@ -86,6 +86,11 @@ export type Provider = {
 	hours?: string;
 	capacity?: string;
 	notes?: string;
+	/* A listing shows a rating only when somebody has actually recorded one —
+	   there is no reviews provider wired, so these stay empty until filled. */
+	rating?: number;
+	reviewCount?: number;
+	reviewsUrl?: string;
 	tags: string[];
 };
 
@@ -183,6 +188,21 @@ export function slugId(value: string): string {
 		.replace(/\s+/g, "-")
 		.slice(0, 48);
 	return slug || `id-${Date.now().toString(36)}`;
+}
+
+export function threadIdFor(channel: Channel, handle: string): string {
+	return slugId(`${channel}-${handle}`);
+}
+
+/*
+ * Lives here rather than in `inbox.ts` because ContactLinks runs in the
+ * browser and `inbox.ts` reaches the store. `to` and `name` let the inbox
+ * open a compose pane when we have never written to this address before.
+ */
+export function threadHref(channel: Channel, handle: string, name?: string): string {
+	const params = new URLSearchParams({ thread: threadIdFor(channel, handle), to: handle });
+	if (name) params.set("name", name);
+	return `/inbox?${params.toString()}`;
 }
 
 export function whatsappHref(number: string): string {

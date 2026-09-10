@@ -13,6 +13,7 @@
 		"./checkbox": "./src/checkbox.tsx",
 		"./dialog": "./src/dialog.tsx",
 		"./dropdown-menu": "./src/dropdown-menu.tsx",
+		"./hover-card": "./src/hover-card.tsx",
 		"./input": "./src/input.tsx",
 		"./label": "./src/label.tsx",
 		"./popover": "./src/popover.tsx",

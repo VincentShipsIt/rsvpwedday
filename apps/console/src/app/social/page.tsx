@@ -29,8 +29,8 @@ export default async function SocialPage({
 		<ConsoleShell pathname="/social">
 			<div className="flex flex-col gap-8">
 				<div>
-					<h1 className="font-display text-3xl font-semibold tracking-tight">Social</h1>
-					<p className="text-ink-soft mt-1 max-w-2xl font-serif text-sm">
+					<h1 className="text-3xl font-semibold tracking-tight">Social</h1>
+					<p className="text-muted-foreground mt-1 max-w-2xl text-sm">
 						Instagram posts from Malta and Gozo weddings. Open one, then save the couple.
 						{source === "instagram" ? " Live from your Instagram hashtags." : ""}
 					</p>
@@ -50,9 +50,9 @@ export default async function SocialPage({
 						</Button>
 					))}
 				</nav>
-				{error ? <p className="text-saffron text-sm">{error}</p> : null}
+				{error ? <p className="text-destructive text-sm">{error}</p> : null}
 				{!error && posts.length === 0 ? (
-					<p className="text-ink-soft font-serif text-sm">
+					<p className="text-muted-foreground text-sm">
 						No Instagram posts yet. Set META_PAGE_ACCESS_TOKEN to pull hashtag media from your
 						studio account, or try another tag.
 					</p>

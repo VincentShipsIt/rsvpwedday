@@ -29,10 +29,8 @@ export default async function AnalyticsPage() {
 		<ConsoleShell pathname="/analytics">
 			<div className="flex flex-col gap-8">
 				<div>
-					<h1 className="font-display text-3xl font-semibold tracking-tight">Analytics</h1>
-					<p className="text-ink-soft mt-1 font-serif text-sm">
-						Studio pipeline — not couple-facing.
-					</p>
+					<h1 className="text-3xl font-semibold tracking-tight">Analytics</h1>
+					<p className="text-muted-foreground mt-1 text-sm">Studio pipeline — not couple-facing.</p>
 				</div>
 				<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 					<Stat label="Pipeline" value={euro.format(pipeline)} />
@@ -71,9 +69,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 			<CardHeader className="pb-2">
 				<CardTitle className="text-muted-foreground text-xs font-normal">{label}</CardTitle>
 			</CardHeader>
-			<CardContent className="font-display text-2xl font-semibold tabular-nums">
-				{value}
-			</CardContent>
+			<CardContent className="text-2xl font-semibold tabular-nums">{value}</CardContent>
 		</Card>
 	);
 }

@@ -1,6 +1,4 @@
 import { Badge } from "@rsvpwedday/ui/badge";
-import { Button } from "@rsvpwedday/ui/button";
-import { Input } from "@rsvpwedday/ui/input";
 import {
 	Table,
 	TableBody,
@@ -10,37 +8,71 @@ import {
 	TableHeader,
 	TableRow,
 } from "@rsvpwedday/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rsvpwedday/ui/tabs";
 import Link from "next/link";
 import { Suspense } from "react";
-import { saveProvider } from "@/app/actions";
 import { ConsoleShell } from "@/components/console-shell";
 import { ContactLinks } from "@/components/contact-links";
 import { FilterBar } from "@/components/filter-bar";
-import { FormSelect } from "@/components/form-select";
-import { PlaceMap } from "@/components/place-map";
+import { ProviderDialog } from "@/components/provider-dialog";
+import { ProvidersMap } from "@/components/providers-map";
+import { ProviderHover } from "@/components/record-hover";
+import { RecordRow } from "@/components/record-row";
 import { filterProviders, providerKindLabels, providerKinds, uniquePlaces } from "@/lib/crm";
+import { mapEmbedSrc, mapsExternalHref } from "@/lib/geocode";
 import { getCrm } from "@/lib/store";
 
 export default async function ProvidersPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ q?: string; kind?: string; place?: string }>;
+	searchParams: Promise<{ q?: string; kind?: string; place?: string; view?: string }>;
 }) {
 	const filters = await searchParams;
 	const { providers } = await getCrm();
 	const rows = filterProviders(providers, filters);
-	const mapped = rows.filter((row) => row.place.lat != null && row.place.lng != null);
+
+	/* The rail panel is built here so the map URL is resolved on the server,
+	   where the maps key lives, and the client only ever renders it. */
+	const panels = new Map(
+		rows.map((provider) => [
+			provider.id,
+			{
+				title: provider.name,
+				subtitle: `${providerKindLabels[provider.kind]} · ${provider.place.label}`,
+				note: provider.notes,
+				rows: [
+					provider.place.address ? { label: "Address", value: provider.place.address } : null,
+					provider.capacity ? { label: "Capacity", value: provider.capacity } : null,
+					provider.hours ? { label: "Hours", value: provider.hours } : null,
+					provider.contact.phone ? { label: "Phone", value: provider.contact.phone } : null,
+					provider.contact.whatsapp
+						? { label: "WhatsApp", value: provider.contact.whatsapp }
+						: null,
+					provider.contact.email ? { label: "Email", value: provider.contact.email } : null,
+					provider.website ? { label: "Website", value: provider.website } : null,
+				].filter((row) => row !== null),
+				tags: [...provider.tags],
+				href: `/providers/${provider.id}`,
+				mapSrc: mapEmbedSrc(provider.place),
+				mapHref: provider.place.lat != null ? mapsExternalHref(provider.place) : null,
+			},
+		])
+	);
 
 	return (
 		<ConsoleShell pathname="/providers">
-			<div className="flex flex-col gap-8">
-				<div>
-					<h1 className="font-display text-3xl font-semibold tracking-tight">Providers</h1>
-					<p className="text-ink-soft mt-1 max-w-2xl font-serif text-sm">
-						Houses, kitchens, flowers, photographers we actually work with. Saving a row geocodes
-						the address. Kitchens keep phone and WhatsApp on the card.
-					</p>
+			<div className="flex flex-col gap-6">
+				<div className="flex flex-wrap items-end justify-between gap-3">
+					<div>
+						<h1 className="text-3xl font-semibold tracking-tight">Providers</h1>
+						<p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+							Houses, kitchens, flowers and photographers we actually work with. An address is
+							geocoded on save, which is what puts a pin on the map.
+						</p>
+					</div>
+					<ProviderDialog />
 				</div>
+
 				<Suspense>
 					<FilterBar
 						selects={[
@@ -60,62 +92,64 @@ export default async function ProvidersPage({
 						]}
 					/>
 				</Suspense>
-				{mapped[0] ? <PlaceMap place={mapped[0].place} /> : null}
-				<div className="rounded-xl bg-card ring-1 ring-foreground/10">
-					<Table>
-						<TableCaption className="sr-only">Providers</TableCaption>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Provider</TableHead>
-								<TableHead>Kind</TableHead>
-								<TableHead>Place</TableHead>
-								<TableHead>Contact</TableHead>
-								<TableHead>Note</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{rows.map((provider) => (
-								<TableRow key={provider.id}>
-									<TableCell className="font-medium">
-										<Link href={`/providers/${provider.id}`}>{provider.name}</Link>
-									</TableCell>
-									<TableCell>
-										<Badge variant="secondary">{providerKindLabels[provider.kind]}</Badge>
-									</TableCell>
-									<TableCell className="text-ink-soft">{provider.place.label}</TableCell>
-									<TableCell>
-										<ContactLinks contact={provider.contact} />
-									</TableCell>
-									<TableCell className="text-ink-soft font-serif text-pretty whitespace-normal">
-										{provider.notes}
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-				<section className="max-w-2xl">
-					<h2 className="font-display text-lg font-semibold tracking-tight">Quick add</h2>
-					<form action={saveProvider} className="mt-3 grid gap-2 sm:grid-cols-2">
-						<Input name="name" required placeholder="Name" aria-label="Name" />
-						<FormSelect
-							name="kind"
-							label="Kind"
-							defaultValue="kitchen"
-							options={providerKinds.map((kind) => ({
-								value: kind,
-								label: providerKindLabels[kind],
-							}))}
-						/>
-						<Input name="place" required placeholder="Place" aria-label="Place" />
-						<Input name="address" placeholder="Address" aria-label="Address" />
-						<Input name="phone" placeholder="Phone" aria-label="Phone" />
-						<Input name="whatsapp" placeholder="WhatsApp" aria-label="WhatsApp" />
-						<Button type="submit" className="sm:col-span-2">
-							Save — fetch map
-						</Button>
-					</form>
-				</section>
+
+				<Tabs defaultValue={filters.view === "map" ? "map" : "list"}>
+					<TabsList>
+						<TabsTrigger value="list">List</TabsTrigger>
+						<TabsTrigger value="map">Map</TabsTrigger>
+					</TabsList>
+
+					<TabsContent value="list">
+						<div className="overflow-hidden rounded-lg border">
+							<Table>
+								<TableCaption className="sr-only">Providers</TableCaption>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Provider</TableHead>
+										<TableHead>Kind</TableHead>
+										<TableHead>Place</TableHead>
+										<TableHead>Contact</TableHead>
+										<TableHead>Note</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{rows.map((provider) => (
+										<RecordRow
+											key={provider.id}
+											panel={panels.get(provider.id) as NonNullable<ReturnType<typeof panels.get>>}
+										>
+											<TableCell className="font-medium">
+												<ProviderHover provider={provider}>
+													<Link href={`/providers/${provider.id}`} className="hover:underline">
+														{provider.name}
+													</Link>
+												</ProviderHover>
+											</TableCell>
+											<TableCell>
+												<Badge variant="secondary" className="font-normal">
+													{providerKindLabels[provider.kind]}
+												</Badge>
+											</TableCell>
+											<TableCell className="text-muted-foreground">
+												{provider.place.label}
+											</TableCell>
+											<TableCell>
+												<ContactLinks contact={provider.contact} name={provider.name} />
+											</TableCell>
+											<TableCell className="text-muted-foreground text-pretty whitespace-normal">
+												{provider.notes}
+											</TableCell>
+										</RecordRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					</TabsContent>
+
+					<TabsContent value="map">
+						<ProvidersMap providers={rows} />
+					</TabsContent>
+				</Tabs>
 			</div>
 		</ConsoleShell>
 	);

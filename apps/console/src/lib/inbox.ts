@@ -1,5 +1,8 @@
 import type { Channel, CrmData, InboxMessage, Thread, ThreadPersonKind } from "@/lib/crm";
-import { slugId } from "@/lib/crm";
+import { threadIdFor } from "@/lib/crm";
+
+export { threadIdFor };
+
 import { appendMessage, getCrm, upsertThread } from "@/lib/store";
 
 export function lastMessage(thread: Thread) {
@@ -61,10 +64,6 @@ function matchesContact(
 		);
 	}
 	return name.toLowerCase() === needle;
-}
-
-export function threadIdFor(channel: Channel, handle: string): string {
-	return slugId(`${channel}-${handle}`);
 }
 
 export async function ingestInbound(input: {
