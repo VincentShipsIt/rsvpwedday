@@ -429,3 +429,9 @@ deleted. Bootstrap markers prevent deleted seeded pages/gifts from returning on 
 syncs the schema, it adds the nullable legacy-photo receipt column and unique index in an
 idempotent transaction. No ownership is inferred, existing rows are unchanged, actual duplicate
 receipts fail, and Prisma's normal data-loss protection remains enabled.
+
+## Claude model routing
+
+- Standard implementation: Claude Sonnet 5.5.
+- Big implementation (large or cross-cutting changes) and planning: Claude Opus 5.5 or newer.
+- Audits, major or minor: the latest Claude Fable (5.2 today). Fable never implements or edits code.
